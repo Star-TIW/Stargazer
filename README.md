@@ -1,2 +1,2 @@
 # Stargazer
-A in-progress movie streaming website
+An in-progress movie streaming website
