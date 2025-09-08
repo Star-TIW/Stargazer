@@ -176,7 +176,7 @@ async function fetchMovieDetails(imdbID) {
   }
 }
 
-// Function to create and display a detailed movie card (updated with Watch button)
+// Function to create and display a detailed movie card
 function createMovieCard(movie) {
   const existingCard = document.getElementById("movie-card");
   if (existingCard) existingCard.remove();
@@ -200,19 +200,18 @@ function createMovieCard(movie) {
 
   const isMovie = movie.Type === "movie";
 
+  const fullPlot = movie.Plot || "N/A";
+  const sentences = fullPlot.split(/(?<=[.!?])\s+/);
+  const shortPlot = sentences.slice(0, 2).join(" ") + (sentences.length > 2 ? " ..." : "");
+
   card.innerHTML = `
     <div style="display:flex; justify-content:flex-end;">
       <span id="close-card-x" style="cursor:pointer; font-size:24px; color:#efef88;">&times;</span>
     </div>
     <h2 style="margin:6px 0 10px 0;">${movie.Title} (${movie.Year})</h2>
-    <img src="${
-      movie.Poster !== "N/A"
-        ? movie.Poster
-        : "https://via.placeholder.com/200x300?text=N/A"
+    <img src="${movie.Poster !== "N/A" ? movie.Poster : "https://via.placeholder.com/200x300?text=N/A"
     }" 
-         alt="${
-           movie.Title
-         }" style="width:100%; border-radius:5px; margin-bottom:10px;" />
+         alt="${movie.Title}" style="width:100%; border-radius:5px; margin-bottom:10px;" />
     <p><strong>Type:</strong> ${movie.Type.charAt(0).toUpperCase() + movie.Type.slice(1)}</p>
     <br>
     <p><strong>Rating:</strong> ${movie.Rated}</p>
@@ -225,7 +224,12 @@ function createMovieCard(movie) {
     <br>
     <p><strong>Actors:</strong> ${movie.Actors || "N/A"}</p>
     <br>
-    <p><strong>Plot:</strong> ${movie.Plot || "N/A"}</p>
+    <div id="plot-container" style="overflow:hidden; transition:max-height 0.4s ease; max-height:60px;">
+      <p id="plot-text"><strong>Plot:</strong> ${shortPlot}</p>
+    </div>
+    ${sentences.length > 2
+      ? '<button id="toggle-plot" style="margin-top:6px; padding:6px 10px; border:none; border-radius:5px; cursor:pointer; font-weight:bold; background:#efef88; color:#000;">See More</button>'
+      : ""}
   `;
 
   const controls = document.createElement("div");
@@ -262,6 +266,27 @@ function createMovieCard(movie) {
   card.appendChild(controls);
   document.body.appendChild(card);
 
+  // ------------------------ See More / See Less ------------------------ //
+  const toggleBtn = card.querySelector("#toggle-plot");
+  if (toggleBtn) {
+    let expanded = false;
+    const plotText = document.getElementById("plot-text");
+    const plotContainer = document.getElementById("plot-container");
+
+    toggleBtn.addEventListener("click", () => {
+      if (!expanded) {
+        plotText.innerHTML = `<strong>Plot:</strong> ${fullPlot}`;
+        plotContainer.style.maxHeight = plotText.scrollHeight + 20 + "px"; // smooth expand
+        toggleBtn.textContent = "See Less";
+      } else {
+        plotText.innerHTML = `<strong>Plot:</strong> ${shortPlot}`;
+        plotContainer.style.maxHeight = "60px"; // smooth collapse
+        toggleBtn.textContent = "See More";
+      }
+      expanded = !expanded;
+    });
+  }
+
   const closeCardX = document.getElementById("close-card-x");
   if (closeCardX) {
     closeCardX.onclick = () => {
@@ -270,6 +295,7 @@ function createMovieCard(movie) {
     };
   }
 
+  // ------------------------ Video Iframe / Watch Button ------------------------ //
   let videoContainer = document.getElementById("video-container");
   let videoIframe;
   let closeVideoX;
@@ -339,7 +365,6 @@ function createMovieCard(movie) {
     videoContainer.appendChild(videoWrapper);
     document.body.appendChild(videoContainer);
 
-    // Close handlers
     const hideOverlay = () => {
       videoIframe.src = "";
       videoContainer.style.display = "none";
@@ -365,7 +390,6 @@ function createMovieCard(movie) {
     };
   }
 
-  // ------------------------ Watch Button Handler ------------------------ //
   watchBtn.onclick = () => {
     let season = null;
     let episode = null;
@@ -382,7 +406,6 @@ function createMovieCard(movie) {
       }
     }
 
-    // Clear search UI and remove card
     const searchEl = document.getElementById("search");
     const suggestionsEl = document.getElementById("suggestions");
     if (searchEl) searchEl.value = "";
@@ -390,14 +413,12 @@ function createMovieCard(movie) {
     const c = document.getElementById("movie-card");
     if (c) c.remove();
 
-    // Add to recently watched
     addToRecentlyWatched({
       imdbID: movie.imdbID,
       Title: movie.Title,
       Poster: movie.Poster
     });
 
-    // Set iframe source
     const imdbID = movie.imdbID || "";
     if (!imdbID) {
       alert("No IMDB ID available for this title.");
@@ -414,7 +435,7 @@ function createMovieCard(movie) {
     setTimeout(() => {
       try {
         videoIframe.contentWindow && videoIframe.contentWindow.focus();
-      } catch (e) {}
+      } catch (e) { }
       videoIframe.scrollIntoView({ behavior: "smooth", block: "center" });
     }, 120);
   };
