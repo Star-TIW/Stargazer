@@ -177,7 +177,7 @@ async function fetchMovieDetails(imdbID) {
 }
 
 // Function to create and display a detailed movie card
-function createMovieCard(movie) {
+  function createMovieCard(movie) {
   const existingCard = document.getElementById("movie-card");
   if (existingCard) existingCard.remove();
   const card = document.createElement("div");
@@ -199,10 +199,7 @@ function createMovieCard(movie) {
   });
 
   const isMovie = movie.Type === "movie";
-
   const fullPlot = movie.Plot || "N/A";
-  const sentences = fullPlot.split(/(?<=[.!?])\s+/);
-  const shortPlot = sentences.slice(0, 2).join(" ") + (sentences.length > 2 ? " ..." : "");
 
   card.innerHTML = `
     <div style="display:flex; justify-content:flex-end;">
@@ -224,12 +221,14 @@ function createMovieCard(movie) {
     <br>
     <p><strong>Actors:</strong> ${movie.Actors || "N/A"}</p>
     <br>
-    <div id="plot-container" style="overflow:hidden; transition:max-height 0.4s ease; max-height:60px;">
-      <p id="plot-text"><strong>Plot:</strong> ${shortPlot}</p>
+    <div id="plot-container" style="overflow:hidden; transition:max-height 0.4s ease;">
+      <p id="plot-text" style="display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">
+        <strong>Plot:</strong> ${fullPlot}
+      </p>
     </div>
-    ${sentences.length > 2
-      ? '<button id="toggle-plot" style="margin-top:6px; padding:6px 10px; border:none; border-radius:5px; cursor:pointer; font-weight:bold; background:#efef88; color:#000;">See More</button>'
-      : ""}
+    <button id="toggle-plot" style="margin-top:6px; padding:6px 10px; border:none; border-radius:5px; cursor:pointer; font-weight:bold; background:#efef88; color:#000;">
+      See More
+    </button>
   `;
 
   const controls = document.createElement("div");
@@ -238,7 +237,7 @@ function createMovieCard(movie) {
   if (!isMovie) {
     controls.innerHTML += `
       <div style="display:flex; gap:10px; align-items:center; margin-bottom:8px;">
-        <label for="seasonInput" style="color:#efef88; font-weight:600; ">Season</label>
+        <label for="seasonInput" style="color:#efef88; font-weight:600;">Season</label>
         <input id="seasonInput" type="number" min="1" placeholder="1" style="width:80px; padding:6px; border-radius:6px; border:2px solid #efef88; background:#111; color:#fff;" />
         <label for="episodeInput" style="color:#efef88; font-weight:600;">Episode</label>
         <input id="episodeInput" type="number" min="1" placeholder="1" style="width:80px; padding:6px; border-radius:6px; border:2px solid #efef88; background:#111; color:#fff;" />
@@ -266,27 +265,35 @@ function createMovieCard(movie) {
   card.appendChild(controls);
   document.body.appendChild(card);
 
-  // ------------------------ See More / See Less ------------------------ //
-  const toggleBtn = card.querySelector("#toggle-plot");
-  if (toggleBtn) {
-    let expanded = false;
-    const plotText = document.getElementById("plot-text");
-    const plotContainer = document.getElementById("plot-container");
+    // --- See More / See Less ---
+    const toggleBtn = card.querySelector("#toggle-plot");
+    if (toggleBtn) {
+      let expanded = false;
+      const plotText = document.getElementById("plot-text");
 
-    toggleBtn.addEventListener("click", () => {
-      if (!expanded) {
-        plotText.innerHTML = `<strong>Plot:</strong> ${fullPlot}`;
-        plotContainer.style.maxHeight = plotText.scrollHeight + 20 + "px"; // smooth expand
-        toggleBtn.textContent = "See Less";
-      } else {
-        plotText.innerHTML = `<strong>Plot:</strong> ${shortPlot}`;
-        plotContainer.style.maxHeight = "60px"; // smooth collapse
-        toggleBtn.textContent = "See More";
-      }
-      expanded = !expanded;
-    });
-  }
+      plotText.style.display = "-webkit-box";
+      plotText.style.webkitLineClamp = "2";
+      plotText.style.webkitBoxOrient = "vertical";
+      plotText.style.overflow = "hidden";
 
+      toggleBtn.addEventListener("click", () => {
+        if (!expanded) {
+          plotText.style.display = "block";
+          plotText.style.overflow = "visible";
+          toggleBtn.textContent = "See Less";
+          expanded = true;
+        } else {
+          plotText.style.display = "-webkit-box";
+          plotText.style.webkitLineClamp = "2";
+          plotText.style.webkitBoxOrient = "vertical";
+          plotText.style.overflow = "hidden";
+          toggleBtn.textContent = "See More";
+          expanded = false;
+        }
+      });
+    }
+
+  // --- Close Card ---
   const closeCardX = document.getElementById("close-card-x");
   if (closeCardX) {
     closeCardX.onclick = () => {
@@ -440,6 +447,7 @@ function createMovieCard(movie) {
     }, 120);
   };
 }
+
 
 function renderSuggestions(results) {
   suggestionsBox.innerHTML = results
