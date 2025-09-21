@@ -1,5 +1,5 @@
 window.gameStreams = {
-    "401772731": "https://dofustream.cloud/player2?m3u8=https://r.dofustream.cloud/s3/cf/s3_401772731_qlg_r2_nflnet/index.txt", // Cincinnati Bengals vs Minnesota Vikings
+    "401772731": "https://dofustream.cloud/player2?m3u8=https://r.dofustream.cloud/s3/cf/s3_401772731_gbj_Bengals/index.txt", // Cincinnati Bengals vs Minnesota Vikings
     "401772732": "https://dofustream.cloud/player2?m3u8=https://r.dofustream.cloud/s3/cf/s3_401772732_y0o_Steelers/index.txt", // Pittsburgh Steelers vs New England Patriots
     "401772733": "https://dofustream.cloud/player2?m3u8=https://r.dofustream.cloud/s3/cf/s3_401772733_e4x_Colts/index.txt", // Indianapolis Colts vs Tennessee Titans
     "401772734": "https://dofustream.cloud/player2?m3u8=https://r.dofustream.cloud/s3/cf/s3_401772734_nen_Texans/index.txt", // Houston Texans vs Jacksonville Jaguars
