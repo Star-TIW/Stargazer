@@ -1,0 +1,153 @@
+/* Banner */
+.live-banner {
+  left: 0;
+  width: 100%;
+  background: rgba(239, 239, 136, 0.1);
+  border-top: 1px solid #efef88;
+  border-bottom: 1px solid #efef88;
+  overflow: hidden;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  z-index: 90;
+}
+
+.banner-text {
+  white-space: nowrap;
+  color: #efef88;
+  font-size: 20px;
+  font-weight: 500;
+  animation: scrollText 15s linear infinite;
+}
+
+@keyframes scrollText {
+  0% {
+    transform: translateX(250%);
+  }
+  100% {
+    transform: translateX(-100%);
+  }
+}
+
+/* Scrollable container for banner + live games */
+.live-scroll-container {
+    position: absolute;
+    top: 87.5px;
+    left: 0;
+    width: 100%;
+    height: calc(100% - 87.5px); 
+    overflow-y: auto;
+    overflow-x: hidden;
+    scroll-behavior: smooth;
+    padding-bottom: 20px; 
+}
+
+/* Optional: customize vertical scrollbar */
+.live-scroll-container::-webkit-scrollbar {
+    width: 8px;
+}
+
+.live-scroll-container::-webkit-scrollbar-track {
+    background: rgba(0,0,0,0.1);
+}
+
+.live-scroll-container::-webkit-scrollbar-thumb {
+    background: rgba(239,239,136,0.5);
+    border-radius: 4px;
+}
+
+
+/* Live container */
+.live-container {
+  padding-top: 0px; /* space under navbar + banner */
+  text-align: center;
+  color: white;
+  font-family: "Poppins", sans-serif;
+}
+
+.live-title {
+  font-size: 28px;
+  margin-bottom: 20px;
+  color: #efef88;
+}
+
+/* Games list */
+.games-list {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  justify-items: center; 
+  gap: 20px;
+  padding-bottom: 20px; 
+  padding-left: 20px;
+  padding-right: 20px;
+}
+
+/* Tablet */
+@media (max-width: 1024px) {
+  .games-list {
+    grid-template-columns: repeat(2, 1fr); /* 2 cards on tablet */
+  }
+}
+
+/* Phone */
+@media (max-width: 600px) {
+  .games-list {
+    grid-template-columns: repeat(1, 1fr);
+    /* 1 card on phone */
+  .banner-text {
+    animation: scrollText 10s linear infinite;
+  }
+  }
+}
+
+.game-card {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(239, 239, 136, 0.3);
+  border-radius: 12px;
+  padding: 20px;
+  width: 100%;
+  color: white;
+  text-align: center;
+  backdrop-filter: blur(2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  transition: transform 0.3s ease;
+}
+
+.game-card:hover {
+  transform: translateY(-5px);
+}
+
+.team {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 8px 0;
+}
+
+.team img {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+}
+
+.game-info {
+  margin-top: 10px;
+  font-size: 14px;
+  color: #efef88;
+}
+
+.watch-btn {
+  margin-top: 12px;
+  padding: 8px 16px;
+  background: linear-gradient(90deg, rgba(180, 132, 65, 1) 0%, rgba(239, 239, 136, 1) 50%, rgba(186, 138, 79, 1) 100%);
+  border: none;
+  border-radius: 8px;
+  color: black;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.watch-btn:hover {
+  background: #efef88;
+}
