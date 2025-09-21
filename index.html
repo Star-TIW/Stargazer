@@ -2,68 +2,70 @@
 <html lang="en">
 
 <head>
-    <title>Stargazer</title>
-    <link rel="icon" href="star.png" />
-    <link rel="stylesheet" href="home.css" />
+  <title>Stargazer</title>
+  <link rel="icon" href="star.png" />
+<link rel="stylesheet" href="home.css" />
+<link rel="stylesheet" href="movies.css" />
 </head>
 
 <body>
-    <div id="shapes"></div>
-    <div id="stars"></div>
-    <div id="bubbles"></div>
-    <div id="snow"></div>
+<div id="shapes"></div>
+<div id="stars"></div>
+<div id="bubbles"></div>
+<div id="snow"></div>
 
-    <header class="header">
-        <div class="brand-group">
-            <img class="logo-small" src="star.png" alt="Star Logo" />
-            <h1 class="brand">Stargazer</h1>
-        </div>
+<header class="header">
+<div class="brand-group">
+<img class="logo-small" src="star.png" alt="Star Logo" />
+<a href="/live/index.html" class="brand">Stargazer</a>
+</div>
+<button id="menu-toggle" class="menu-toggle">☰</button>
+<nav class="navbar" id="navbar">
+<button class="nav-button" data-effect="stars">Stars</button>
+<button class="nav-button" data-effect="shapes">Shapes</button>
+<button class="nav-button" data-effect="bubbles">Bubbles</button>
+<button class="nav-button" data-effect="snow">Snow</button>
+</nav>
+</header>
+<div id="particles-js"></div>
 
-        <nav class="navbar" id="navbar">
-            <button class="nav-button" data-effect="stars">Stars</button>
-            <button class="nav-button" data-effect="shapes">Shapes</button>
-            <button class="nav-button" data-effect="bubbles">Bubbles</button>
-            <button class="nav-button" data-effect="snow">Snow</button>
-        </nav>
-    </header>
-    <div id="particles-js"></div>
+<div id="clock">
+<div id="time"></div>
+<div id="date"></div>
+</div>
 
-    <div id="clock">
-        <div id="time"></div>
-        <div id="date"></div>
-    </div>
+<form id="search-container" class="flex-center">
+<input id="search" type="text" autocomplete="off" placeholder="Search movies & shows..." />
+<div id="suggestions"></div>
+</form>
+<!-- Video Container -->
+<div id="video-container" style="display:none;">
+<div id="video-wrapper">
+<span id="close-video-x">&times;</span>
+<iframe id="video-iframe" frameborder="0" allowfullscreen></iframe>
+</div>
+</div>
+<!-- Recently Watched Container -->
+<div id="recently-watched-container">
+<h3>Recently Watched</h3>
+<div id="recently-watched" class="recently-watched-scroll"></div>
+</div>
 
-    <form id="search-container" class="flex-center">
-        <input id="search" type="text" autocomplete="off" placeholder="Search movies & shows..." />
-        <div id="suggestions"></div>
-    </form>
-    <!-- Video Container -->
-    <div id="video-container" style="display:none;">
-        <div id="video-wrapper">
-            <span id="close-video-x">&times;</span>
-            <iframe id="video-iframe" frameborder="0" allowfullscreen></iframe>
-        </div>
-    </div>
-    <!-- Recently Watched Container -->
-    <div id="recently-watched-container">
-        <h3>Recently Watched</h3>
-        <div id="recently-watched" class="recently-watched-scroll"></div>
-    </div>
+<script src="particles.min.js"></script>
+<script src="movies.js"></script>
+<script src="particle-config.js"></script>
 
-    <script src="particles.min.js"></script>
-    <script src="movies.js"></script>
 
 </body>
 <!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-G0V9JTCLBP"></script>
 <script>
-    window.dataLayer = window.dataLayer || [];
+window.dataLayer = window.dataLayer || [];
 
-    function gtag() {
-        dataLayer.push(arguments);
-    }
-    gtag('js', new Date());
-    gtag('config', 'G-G0V9JTCLBP');
+function gtag() {
+dataLayer.push(arguments);
+}
+gtag('js', new Date());
+gtag('config', 'G-G0V9JTCLBP');
 </script>
-
 </html>
