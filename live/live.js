@@ -297,7 +297,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
               if (!streamLink || streamLink === "DNE") return;
 
-              videoIframe.src = "https://dofustream.cloud/player2?m3u8=" + streamLink;
+              videoIframe.src = streamLink;
               videoContainer.style.display = "flex";
               setTimeout(() => {
                 videoContainer.style.opacity = "1";
