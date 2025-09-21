@@ -16,8 +16,8 @@ function updateClock() {
   const formattedTime = `${formattedHours
     .toString()
     .padStart(2, "0")} : ${minutes
-    .toString()
-    .padStart(2, "0")} : ${seconds.toString().padStart(2, "0")} ${ampm}`;
+      .toString()
+      .padStart(2, "0")} : ${seconds.toString().padStart(2, "0")} ${ampm}`;
   const options = {
     weekday: "long",
     year: "numeric",
@@ -326,14 +326,12 @@ function renderSuggestions(results) {
     .map(
       (movie) => `
     <div class="suggestion-item" data-imdbid="${movie.imdbID}">
-      <img src="${
-        movie.Poster !== "N/A"
+      <img src="${movie.Poster !== "N/A"
           ? movie.Poster
           : "https://via.placeholder.com/50x75?text=N/A"
-      }" alt="${movie.Title}" />
-      <span>${movie.Title} (${movie.Year}) - ${
-        movie.Type === "movie" ? "Movie" : "Show"
-      }</span>
+        }" alt="${movie.Title}" />
+      <span>${movie.Title} (${movie.Year}) - ${movie.Type === "movie" ? "Movie" : "Show"
+        }</span>
     </div>
   `
     )
@@ -412,18 +410,14 @@ function renderRecentlyWatched() {
   recentContainer.innerHTML = recentlyWatched
     .map(
       (movie) => `
-      <div class="recently-watched-item" data-imdbid="${
-        movie.imdbID
-      }" style="display:flex; flex-direction:column; align-items:center; cursor:pointer; min-width:80px; flex:0 0 auto;">
-        <img src="${
-          movie.Poster !== "N/A"
-            ? movie.Poster
-            : "https://via.placeholder.com/50x75?text=N/A"
-        }" alt="${
-        movie.Title
-      }" style="width:50px; height:75px; border-radius:4px; object-fit:cover;" />
-        <span style="color:#efef88; font-size:12px; text-align:center; margin-top:3px;">${
-          movie.Title.length > 12 ? movie.Title.slice(0, 12) + "…" : movie.Title
+      <div class="recently-watched-item" data-imdbid="${movie.imdbID
+        }" style="display:flex; flex-direction:column; align-items:center; cursor:pointer; min-width:80px; flex:0 0 auto;">
+        <img src="${movie.Poster !== "N/A"
+          ? movie.Poster
+          : "https://via.placeholder.com/50x75?text=N/A"
+        }" alt="${movie.Title
+        }" style="width:50px; height:75px; border-radius:4px; object-fit:cover;" />
+        <span style="color:#efef88; font-size:12px; text-align:center; margin-top:3px;">${movie.Title.length > 12 ? movie.Title.slice(0, 12) + "…" : movie.Title
         }</span>
       </div>
     `
