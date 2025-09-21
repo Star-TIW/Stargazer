@@ -189,7 +189,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       // // --- Add test card at top ---
       // const testKickoff = new Date();
-      // testKickoff.setHours(1, 55, 0, 0);
+      // testKickoff.setHours(9, 19, 30, 0);
       // events.unshift({
       //   id: "1234568",
       //   date: testKickoff.toISOString(),
@@ -255,6 +255,18 @@ document.addEventListener("DOMContentLoaded", () => {
 
             function updateWatchButton() {
               const now = new Date();
+              const streamLink = (typeof gameStreams !== "undefined" && gameStreams[ev.id]) ? gameStreams[ev.id] : null;
+              const gameStartTime = new Date(startIso);
+              const showTime = new Date(gameStartTime.getTime() - 30 * 60 * 1000);
+
+              if (!streamLink && now >= showTime) {
+                watchBtn.innerText = "No stream available yet";
+                watchBtn.disabled = true;
+                watchBtn.style.opacity = "0.6";
+                watchBtn.style.cursor = "not-allowed";
+                return;
+              }
+
               if (now >= showTime) {
                 watchBtn.innerText = "Watch Live";
                 watchBtn.disabled = false;
@@ -266,8 +278,12 @@ document.addEventListener("DOMContentLoaded", () => {
                 const mins = Math.floor((diff % 3600) / 60);
                 const secs = diff % 60;
                 watchBtn.innerText = `Available in ${hrs}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+                watchBtn.disabled = true;
+                watchBtn.style.opacity = "0.6";
+                watchBtn.style.cursor = "not-allowed";
               }
             }
+
 
             updateWatchButton();
             setInterval(updateWatchButton, 1000);
