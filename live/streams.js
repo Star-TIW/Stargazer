@@ -10,7 +10,7 @@ window.gameStreams = {
     "401772840": "https://dofustream.cloud/player2?m3u8=https://r.dofustream.cloud/s3/cf/s3_401772840_jec_Jets/index.txt", // New York Jets vs Tampa Bay Buccaneers
     "401772841": "https://dofustream.cloud/player2?m3u8=https://r.dofustream.cloud/s3/cf/s3_401772841_skg_Raiders/index.txt", // Las Vegas Raiders vs Washington Commanders
     "401772842": "https://dofustream.cloud/player2?m3u8=https://r.dofustream.cloud/s3/cf/s3_401772842_a2a_Packers/index.txt", // Green Bay Packers vs Cleveland Browns
-    "401772843": "", // Arizona Cardinals vs San Francisco 49ers
-    "401772844": "", // Dallas Cowboys vs Chicago Bears
+    "401772843": "https://dofustream.cloud/player2?m3u8=https://r.dofustream.cloud/s3/cf/s3_401772843_vjk_Cardinals/index.txt", // Arizona Cardinals vs San Francisco 49ers
+    "401772844": "https://dofustream.cloud/player2?m3u8=https://s3.us-east-1.amazonaws.com/oscaar.lohmiller/redzone.m3u8", // Dallas Cowboys vs Chicago Bears
     "401772920": "", // Kansas City Chiefs vs New York Giants
 };
