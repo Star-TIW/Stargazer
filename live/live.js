@@ -251,13 +251,13 @@ document.addEventListener("DOMContentLoaded", () => {
             watchBtn.style.cursor = "not-allowed";
 
             const gameStart = new Date(startIso);
-            const showTime = new Date(gameStart.getTime() - 30 * 60 * 1000);
+            const showTime = new Date(gameStart.getTime() - 10 * 60 * 1000);
 
             function updateWatchButton() {
               const now = new Date();
               const streamLink = (typeof gameStreams !== "undefined" && gameStreams[ev.id]) ? gameStreams[ev.id] : null;
               const gameStartTime = new Date(startIso);
-              const showTime = new Date(gameStartTime.getTime() - 30 * 60 * 1000);
+              const showTime = new Date(gameStartTime.getTime() - 10 * 60 * 1000);
 
               if (!streamLink && now >= showTime) {
                 watchBtn.innerText = "No stream available yet";
@@ -273,14 +273,15 @@ document.addEventListener("DOMContentLoaded", () => {
                 watchBtn.style.opacity = "1";
                 watchBtn.style.cursor = "pointer";
               } else {
-                const diff = Math.max(0, Math.floor((showTime - now) / 1000));
-                const hrs = Math.floor(diff / 3600);
-                const mins = Math.floor((diff % 3600) / 60);
-                const secs = diff % 60;
-                watchBtn.innerText = `Available in ${hrs}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
-                watchBtn.disabled = true;
-                watchBtn.style.opacity = "0.6";
-                watchBtn.style.cursor = "not-allowed";
+                  const diff = Math.max(0, Math.floor((showTime - now) / 1000));
+                  const days = Math.floor(diff / 86400);
+                  const hrs = Math.floor((diff % 86400) / 3600);
+                  const mins = Math.floor((diff % 3600) / 60);
+                  const secs = diff % 60;
+                  watchBtn.innerText = `Available in ${String(days).padStart(2, '0')}:${String(hrs).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+                  watchBtn.disabled = true;
+                  watchBtn.style.opacity = "0.6";
+                  watchBtn.style.cursor = "not-allowed";
               }
             }
 
