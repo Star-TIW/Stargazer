@@ -305,9 +305,9 @@ async function fetchMovieDetails(imdbID) {
     }
 
     if (isMovie) {
-      videoIframe.src = `https://vidsrc.net/embed/movie/${imdbID}`;
+      videoIframe.src = `https://moviesapi.to/movie/${imdbID}`;
     } else {
-      videoIframe.src = `https://vidsrc.net/embed/tv/${imdbID}/${season}-${episode}`;
+      videoIframe.src = `https://moviesapi.to/tv/${imdbID}-${season}-${episode}`;
     }
 
     videoContainer.style.display = "flex";
