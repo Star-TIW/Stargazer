@@ -1,5 +1,4 @@
 window.gameStreams = {
-    "401772632": "https://dofustream.cloud/player2?m3u8=https://r.dofustream.cloud/s3/cf/s3_401772632_9hq_Vikings/index.txt", // Minnesota Vikings vs Pittsburgh Steelers
     "401772737": "https://dofustream.cloud/player2?m3u8=https://r.dofustream.cloud/s3/cf/s3_401772737_98x_Chargers/index.txt", // Los Angeles Chargers vs New York Giants
     "401772738": "https://dofustream.cloud/player2?m3u8=https://r.dofustream.cloud/s3/cf/s3_401772738_etr_Titans/index.txt", // Tennessee Titans vs Houston Texans
     "401772739": "https://dofustream.cloud/player2?m3u8=https://r.dofustream.cloud/s3/cf/s3_401772739_dyk_Commanders/index.txt", // Washington Commanders vs Atlanta Falcons
