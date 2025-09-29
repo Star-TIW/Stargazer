@@ -31,35 +31,34 @@
 
 /* Scrollable container for banner + live games */
 .live-scroll-container {
-    position: absolute;
-    top: 87.5px;
-    left: 0;
-    width: 100%;
-    height: calc(100% - 87.5px); 
-    overflow-y: auto;
-    overflow-x: hidden;
-    scroll-behavior: smooth;
-    padding-bottom: 20px; 
+  position: absolute;
+  top: 87.5px;
+  left: 0;
+  width: 100%;
+  height: calc(100% - 87.5px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  scroll-behavior: smooth;
+  padding-bottom: 20px;
 }
 
 /* Optional: customize vertical scrollbar */
 .live-scroll-container::-webkit-scrollbar {
-    width: 8px;
+  width: 8px;
 }
 
 .live-scroll-container::-webkit-scrollbar-track {
-    background: rgba(0,0,0,0.1);
+  background: rgba(0, 0, 0, 0.1);
 }
 
 .live-scroll-container::-webkit-scrollbar-thumb {
-    background: rgba(239,239,136,0.5);
-    border-radius: 4px;
+  background: rgba(239, 239, 136, 0.5);
+  border-radius: 4px;
 }
-
 
 /* Live container */
 .live-container {
-  padding: 15px; /* space under navbar + banner */
+  padding: 15px;
   text-align: center;
   color: white;
   font-family: "Poppins", sans-serif;
@@ -75,17 +74,15 @@
 .games-list {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  justify-items: center; 
+  justify-items: center;
   gap: 20px;
-  padding-bottom: 20px; 
-  padding-left: 20px;
-  padding-right: 20px;
+  padding: 0 20px 20px;
 }
 
 /* Tablet */
 @media (max-width: 1024px) {
   .games-list {
-    grid-template-columns: repeat(2, 1fr); /* 2 cards on tablet */
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 
@@ -93,10 +90,10 @@
 @media (max-width: 600px) {
   .games-list {
     grid-template-columns: repeat(1, 1fr);
-    /* 1 card on phone */
+  }
+
   .banner-text {
     animation: scrollText 10s linear infinite;
-  }
   }
 }
 
@@ -117,19 +114,6 @@
   transform: translateY(-5px);
 }
 
-.team {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin: 8px 0;
-}
-
-.team img {
-  width: 32px;
-  height: 32px;
-  object-fit: contain;
-}
-
 .game-info {
   margin-top: 10px;
   font-size: 14px;
@@ -139,7 +123,12 @@
 .watch-btn {
   margin-top: 12px;
   padding: 8px 16px;
-  background: linear-gradient(90deg, rgba(180, 132, 65, 1) 0%, rgba(239, 239, 136, 1) 50%, rgba(186, 138, 79, 1) 100%);
+  background: linear-gradient(
+    90deg,
+    rgba(180, 132, 65, 1) 0%,
+    rgba(239, 239, 136, 1) 50%,
+    rgba(186, 138, 79, 1) 100%
+  );
   border: none;
   border-radius: 8px;
   color: black;
@@ -196,14 +185,6 @@
 }
 
 .collapsible.closed {
-  padding:0px;
-  border:none;
-}
-
-
-.collapsible.open + .arrow {
-  transform: rotate(180deg);
-}
-.collapsible.closed + .arrow {
-  transform: rotate(0deg);
+  padding: 0;
+  border: none;
 }
