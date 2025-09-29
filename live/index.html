@@ -5,63 +5,88 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Stargazer Live - NFL</title>
   <link rel="icon" href="/star.png" />
-<link rel="stylesheet" href="/home.css" />
-<link rel="stylesheet" href="live.css" />
+  <link rel="stylesheet" href="/home.css" />
+  <link rel="stylesheet" href="live.css" />
 </head>
 
 <body>
-<div id="shapes"></div>
-<div id="stars"></div>
-<div id="bubbles"></div>
-<div id="snow"></div>
+  <div id="shapes"></div>
+  <div id="stars"></div>
+  <div id="bubbles"></div>
+  <div id="snow"></div>
 
-<header class="header">
-<div class="brand-group">
-<img class="logo-small" src="/star.png" alt="Star Logo" />
-<a href="/" class="brand">Stargazer</a>
-</div>
-<button id="menu-toggle" class="menu-toggle">☰</button>
-<nav class="navbar" id="navbar">
-<button class="nav-button" data-effect="stars">Stars</button>
-<button class="nav-button" data-effect="shapes">Shapes</button>
-<button class="nav-button" data-effect="bubbles">Bubbles</button>
-<button class="nav-button" data-effect="snow">Snow</button>
-</nav>
-</header>
-<div id="particles-js"></div>
-<div class="live-scroll-container">
-<div class="live-banner">
-<div class="banner-text">
-Beta Live Streaming: NFL Games only for now. More sports coming soon
-</div>
-</div>
+  <header class="header">
+    <div class="brand-group">
+      <img class="logo-small" src="/star.png" alt="Star Logo" />
+      <a href="/" class="brand">Stargazer</a>
+    </div>
+    <button id="menu-toggle" class="menu-toggle">☰</button>
+    <nav class="navbar" id="navbar">
+      <button class="nav-button" data-effect="stars">Stars</button>
+      <button class="nav-button" data-effect="shapes">Shapes</button>
+      <button class="nav-button" data-effect="bubbles">Bubbles</button>
+      <button class="nav-button" data-effect="snow">Snow</button>
+    </nav>
+  </header>
+  <div id="particles-js"></div>
+  <div class="live-scroll-container">
+    <div class="live-banner">
+      <div class="banner-text">
+        Beta Live Streaming: NFL Games only for now. More sports coming soon
+      </div>
+    </div>
 
-<main class="live-container">
-<h2 class="live-title">NFL Games</h2>
-<div id="games-list" class="games-list"></div>
-</main>
-</div>
-<!-- Video Container -->
-<div id="video-container" style="display: none;">
-<div id="video-wrapper">
-<span id="close-video-x">&times;</span>
-<iframe id="video-iframe" src="" allowfullscreen></iframe>
-</div>
-</div>
-<script src="/live/streams.js"></script>
-<script src="/live/live.js"></script>
-<script src="/particles.min.js"></script>
-<script src="/particle-config.js"></script>
+    <main class="live-container">
 
-<!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-G0V9JTCLBP"></script>
-<script>
-window.dataLayer = window.dataLayer || [];
-function gtag() {
-dataLayer.push(arguments);
-}
-gtag('js', new Date());
-gtag('config', 'G-G0V9JTCLBP');
-</script>
+      <!-- Today’s Games Section -->
+      <div class="games-section">
+        <div class="games-header" data-target="today-games">
+          <h2 class="live-title">Today's Games</h2>
+          <span class="arrow">&#9660;</span>
+        </div>
+        <div id="today-games" class="games-list collapsible open">
+          <!-- JS will insert today’s games here -->
+          <p class="no-games-message" style="display:none;">No games today</p>
+        </div>
+      </div>
+
+      <!-- Upcoming Games Section -->
+      <div class="games-section">
+        <div class="games-header" data-target="upcoming-games">
+          <h2 class="live-title">Upcoming Games</h2>
+          <span class="arrow">&#9660;</span>
+        </div>
+        <div id="upcoming-games" class="games-list collapsible open">
+          <!-- JS will insert upcoming games here -->
+          <p class="no-games-message" style="display:none;">No upcoming games</p>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- Video Container -->
+  <div id="video-container" style="display: none;">
+    <div id="video-wrapper">
+      <span id="close-video-x">&times;</span>
+      <iframe id="video-iframe" src="" allowfullscreen></iframe>
+    </div>
+  </div>
+
+  <script src="/live/streams.js"></script>
+  <script src="/live/live.js"></script>
+  <script src="/particles.min.js"></script>
+  <script src="/particle-config.js"></script>
+
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-G0V9JTCLBP"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag() {
+      dataLayer.push(arguments);
+    }
+    gtag('js', new Date());
+    gtag('config', 'G-G0V9JTCLBP');
+  </script>
 </body>
 </html>
