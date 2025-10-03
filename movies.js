@@ -50,9 +50,10 @@ function createMovieCard(movie) {
       <span id="close-card-x" style="cursor:pointer; font-size:24px; color:#efef88;">&times;</span>
     </div>
     <h2 style="margin:6px 0 10px 0;">${movie.Title} (${movie.Year})</h2>
-    <img src="${movie.Poster !== "N/A" ? movie.Poster : "https://via.placeholder.com/200x300?text=N/A"
-    }" 
-         alt="${movie.Title}" style="width:100%; border-radius:5px; margin-bottom:10px;" />
+    <div style="position:relative;" id="poster-container">
+      <img src="${movie.Poster !== "N/A" ? movie.Poster : "https://via.placeholder.com/200x300?text=N/A"}" 
+           alt="${movie.Title}" style="width:100%; border-radius:5px; margin-bottom:10px;" />
+    </div>
     <p><strong>Type:</strong> ${movie.Type.charAt(0).toUpperCase() + movie.Type.slice(1)}</p>
     <br>
     <p><strong>Rating:</strong> ${movie.Rated}</p>
@@ -74,6 +75,34 @@ function createMovieCard(movie) {
       See More
     </button>
   `;
+
+  // --- Secret Lincoln Scroll Button ---
+  const posterContainer = card.querySelector("#poster-container");
+  if (posterContainer) {
+    const lincolnBtn = document.createElement("button");
+    lincolnBtn.id = "lincoln-btn";
+    lincolnBtn.style.position = "absolute";
+    lincolnBtn.style.top = "5px";
+    lincolnBtn.style.left = "5px";
+    lincolnBtn.style.width = "25px";
+    lincolnBtn.style.height = "25px";
+    lincolnBtn.style.borderRadius = "50%";
+    lincolnBtn.style.border = "none";
+    lincolnBtn.style.background = "none";
+    lincolnBtn.style.cursor = "pointer";
+    lincolnBtn.style.zIndex = "15";
+    lincolnBtn.style.padding = "0";
+    lincolnBtn.style.margin = "0";
+
+    lincolnBtn.onclick = () => {
+      card.scrollTo({
+        top: card.scrollHeight,
+        behavior: "smooth"
+      });
+    };
+
+    posterContainer.appendChild(lincolnBtn);
+  }
 
   const controls = document.createElement("div");
   controls.style.marginTop = "10px";
@@ -379,18 +408,22 @@ if (!recentContainer) {
 let recentlyWatched = JSON.parse(localStorage.getItem(RECENT_KEY)) || [];
 
 function renderRecentlyWatched() {
-  recentContainer.innerHTML = recentlyWatched
+  const container = document.getElementById("recentlyWatchedContainer");
+  const recentList = document.getElementById("recently-watched");
+
+  // Hide container if no movies
+  if (!recentlyWatched || recentlyWatched.length === 0) {
+    if (container) container.style.display = "none";
+    return;
+  } else {
+    if (container) container.style.display = "block";
+  }
+  recentList.innerHTML = recentlyWatched
     .map(
       (movie) => `
-      <div class="recently-watched-item" data-imdbid="${movie.imdbID
-        }" style="display:flex; flex-direction:column; align-items:center; cursor:pointer; min-width:80px; flex:0 0 auto;">
-        <img src="${movie.Poster !== "N/A"
-          ? movie.Poster
-          : "https://via.placeholder.com/50x75?text=N/A"
-        }" alt="${movie.Title
-        }" style="width:50px; height:75px; border-radius:4px; object-fit:cover;" />
-        <span style="color:#efef88; font-size:12px; text-align:center; margin-top:3px;">${movie.Title.length > 12 ? movie.Title.slice(0, 12) + "â€¦" : movie.Title
-        }</span>
+      <div class="recently-watched-item" data-imdbid="${movie.imdbID}" style="display:flex; flex-direction:column; align-items:center; cursor:pointer; min-width:80px; flex:0 0 auto;">
+        <img src="${movie.Poster !== "N/A" ? movie.Poster : "https://via.placeholder.com/50x75?text=N/A"}" alt="${movie.Title}" style="width:50px; height:75px; border-radius:4px; object-fit:cover;" />
+        <span style="color:#efef88; font-size:12px; text-align:center; margin-top:3px;">${movie.Title.length > 12 ? movie.Title.slice(0, 12) + "…" : movie.Title}</span>
       </div>
     `
     )
@@ -402,8 +435,8 @@ function renderRecentlyWatched() {
       if (movie && movie.Response === "True") createMovieCard(movie);
     });
   });
-
 }
+
 function addToRecentlyWatched(movie) {
   recentlyWatched = recentlyWatched.filter((m) => m.imdbID !== movie.imdbID);
   recentlyWatched.unshift({
