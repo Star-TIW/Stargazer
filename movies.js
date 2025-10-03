@@ -3,34 +3,6 @@ document.getElementById("menu-toggle").addEventListener("click", () => {
   document.getElementById("navbar").classList.toggle("active");
 });
 
-// Clock
-function updateClock() {
-  const timeElement = document.getElementById("time");
-  const dateElement = document.getElementById("date");
-  const now = new Date();
-  const hours = now.getHours();
-  const minutes = now.getMinutes();
-  const seconds = now.getSeconds();
-  const ampm = hours >= 12 ? "PM" : "AM";
-  const formattedHours = hours % 12 || 12;
-  const formattedTime = `${formattedHours
-    .toString()
-    .padStart(2, "0")} : ${minutes
-      .toString()
-      .padStart(2, "0")} : ${seconds.toString().padStart(2, "0")} ${ampm}`;
-  const options = {
-    weekday: "long",
-    year: "numeric",
-    month: "long",
-    day: "numeric"
-  };
-  const formattedDate = now.toLocaleDateString("en-US", options);
-  timeElement.textContent = formattedTime;
-  dateElement.textContent = formattedDate;
-}
-setInterval(updateClock, 1000);
-updateClock();
-
 // Movie search
 const API_KEY = "16198ae6";
 const searchInput = document.getElementById("search");
@@ -49,7 +21,7 @@ async function fetchMovieDetails(imdbID) {
 }
 
 // Function to create and display a detailed movie card
-  function createMovieCard(movie) {
+function createMovieCard(movie) {
   const existingCard = document.getElementById("movie-card");
   if (existingCard) existingCard.remove();
   const card = document.createElement("div");
@@ -137,33 +109,33 @@ async function fetchMovieDetails(imdbID) {
   card.appendChild(controls);
   document.body.appendChild(card);
 
-    // --- See More / See Less ---
-    const toggleBtn = card.querySelector("#toggle-plot");
-    if (toggleBtn) {
-      let expanded = false;
-      const plotText = document.getElementById("plot-text");
+  // --- See More / See Less ---
+  const toggleBtn = card.querySelector("#toggle-plot");
+  if (toggleBtn) {
+    let expanded = false;
+    const plotText = document.getElementById("plot-text");
 
-      plotText.style.display = "-webkit-box";
-      plotText.style.webkitLineClamp = "2";
-      plotText.style.webkitBoxOrient = "vertical";
-      plotText.style.overflow = "hidden";
+    plotText.style.display = "-webkit-box";
+    plotText.style.webkitLineClamp = "2";
+    plotText.style.webkitBoxOrient = "vertical";
+    plotText.style.overflow = "hidden";
 
-      toggleBtn.addEventListener("click", () => {
-        if (!expanded) {
-          plotText.style.display = "block";
-          plotText.style.overflow = "visible";
-          toggleBtn.textContent = "See Less";
-          expanded = true;
-        } else {
-          plotText.style.display = "-webkit-box";
-          plotText.style.webkitLineClamp = "2";
-          plotText.style.webkitBoxOrient = "vertical";
-          plotText.style.overflow = "hidden";
-          toggleBtn.textContent = "See More";
-          expanded = false;
-        }
-      });
-    }
+    toggleBtn.addEventListener("click", () => {
+      if (!expanded) {
+        plotText.style.display = "block";
+        plotText.style.overflow = "visible";
+        toggleBtn.textContent = "See Less";
+        expanded = true;
+      } else {
+        plotText.style.display = "-webkit-box";
+        plotText.style.webkitLineClamp = "2";
+        plotText.style.webkitBoxOrient = "vertical";
+        plotText.style.overflow = "hidden";
+        toggleBtn.textContent = "See More";
+        expanded = false;
+      }
+    });
+  }
 
   // --- Close Card ---
   const closeCardX = document.getElementById("close-card-x");
@@ -417,7 +389,7 @@ function renderRecentlyWatched() {
           : "https://via.placeholder.com/50x75?text=N/A"
         }" alt="${movie.Title
         }" style="width:50px; height:75px; border-radius:4px; object-fit:cover;" />
-        <span style="color:#efef88; font-size:12px; text-align:center; margin-top:3px;">${movie.Title.length > 12 ? movie.Title.slice(0, 12) + "…" : movie.Title
+        <span style="color:#efef88; font-size:12px; text-align:center; margin-top:3px;">${movie.Title.length > 12 ? movie.Title.slice(0, 12) + "â€¦" : movie.Title
         }</span>
       </div>
     `
