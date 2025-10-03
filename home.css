@@ -176,25 +176,6 @@ html {
   }
 }
 
-/* Clock */
-#clock {
-  position: fixed;
-  bottom: 2%;
-  right: 1%;
-  color: white;
-  font-family: "Poppins", sans-serif;
-  text-align: right;
-  z-index: 10;
-}
-
-#clock #time {
-  font-size: 25px;
-  font-weight: thin;
-}
-#clock #date {
-  font-size: 15px;
-}
-
 /* Video Container Overlay */
 #video-container {
   position: fixed;
@@ -275,15 +256,5 @@ html {
 @media (min-width: 769px) {
   .menu-toggle {
     display: none;
-  }
-}
-
-/* Clock resize */
-@media (max-width: 768px) {
-  #clock #time {
-    font-size: 18px;
-  }
-  #clock #date {
-    font-size: 12px;
   }
 }
