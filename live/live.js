@@ -235,55 +235,80 @@ document.addEventListener("DOMContentLoaded", () => {
         : "-";
     const awayLogo = getTeamLogo(away);
     const homeLogo = getTeamLogo(home);
+    const gameStart = new Date(startIso);
 
     const card = document.createElement("div");
     card.className = "game-card";
     card.innerHTML = `
-      <div class="teams" style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
-        <div style="display:flex; align-items:center; gap:8px;">
-          <img src="${escapeHtml(awayLogo)}" alt="${escapeHtml(
+    <div class="teams" style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
+      <div style="display:flex; align-items:center; gap:8px;">
+        <img src="${escapeHtml(awayLogo)}" alt="${escapeHtml(
       away.team?.displayName || "Away"
     )}" style="height:36px; width:auto;"/>
-          <div style="font-weight:700;">${escapeHtml(
+        <div style="font-weight:700;">${escapeHtml(
       away.team?.displayName || "Away"
     )}</div>
-        </div>
-        <div style="font-size:20px; color:#ddd; font-weight: bold;">@</div>
-        <div style="display:flex; align-items:center; gap:8px;">
-          <div style="font-weight:700;">${escapeHtml(
-      home.team?.displayName || "Home"
-    )}</div>
-          <img src="${escapeHtml(homeLogo)}" alt="${escapeHtml(
-      home.team?.displayName || "Home"
-    )}" style="height:36px; width:auto;"/>
-        </div>
       </div>
-      <div class="start-time" style="margin-top:10px; color:#efef88;">Kickoff: ${escapeHtml(
+      <div style="font-size:20px; color:#ddd; font-weight: bold;">@</div>
+      <div style="display:flex; align-items:center; gap:8px;">
+        <div style="font-weight:700;">${escapeHtml(
+      home.team?.displayName || "Home"
+    )}</div>
+        <img src="${escapeHtml(homeLogo)}" alt="${escapeHtml(
+      home.team?.displayName || "Home"
+    )}" style="height:36px; width:auto;"/>
+      </div>
+    </div>
+    <div class="start-time" style="margin-top:10px; color:#efef88;">Kickoff: ${escapeHtml(
       startText
     )}</div>
-      <div class="status" style="margin-top:6px; color:#ddd;">Status: ${escapeHtml(
+    <div class="status" style="margin-top:6px; color:#ddd;">Status: ${escapeHtml(
       statusText
     )}</div>
-      <div class="score" style="margin-top:6px; font-weight:800; color:#efef88;">
-        ${escapeHtml(away.team?.abbreviation || "AW")}: ${escapeHtml(
+    <div class="score" style="margin-top:6px; font-weight:800; color:#efef88; display:none;">
+      ${escapeHtml(away.team?.abbreviation || "AW")}: ${escapeHtml(
       String(awayScore)
     )} &nbsp; - &nbsp; ${escapeHtml(
       home.team?.abbreviation || "HM"
     )}: ${escapeHtml(String(homeScore))}
-      </div>
-      <div style="margin-top:10px; display:flex; gap:8px; justify-content:center;">
-        <button class="watch-btn">Available 10 mins before kickoff</button>
-      </div>
-    `;
+    </div>
+    ${statusText.includes("Final")
+        ? "" // no button after final
+        : `<div style="margin-top:10px; display:flex; gap:8px; justify-content:center;">
+             <button class="watch-btn">Available 10 mins before kickoff</button>
+           </div>`
+      }
+  `;
 
+    // --- Show/hide score + kickoff time ---
+    const scoreDiv = card.querySelector(".score");
+    const startTimeDiv = card.querySelector(".start-time");
+
+    function updateScoreAndTime() {
+      const now = new Date();
+      if (now >= gameStart) {
+        // Show score, hide kickoff
+        scoreDiv.style.display = "block";
+        if (startTimeDiv) startTimeDiv.style.display = "none";
+      } else {
+        // Hide score, show kickoff
+        scoreDiv.style.display = "none";
+        if (startTimeDiv) startTimeDiv.style.display = "block";
+      }
+    }
+
+    updateScoreAndTime();
+    setInterval(updateScoreAndTime, 1000);
+
+    // --- Watch button logic (only if not Final) ---
     const watchBtn = card.querySelector(".watch-btn");
     if (watchBtn) {
       watchBtn.disabled = true;
       watchBtn.style.opacity = "0.6";
       watchBtn.style.cursor = "not-allowed";
 
-      const gameStart = new Date(startIso);
-      const showTime = new Date(gameStart.getTime() - 10 * 60 * 1000);
+      const gameStartTime = new Date(startIso);
+      const showTime = new Date(gameStartTime.getTime() - 10 * 60 * 1000);
 
       function updateWatchButton() {
         const now = new Date();
@@ -291,8 +316,6 @@ document.addEventListener("DOMContentLoaded", () => {
           typeof gameStreams !== "undefined" && gameStreams[ev.id]
             ? gameStreams[ev.id]
             : null;
-        const gameStartTime = new Date(startIso);
-        const showTime = new Date(gameStartTime.getTime() - 10 * 60 * 1000);
 
         if (!streamLink && now >= showTime) {
           watchBtn.innerText = "No stream available yet";
@@ -329,7 +352,6 @@ document.addEventListener("DOMContentLoaded", () => {
       updateWatchButton();
       setInterval(updateWatchButton, 1000);
 
-      // --- Watch Button Overlay Logic ---
       watchBtn.addEventListener("click", () => {
         const streamLink =
           typeof gameStreams !== "undefined" && gameStreams[ev.id]
@@ -355,6 +377,172 @@ document.addEventListener("DOMContentLoaded", () => {
 
     return card;
   }
+  function renderGameCard(ev) {
+    const comp =
+      ev.competitions && ev.competitions[0] ? ev.competitions[0] : null;
+    const competitors =
+      comp && Array.isArray(comp.competitors) ? comp.competitors : [];
+    const home =
+      competitors.find((t) => t.homeAway === "home") || competitors[0] || {};
+    const away =
+      competitors.find((t) => t.homeAway === "away") || competitors[1] || {};
+    const startIso = ev.date;
+    const startText = formatStartTime(startIso);
+    const statusText =
+      (comp &&
+        comp.status &&
+        comp.status.type &&
+        (comp.status.type.shortDetail || comp.status.type.description)) ||
+      "Scheduled";
+    const homeScore =
+      home && home.score !== undefined && home.score !== null
+        ? home.score
+        : "-";
+    const awayScore =
+      away && away.score !== undefined && away.score !== null
+        ? away.score
+        : "-";
+    const awayLogo = getTeamLogo(away);
+    const homeLogo = getTeamLogo(home);
+    const gameStart = new Date(startIso);
+
+    const card = document.createElement("div");
+    card.className = "game-card";
+    card.innerHTML = `
+    <div class="teams" style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
+      <div style="display:flex; align-items:center; gap:8px;">
+        <img src="${escapeHtml(awayLogo)}" alt="${escapeHtml(
+      away.team?.displayName || "Away"
+    )}" style="height:36px; width:auto;"/>
+        <div style="font-weight:700;">${escapeHtml(
+      away.team?.displayName || "Away"
+    )}</div>
+      </div>
+      <div style="font-size:20px; color:#ddd; font-weight: bold;">@</div>
+      <div style="display:flex; align-items:center; gap:8px;">
+        <div style="font-weight:700;">${escapeHtml(
+      home.team?.displayName || "Home"
+    )}</div>
+        <img src="${escapeHtml(homeLogo)}" alt="${escapeHtml(
+      home.team?.displayName || "Home"
+    )}" style="height:36px; width:auto;"/>
+      </div>
+    </div>
+    <div class="start-time" style="margin-top:10px; color:#efef88;">Kickoff: ${escapeHtml(
+      startText
+    )}</div>
+    <div class="status" style="margin-top:6px; color:#ddd;">Status: ${escapeHtml(
+      statusText
+    )}</div>
+    <div class="score" style="margin-top:6px; font-weight:800; color:#efef88; display:none;">
+      ${escapeHtml(away.team?.abbreviation || "AW")}: ${escapeHtml(
+      String(awayScore)
+    )} &nbsp; - &nbsp; ${escapeHtml(
+      home.team?.abbreviation || "HM"
+    )}: ${escapeHtml(String(homeScore))}
+    </div>
+    ${statusText.includes("Final")
+        ? ""
+        : `<div style="margin-top:10px; display:flex; gap:8px; justify-content:center;">
+             <button class="watch-btn">Available 10 mins before kickoff</button>
+           </div>`
+      }
+  `;
+    const scoreDiv = card.querySelector(".score");
+    const startTimeDiv = card.querySelector(".start-time");
+
+    function updateScoreAndTime() {
+      const now = new Date();
+      if (now >= gameStart) {
+        scoreDiv.style.display = "block";
+        if (startTimeDiv) startTimeDiv.style.display = "none";
+      } else {
+        scoreDiv.style.display = "none";
+        if (startTimeDiv) startTimeDiv.style.display = "block";
+      }
+    }
+
+    updateScoreAndTime();
+    setInterval(updateScoreAndTime, 1000);
+
+    // --- Watch button logic
+    const watchBtn = card.querySelector(".watch-btn");
+    if (watchBtn) {
+      watchBtn.disabled = true;
+      watchBtn.style.opacity = "0.6";
+      watchBtn.style.cursor = "not-allowed";
+
+      const gameStartTime = new Date(startIso);
+      const showTime = new Date(gameStartTime.getTime() - 10 * 60 * 1000);
+
+      function updateWatchButton() {
+        const now = new Date();
+        const streamLink =
+          typeof gameStreams !== "undefined" && gameStreams[ev.id]
+            ? gameStreams[ev.id]
+            : null;
+
+        if (!streamLink && now >= showTime) {
+          watchBtn.innerText = "No stream available yet";
+          watchBtn.disabled = true;
+          watchBtn.style.opacity = "0.6";
+          watchBtn.style.cursor = "not-allowed";
+          return;
+        }
+
+        if (now >= showTime) {
+          watchBtn.innerText = "Watch Live";
+          watchBtn.disabled = false;
+          watchBtn.style.opacity = "1";
+          watchBtn.style.cursor = "pointer";
+        } else {
+          const diff = Math.max(0, Math.floor((showTime - now) / 1000));
+          const days = Math.floor(diff / 86400);
+          const hrs = Math.floor((diff % 86400) / 3600);
+          const mins = Math.floor((diff % 3600) / 60);
+          const secs = diff % 60;
+          watchBtn.innerText = `Available in ${String(days).padStart(
+            2,
+            "0"
+          )}:${String(hrs).padStart(2, "0")}:${String(mins).padStart(
+            2,
+            "0"
+          )}:${String(secs).padStart(2, "0")}`;
+          watchBtn.disabled = true;
+          watchBtn.style.opacity = "0.6";
+          watchBtn.style.cursor = "not-allowed";
+        }
+      }
+
+      updateWatchButton();
+      setInterval(updateWatchButton, 1000);
+
+      watchBtn.addEventListener("click", () => {
+        const streamLink =
+          typeof gameStreams !== "undefined" && gameStreams[ev.id]
+            ? gameStreams[ev.id]
+            : "DNE";
+        console.log(`Game ID: ${ev.id}, Stream link: ${streamLink}`);
+
+        if (!streamLink || streamLink === "DNE") return;
+
+        videoIframe.src = streamLink;
+        videoContainer.style.display = "flex";
+        setTimeout(() => {
+          videoContainer.style.opacity = "1";
+          videoContainer.querySelector("#video-wrapper").style.transform =
+            "scale(1)";
+          try {
+            videoIframe.contentWindow && videoIframe.contentWindow.focus();
+          } catch (e) { }
+          videoIframe.scrollIntoView({ behavior: "smooth", block: "center" });
+        }, 50);
+      });
+    }
+
+    return card;
+  }
+
 
   // ---------- Main fetch ----------
   async function fetchNFLGamesWindow() {
@@ -387,7 +575,7 @@ document.addEventListener("DOMContentLoaded", () => {
       // //TEST CARD
       // // --- Add test card at top ---
       // const testKickoff = new Date();
-      // testKickoff.setHours(9, 19, 30, 0);
+      // testKickoff.setHours(9, 17, 0, 0);
       // events.unshift({
       //   id: "1234568",
       //   date: testKickoff.toISOString(),
@@ -396,7 +584,7 @@ document.addEventListener("DOMContentLoaded", () => {
       //       { homeAway: "home", team: { displayName: "Test Home", abbreviation: "TH", logo: "/star.png" }, score: "-" },
       //       { homeAway: "away", team: { displayName: "Test Away", abbreviation: "TA", logo: "/star.png" }, score: "-" }
       //     ],
-      //     status: { type: { shortDetail: "TEST" } }
+      //     status: { type: { shortDetail: "Final/OT" } }
       //   }]
       // });
 
@@ -419,8 +607,6 @@ document.addEventListener("DOMContentLoaded", () => {
         const t = new Date(ev.date);
         return t >= todayEnd;
       });
-
-      // Clear old cards
       todayGamesList.querySelectorAll(".game-card").forEach((el) => el.remove());
       upcomingGamesList
         .querySelectorAll(".game-card")
