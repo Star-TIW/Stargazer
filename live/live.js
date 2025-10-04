@@ -3,6 +3,28 @@ document.addEventListener("DOMContentLoaded", () => {
   const todayGamesList = document.getElementById("today-games");
   const upcomingGamesList = document.getElementById("upcoming-games");
 
+  // Open all collapsibles on page load
+  document.querySelectorAll(".collapsible").forEach(section => {
+    section.classList.add("open");
+    section.classList.remove("closed");
+    section.style.maxHeight = "none";
+    section.style.opacity = "1";
+  });
+
+  // Set arrows to match open sections
+  document.querySelectorAll(".games-header").forEach(header => {
+    const targetId = header.getAttribute("data-target");
+    const section = document.getElementById(targetId);
+    const arrow = header.querySelector(".arrow");
+
+    if (section.classList.contains("open")) {
+      arrow.style.transform = "rotate(180deg)";
+    } else {
+      arrow.style.transform = "rotate(0deg)";
+    }
+  });
+
+
   // ---------- Message Card ----------
   function renderNoGamesCard(text) {
     const card = document.createElement("div");
@@ -239,6 +261,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const card = document.createElement("div");
     card.className = "game-card";
+    card.dataset.gameId = ev.id;
+
     card.innerHTML = `
     <div class="teams" style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
       <div style="display:flex; align-items:center; gap:8px;">
@@ -273,12 +297,56 @@ document.addEventListener("DOMContentLoaded", () => {
     )}: ${escapeHtml(String(homeScore))}
     </div>
     ${statusText.includes("Final")
-        ? "" // no button after final
+        ? "" 
         : `<div style="margin-top:10px; display:flex; gap:8px; justify-content:center;">
              <button class="watch-btn">Available 10 mins before kickoff</button>
            </div>`
       }
   `;
+
+    // --- Favorite star ---
+    const favStar = document.createElement("div");
+    favStar.className = "favorite-star";
+    Object.assign(favStar.style, {
+      position: "absolute",
+      bottom: "8px",
+      right: "8px",
+      width: "24px",
+      height: "24px",
+      cursor: "pointer",
+      zIndex: "10",
+    });
+
+    favStar.innerHTML = `
+<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#efef88" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <polygon points="12,2 15,9 22,9 17,14 18,21 12,17 6,21 7,14 2,9 9,9"/>
+</svg>`;
+
+    card.appendChild(favStar);
+    let favorites = JSON.parse(localStorage.getItem("favoriteGames") || "[]");
+    const starSvg = favStar.querySelector("svg polygon");
+    if (favorites.includes(ev.id)) {
+      starSvg.setAttribute("fill", "#efef88");
+    } else {
+      starSvg.setAttribute("fill", "none"); 
+    }
+
+    favStar.addEventListener("click", () => {
+      const isFav = favorites.includes(ev.id);
+      const starSvg = favStar.querySelector("svg polygon");
+
+if (isFav) {
+  favorites = favorites.filter(id => id !== ev.id);
+  starSvg.setAttribute("fill", "none"); 
+} else {
+  favorites.push(ev.id);
+  starSvg.setAttribute("fill", "#efef88"); 
+}
+localStorage.setItem("favoriteGames", JSON.stringify(favorites));
+
+      fetchNFLGamesWindow();
+
+    });
 
     // --- Show/hide score + kickoff time ---
     const scoreDiv = card.querySelector(".score");
@@ -287,11 +355,9 @@ document.addEventListener("DOMContentLoaded", () => {
     function updateScoreAndTime() {
       const now = new Date();
       if (now >= gameStart) {
-        // Show score, hide kickoff
         scoreDiv.style.display = "block";
         if (startTimeDiv) startTimeDiv.style.display = "none";
       } else {
-        // Hide score, show kickoff
         scoreDiv.style.display = "none";
         if (startTimeDiv) startTimeDiv.style.display = "block";
       }
@@ -300,7 +366,7 @@ document.addEventListener("DOMContentLoaded", () => {
     updateScoreAndTime();
     setInterval(updateScoreAndTime, 1000);
 
-    // --- Watch button logic (only if not Final) ---
+    // --- Watch button logic ---
     const watchBtn = card.querySelector(".watch-btn");
     if (watchBtn) {
       watchBtn.disabled = true;
@@ -357,173 +423,6 @@ document.addEventListener("DOMContentLoaded", () => {
           typeof gameStreams !== "undefined" && gameStreams[ev.id]
             ? gameStreams[ev.id]
             : "DNE";
-        console.log(`Game ID: ${ev.id}, Stream link: ${streamLink}`);
-
-        if (!streamLink || streamLink === "DNE") return;
-
-        videoIframe.src = streamLink;
-        videoContainer.style.display = "flex";
-        setTimeout(() => {
-          videoContainer.style.opacity = "1";
-          videoContainer.querySelector("#video-wrapper").style.transform =
-            "scale(1)";
-          try {
-            videoIframe.contentWindow && videoIframe.contentWindow.focus();
-          } catch (e) { }
-          videoIframe.scrollIntoView({ behavior: "smooth", block: "center" });
-        }, 50);
-      });
-    }
-
-    return card;
-  }
-  function renderGameCard(ev) {
-    const comp =
-      ev.competitions && ev.competitions[0] ? ev.competitions[0] : null;
-    const competitors =
-      comp && Array.isArray(comp.competitors) ? comp.competitors : [];
-    const home =
-      competitors.find((t) => t.homeAway === "home") || competitors[0] || {};
-    const away =
-      competitors.find((t) => t.homeAway === "away") || competitors[1] || {};
-    const startIso = ev.date;
-    const startText = formatStartTime(startIso);
-    const statusText =
-      (comp &&
-        comp.status &&
-        comp.status.type &&
-        (comp.status.type.shortDetail || comp.status.type.description)) ||
-      "Scheduled";
-    const homeScore =
-      home && home.score !== undefined && home.score !== null
-        ? home.score
-        : "-";
-    const awayScore =
-      away && away.score !== undefined && away.score !== null
-        ? away.score
-        : "-";
-    const awayLogo = getTeamLogo(away);
-    const homeLogo = getTeamLogo(home);
-    const gameStart = new Date(startIso);
-
-    const card = document.createElement("div");
-    card.className = "game-card";
-    card.innerHTML = `
-    <div class="teams" style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
-      <div style="display:flex; align-items:center; gap:8px;">
-        <img src="${escapeHtml(awayLogo)}" alt="${escapeHtml(
-      away.team?.displayName || "Away"
-    )}" style="height:36px; width:auto;"/>
-        <div style="font-weight:700;">${escapeHtml(
-      away.team?.displayName || "Away"
-    )}</div>
-      </div>
-      <div style="font-size:20px; color:#ddd; font-weight: bold;">@</div>
-      <div style="display:flex; align-items:center; gap:8px;">
-        <div style="font-weight:700;">${escapeHtml(
-      home.team?.displayName || "Home"
-    )}</div>
-        <img src="${escapeHtml(homeLogo)}" alt="${escapeHtml(
-      home.team?.displayName || "Home"
-    )}" style="height:36px; width:auto;"/>
-      </div>
-    </div>
-    <div class="start-time" style="margin-top:10px; color:#efef88;">Kickoff: ${escapeHtml(
-      startText
-    )}</div>
-    <div class="status" style="margin-top:6px; color:#ddd;">Status: ${escapeHtml(
-      statusText
-    )}</div>
-    <div class="score" style="margin-top:6px; font-weight:800; color:#efef88; display:none;">
-      ${escapeHtml(away.team?.abbreviation || "AW")}: ${escapeHtml(
-      String(awayScore)
-    )} &nbsp; - &nbsp; ${escapeHtml(
-      home.team?.abbreviation || "HM"
-    )}: ${escapeHtml(String(homeScore))}
-    </div>
-    ${statusText.includes("Final")
-        ? ""
-        : `<div style="margin-top:10px; display:flex; gap:8px; justify-content:center;">
-             <button class="watch-btn">Available 10 mins before kickoff</button>
-           </div>`
-      }
-  `;
-    const scoreDiv = card.querySelector(".score");
-    const startTimeDiv = card.querySelector(".start-time");
-
-    function updateScoreAndTime() {
-      const now = new Date();
-      if (now >= gameStart) {
-        scoreDiv.style.display = "block";
-        if (startTimeDiv) startTimeDiv.style.display = "none";
-      } else {
-        scoreDiv.style.display = "none";
-        if (startTimeDiv) startTimeDiv.style.display = "block";
-      }
-    }
-
-    updateScoreAndTime();
-    setInterval(updateScoreAndTime, 1000);
-
-    // --- Watch button logic
-    const watchBtn = card.querySelector(".watch-btn");
-    if (watchBtn) {
-      watchBtn.disabled = true;
-      watchBtn.style.opacity = "0.6";
-      watchBtn.style.cursor = "not-allowed";
-
-      const gameStartTime = new Date(startIso);
-      const showTime = new Date(gameStartTime.getTime() - 10 * 60 * 1000);
-
-      function updateWatchButton() {
-        const now = new Date();
-        const streamLink =
-          typeof gameStreams !== "undefined" && gameStreams[ev.id]
-            ? gameStreams[ev.id]
-            : null;
-
-        if (!streamLink && now >= showTime) {
-          watchBtn.innerText = "No stream available yet";
-          watchBtn.disabled = true;
-          watchBtn.style.opacity = "0.6";
-          watchBtn.style.cursor = "not-allowed";
-          return;
-        }
-
-        if (now >= showTime) {
-          watchBtn.innerText = "Watch Live";
-          watchBtn.disabled = false;
-          watchBtn.style.opacity = "1";
-          watchBtn.style.cursor = "pointer";
-        } else {
-          const diff = Math.max(0, Math.floor((showTime - now) / 1000));
-          const days = Math.floor(diff / 86400);
-          const hrs = Math.floor((diff % 86400) / 3600);
-          const mins = Math.floor((diff % 3600) / 60);
-          const secs = diff % 60;
-          watchBtn.innerText = `Available in ${String(days).padStart(
-            2,
-            "0"
-          )}:${String(hrs).padStart(2, "0")}:${String(mins).padStart(
-            2,
-            "0"
-          )}:${String(secs).padStart(2, "0")}`;
-          watchBtn.disabled = true;
-          watchBtn.style.opacity = "0.6";
-          watchBtn.style.cursor = "not-allowed";
-        }
-      }
-
-      updateWatchButton();
-      setInterval(updateWatchButton, 1000);
-
-      watchBtn.addEventListener("click", () => {
-        const streamLink =
-          typeof gameStreams !== "undefined" && gameStreams[ev.id]
-            ? gameStreams[ev.id]
-            : "DNE";
-        console.log(`Game ID: ${ev.id}, Stream link: ${streamLink}`);
-
         if (!streamLink || streamLink === "DNE") return;
 
         videoIframe.src = streamLink;
@@ -543,6 +442,21 @@ document.addEventListener("DOMContentLoaded", () => {
     return card;
   }
 
+  // ---------- Pin favorites ----------
+  function pinFavorites(container) {
+    const cards = Array.from(container.querySelectorAll(".game-card"));
+    const favorites = JSON.parse(localStorage.getItem("favoriteGames") || "[]");
+
+    cards.sort((a, b) => {
+      const aId = a.dataset.gameId;
+      const bId = b.dataset.gameId;
+      const aFav = favorites.includes(aId);
+      const bFav = favorites.includes(bId);
+      if (aFav && !bFav) return -1;
+      if (!aFav && bFav) return 1;
+      return 0;
+    }).forEach(c => container.appendChild(c));
+  }
 
   // ---------- Main fetch ----------
   async function fetchNFLGamesWindow() {
@@ -572,7 +486,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       const events = Array.from(eventMap.values());
 
-      // //TEST CARD
+      // //TEST CARD DO NOT REMOVE
       // // --- Add test card at top ---
       // const testKickoff = new Date();
       // testKickoff.setHours(9, 17, 0, 0);
@@ -607,10 +521,9 @@ document.addEventListener("DOMContentLoaded", () => {
         const t = new Date(ev.date);
         return t >= todayEnd;
       });
+
       todayGamesList.querySelectorAll(".game-card").forEach((el) => el.remove());
-      upcomingGamesList
-        .querySelectorAll(".game-card")
-        .forEach((el) => el.remove());
+      upcomingGamesList.querySelectorAll(".game-card").forEach((el) => el.remove());
 
       if (todayEvents.length > 0) {
         todayEvents.forEach((ev) =>
@@ -627,6 +540,10 @@ document.addEventListener("DOMContentLoaded", () => {
       } else {
         upcomingGamesList.appendChild(renderNoGamesCard("No upcoming games"));
       }
+
+      pinFavorites(todayGamesList);
+      pinFavorites(upcomingGamesList);
+
     } catch (err) {
       console.error("live.js: Critical error in fetchNFLGamesWindow:", err);
       todayGamesList.innerHTML = `<div class="game-card"><p style="text-align:center; color:#efef88;">Could not load games.</p></div>`;
@@ -634,20 +551,39 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // Collapsible section toggle
   document.querySelectorAll(".games-header").forEach((header) => {
     header.addEventListener("click", () => {
       const targetId = header.getAttribute("data-target");
       const section = document.getElementById(targetId);
       const arrow = header.querySelector(".arrow");
 
-      section.classList.toggle("open");
-      section.classList.toggle("closed");
+      if (section.classList.contains("open")) {
+        section.style.maxHeight = section.scrollHeight + "px";
+        requestAnimationFrame(() => {
+          section.style.transition = "max-height 0.5s ease, opacity 0.5s ease, padding 0.5s ease";
+          section.style.maxHeight = "0";
+          section.style.opacity = "0";
+        });
+        section.classList.remove("open");
+        section.classList.add("closed");
+      } else {
+        section.classList.remove("closed");
+        section.classList.add("open");
+        section.style.transition = "max-height 0.5s ease, opacity 0.5s ease, padding 0.5s ease";
+        section.style.maxHeight = section.scrollHeight + "px";
+        section.style.opacity = "1";
+
+        setTimeout(() => {
+          if (section.classList.contains("open")) section.style.maxHeight = "none";
+        }, 500);
+      }
+
       arrow.style.transform = section.classList.contains("open")
         ? "rotate(180deg)"
         : "rotate(0deg)";
     });
   });
+
 
   // ---------- Grid Layout Adjustments ----------
   function updateGridLayout(container) {
