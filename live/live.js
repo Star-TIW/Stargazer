@@ -3,260 +3,124 @@ document.addEventListener("DOMContentLoaded", () => {
   const todayGamesList = document.getElementById("today-games");
   const upcomingGamesList = document.getElementById("upcoming-games");
 
-  // Open all collapsibles on page load
-  document.querySelectorAll(".collapsible").forEach(section => {
-    section.classList.add("open");
-    section.classList.remove("closed");
-    section.style.maxHeight = "none";
-    section.style.opacity = "1";
-  });
+  // ---------- Helpers ----------
+  const pad = (n) => String(n).padStart(2, "0");
 
-  // Set arrows to match open sections
-  document.querySelectorAll(".games-header").forEach(header => {
-    const targetId = header.getAttribute("data-target");
-    const section = document.getElementById(targetId);
-    const arrow = header.querySelector(".arrow");
+  const getDateStr = (offsetDays = 0) => {
+    const d = new Date();
+    d.setDate(d.getDate() + offsetDays);
+    return `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}`;
+  };
 
-    if (section.classList.contains("open")) {
-      arrow.style.transform = "rotate(180deg)";
-    } else {
-      arrow.style.transform = "rotate(0deg)";
-    }
-  });
+  const escapeHtml = (s) => {
+    if (s == null) return "";
+    return String(s).replace(/[&<>\"']/g, (c) =>
+      ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])
+    );
+  };
 
+  const formatStartTime = (iso) => {
+    const d = new Date(iso);
+    const today = new Date();
+    const sameDay = d.toDateString() === today.toDateString();
+    return sameDay
+      ? d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+      : d.toLocaleString([], { weekday: "short", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
+  };
 
-  // ---------- Message Card ----------
-  function renderNoGamesCard(text) {
+  const getTeamLogo = (teamObj) => {
+    if (!teamObj) return "/star.png";
+    if (teamObj.logo) return teamObj.logo;
+    if (teamObj.team?.logo) return teamObj.team.logo;
+    try {
+      const links = teamObj.team?.links || teamObj.links || [];
+      const found = links.find(l => l.rel?.includes("logo"));
+      return found?.href || "/star.png";
+    } catch { return "/star.png"; }
+  };
+
+  const renderNoGamesCard = (text) => {
     const card = document.createElement("div");
     card.className = "game-card no-games-card";
     Object.assign(card.style, {
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      textAlign: "center",
-      width: "100%",
-      minHeight: "120px",
-      color: "#efef88",
-      fontSize: "20px",
-      fontWeight: "bold",
+      display: "flex", alignItems: "center", justifyContent: "center",
+      textAlign: "center", width: "100%", minHeight: "120px",
+      color: "#efef88", fontSize: "20px", fontWeight: "bold"
     });
     card.textContent = text;
     return card;
-  }
+  };
 
-  // ---------- Helpers ----------
-  function pad(n) {
-    return String(n).padStart(2, "0");
-  }
-
-  function getDateStr(offsetDays = 0) {
-    const d = new Date();
-    d.setDate(d.getDate() + offsetDays);
-    const yyyy = d.getFullYear();
-    const mm = pad(d.getMonth() + 1);
-    const dd = pad(d.getDate());
-    return `${yyyy}${mm}${dd}`;
-  }
-
-  function getTeamLogo(teamObj) {
-    if (!teamObj) return "/star.png";
-    if (teamObj.logo) return teamObj.logo;
-    if (teamObj.team && teamObj.team.logo) return teamObj.team.logo;
-    try {
-      const links =
-        teamObj.team && teamObj.team.links ? teamObj.team.links : teamObj.links;
-      if (Array.isArray(links)) {
-        const found = links.find(
-          (l) => l.rel && l.rel.indexOf && l.rel.indexOf("logo") !== -1
-        );
-        if (found && found.href) return found.href;
-      }
-    } catch (e) {
-      /* ignore */
-    }
-    return "/star.png";
-  }
-
-  function formatStartTime(iso) {
-    const d = new Date(iso);
-    const today = new Date();
-    const sameDay =
-      d.getFullYear() === today.getFullYear() &&
-      d.getMonth() === today.getMonth() &&
-      d.getDate() === today.getDate();
-    if (sameDay) {
-      return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-    } else {
-      return d.toLocaleString([], {
-        weekday: "short",
-        month: "short",
-        day: "numeric",
-        hour: "2-digit",
-        minute: "2-digit"
-      });
-    }
-  }
-
-  function escapeHtml(s) {
-    if (s === undefined || s === null) return "";
-    return String(s).replace(/[&<>\"']/g, function (c) {
-      return {
-        "&": "&amp;",
-        "<": "&lt;",
-        ">": "&gt;",
-        '"': "&quot;",
-        "'": "&#39;"
-      }[c];
-    });
-  }
-
-  // ---------- Video Overlay Setup ----------
+  // ---------- Video Overlay ----------
   let videoContainer = document.getElementById("video-container");
-  let videoIframe;
-  let closeVideoX;
+  let videoIframe, closeVideoX;
 
-  if (!videoContainer) {
-    videoContainer = document.createElement("div");
-    videoContainer.id = "video-container";
-    Object.assign(videoContainer.style, {
-      position: "fixed",
-      top: "0",
-      left: "0",
-      width: "100%",
-      height: "100%",
-      background: "rgba(0,0,0,0.85)",
-      display: "none",
-      justifyContent: "center",
-      alignItems: "center",
-      zIndex: "200",
-      opacity: "0",
-      transition: "opacity 0.4s ease"
-    });
+  const setupVideoOverlay = () => {
+    if (!videoContainer) {
+      videoContainer = document.createElement("div");
+      videoContainer.id = "video-container";
+      Object.assign(videoContainer.style, {
+        position: "fixed", top: 0, left: 0, width: "100%", height: "100%",
+        background: "rgba(0,0,0,0.85)", display: "none", justifyContent: "center",
+        alignItems: "center", zIndex: 200, opacity: 0, transition: "opacity 0.4s ease"
+      });
 
-    const videoWrapper = document.createElement("div");
-    videoWrapper.id = "video-wrapper";
-    Object.assign(videoWrapper.style, {
-      position: "relative",
-      width: "75vw",
-      height: "75vh",
-      maxWidth: "1200px",
-      maxHeight: "800px",
-      background: "#000",
-      borderRadius: "12px",
-      boxShadow: "0 4px 20px rgba(239,239,136,0.3)",
-      overflow: "hidden",
-      transform: "scale(0.8)",
-      transition: "transform 0.4s ease"
-    });
+      const videoWrapper = document.createElement("div");
+      videoWrapper.id = "video-wrapper";
+      Object.assign(videoWrapper.style, {
+        position: "relative", width: "75vw", height: "75vh",
+        maxWidth: "1200px", maxHeight: "800px", background: "#000",
+        borderRadius: "12px", boxShadow: "0 4px 20px rgba(239,239,136,0.3)",
+        overflow: "hidden", transform: "scale(0.8)", transition: "transform 0.4s ease"
+      });
 
-    closeVideoX = document.createElement("span");
-    closeVideoX.id = "close-video-x";
-    closeVideoX.innerHTML = "&times;";
-    Object.assign(closeVideoX.style, {
-      position: "absolute",
-      top: "10px",
-      right: "15px",
-      color: "#efef88",
-      fontSize: "32px",
-      fontWeight: "bold",
-      cursor: "pointer",
-      zIndex: "250",
-      transition: "color 0.3s ease"
-    });
+      closeVideoX = document.createElement("span");
+      closeVideoX.id = "close-video-x";
+      closeVideoX.innerHTML = "&times;";
+      Object.assign(closeVideoX.style, {
+        position: "absolute", top: "10px", right: "15px",
+        color: "#efef88", fontSize: "32px", fontWeight: "bold",
+        cursor: "pointer", zIndex: 250, transition: "color 0.3s ease"
+      });
 
-    videoIframe = document.createElement("iframe");
-    videoIframe.id = "video-iframe";
-    videoIframe.setAttribute("frameborder", "0");
-    videoIframe.setAttribute(
-      "allow",
-      "autoplay; fullscreen; encrypted-media; picture-in-picture"
-    );
-    videoIframe.setAttribute("allowfullscreen", "");
-    Object.assign(videoIframe.style, {
-      width: "100%",
-      height: "100%",
-      border: "none",
-      display: "block"
-    });
+      videoIframe = document.createElement("iframe");
+      videoIframe.id = "video-iframe";
+      videoIframe.setAttribute("frameborder", "0");
+      videoIframe.setAttribute("allow", "autoplay; fullscreen; encrypted-media; picture-in-picture");
+      videoIframe.setAttribute("allowfullscreen", "");
+      Object.assign(videoIframe.style, { width: "100%", height: "100%", border: "none", display: "block" });
 
-    videoWrapper.appendChild(closeVideoX);
-    videoWrapper.appendChild(videoIframe);
-    videoContainer.appendChild(videoWrapper);
-    document.body.appendChild(videoContainer);
+      videoWrapper.append(closeVideoX, videoIframe);
+      videoContainer.appendChild(videoWrapper);
+      document.body.appendChild(videoContainer);
+    } else {
+      videoIframe = document.getElementById("video-iframe");
+      closeVideoX = document.getElementById("close-video-x");
+    }
 
     const hideOverlay = () => {
       videoIframe.src = "";
       videoContainer.style.opacity = "0";
-      videoContainer.querySelector("#video-wrapper").style.transform =
-        "scale(0.8)";
-      setTimeout(() => (videoContainer.style.display = "none"), 400);
+      videoContainer.querySelector("#video-wrapper").style.transform = "scale(0.8)";
+      setTimeout(() => videoContainer.style.display = "none", 400);
     };
-    closeVideoX.onclick = hideOverlay;
-    videoContainer.onclick = (e) => {
-      if (e.target === videoContainer) hideOverlay();
-    };
-  } else {
-    videoIframe = document.getElementById("video-iframe");
-    closeVideoX = document.getElementById("close-video-x");
-    closeVideoX.onclick = () => {
-      videoIframe.src = "";
-      videoContainer.style.opacity = "0";
-      videoContainer.querySelector("#video-wrapper").style.transform =
-        "scale(0.8)";
-      setTimeout(() => (videoContainer.style.display = "none"), 400);
-    };
-    videoContainer.onclick = (e) => {
-      if (e.target === videoContainer) {
-        videoIframe.src = "";
-        videoContainer.style.opacity = "0";
-        videoContainer.querySelector("#video-wrapper").style.transform =
-          "scale(0.8)";
-        setTimeout(() => (videoContainer.style.display = "none"), 400);
-      }
-    };
-  }
 
-  // ---------- Fetch helpers ----------
-  async function fetchForDate(dateStr) {
-    const url = `https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?dates=${dateStr}`;
-    try {
-      const resp = await fetch(url);
-      if (!resp.ok) return [];
-      const json = await resp.json();
-      return json.events || [];
-    } catch {
-      return [];
-    }
-  }
+    closeVideoX.onclick = hideOverlay;
+    videoContainer.onclick = (e) => { if (e.target === videoContainer) hideOverlay(); };
+  };
+  setupVideoOverlay();
 
   // ---------- Render Game Card ----------
-  function renderGameCard(ev) {
-    const comp =
-      ev.competitions && ev.competitions[0] ? ev.competitions[0] : null;
-    const competitors =
-      comp && Array.isArray(comp.competitors) ? comp.competitors : [];
-    const home =
-      competitors.find((t) => t.homeAway === "home") || competitors[0] || {};
-    const away =
-      competitors.find((t) => t.homeAway === "away") || competitors[1] || {};
+  const renderGameCard = (ev) => {
+    const comp = ev.competitions?.[0] || {};
+    const competitors = comp.competitors || [];
+    const home = competitors.find(t => t.homeAway === "home") || competitors[0] || {};
+    const away = competitors.find(t => t.homeAway === "away") || competitors[1] || {};
     const startIso = ev.date;
     const startText = formatStartTime(startIso);
-    const statusText =
-      (comp &&
-        comp.status &&
-        comp.status.type &&
-        (comp.status.type.shortDetail || comp.status.type.description)) ||
-      "Scheduled";
-    const homeScore =
-      home && home.score !== undefined && home.score !== null
-        ? home.score
-        : "-";
-    const awayScore =
-      away && away.score !== undefined && away.score !== null
-        ? away.score
-        : "-";
-    const awayLogo = getTeamLogo(away);
-    const homeLogo = getTeamLogo(home);
+    const statusText = comp.status?.type?.shortDetail || comp.status?.type?.description || "Scheduled";
+    const homeScore = home.score ?? "-";
+    const awayScore = away.score ?? "-";
     const gameStart = new Date(startIso);
 
     const card = document.createElement("div");
@@ -264,294 +128,183 @@ document.addEventListener("DOMContentLoaded", () => {
     card.dataset.gameId = ev.id;
 
     card.innerHTML = `
-    <div class="teams" style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
-      <div style="display:flex; align-items:center; gap:8px;">
-        <img src="${escapeHtml(awayLogo)}" alt="${escapeHtml(
-      away.team?.displayName || "Away"
-    )}" style="height:36px; width:auto;"/>
-        <div style="font-weight:700;">${escapeHtml(
-      away.team?.displayName || "Away"
-    )}</div>
+      <div class="teams" style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <img src="${escapeHtml(getTeamLogo(away))}" alt="${escapeHtml(away.team?.displayName || 'Away')}" style="height:36px;width:auto;"/>
+          <div style="font-weight:700;">${escapeHtml(away.team?.displayName || 'Away')}</div>
+        </div>
+        <div style="font-size:20px;color:#ddd;font-weight:bold;">@</div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div style="font-weight:700;">${escapeHtml(home.team?.displayName || 'Home')}</div>
+          <img src="${escapeHtml(getTeamLogo(home))}" alt="${escapeHtml(home.team?.displayName || 'Home')}" style="height:36px;width:auto;"/>
+        </div>
       </div>
-      <div style="font-size:20px; color:#ddd; font-weight: bold;">@</div>
-      <div style="display:flex; align-items:center; gap:8px;">
-        <div style="font-weight:700;">${escapeHtml(
-      home.team?.displayName || "Home"
-    )}</div>
-        <img src="${escapeHtml(homeLogo)}" alt="${escapeHtml(
-      home.team?.displayName || "Home"
-    )}" style="height:36px; width:auto;"/>
+      <div class="start-time" style="margin-top:10px;color:#efef88;">Kickoff: ${escapeHtml(startText)}</div>
+      <div class="status" style="margin-top:6px;color:#ddd;">Status: ${escapeHtml(statusText)}</div>
+      <div class="score" style="margin-top:6px;font-weight:800;color:#efef88;display:none;">
+        ${escapeHtml(away.team?.abbreviation || "AW")}: ${escapeHtml(String(awayScore))} &nbsp; - &nbsp;
+        ${escapeHtml(home.team?.abbreviation || "HM")}: ${escapeHtml(String(homeScore))}
       </div>
-    </div>
-    <div class="start-time" style="margin-top:10px; color:#efef88;">Kickoff: ${escapeHtml(
-      startText
-    )}</div>
-    <div class="status" style="margin-top:6px; color:#ddd;">Status: ${escapeHtml(
-      statusText
-    )}</div>
-    <div class="score" style="margin-top:6px; font-weight:800; color:#efef88; display:none;">
-      ${escapeHtml(away.team?.abbreviation || "AW")}: ${escapeHtml(
-      String(awayScore)
-    )} &nbsp; - &nbsp; ${escapeHtml(
-      home.team?.abbreviation || "HM"
-    )}: ${escapeHtml(String(homeScore))}
-    </div>
-    ${statusText.includes("Final")
-        ? "" 
-        : `<div style="margin-top:10px; display:flex; gap:8px; justify-content:center;">
-             <button class="watch-btn">Available 10 mins before kickoff</button>
-           </div>`
-      }
-  `;
+      ${statusText.includes("Final") ? "" : `<div style="margin-top:10px;display:flex;gap:8px;justify-content:center;"><button class="watch-btn">Available 10 mins before kickoff</button></div>`}
+    `;
 
-    // --- Favorite star ---
+    // Favorite star
     const favStar = document.createElement("div");
     favStar.className = "favorite-star";
-    Object.assign(favStar.style, {
-      position: "absolute",
-      bottom: "8px",
-      right: "8px",
-      width: "24px",
-      height: "24px",
-      cursor: "pointer",
-      zIndex: "10",
-    });
-
-    favStar.innerHTML = `
-<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#efef88" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-  <polygon points="12,2 15,9 22,9 17,14 18,21 12,17 6,21 7,14 2,9 9,9"/>
-</svg>`;
-
+    Object.assign(favStar.style, { position: "absolute", bottom: "8px", right: "8px", width: "24px", height: "24px", cursor: "pointer", zIndex: "10" });
+    favStar.innerHTML = `<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#efef88" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12,2 15,9 22,9 17,14 18,21 12,17 6,21 7,14 2,9 9,9"/></svg>`;
     card.appendChild(favStar);
+
     let favorites = JSON.parse(localStorage.getItem("favoriteGames") || "[]");
     const starSvg = favStar.querySelector("svg polygon");
-    if (favorites.includes(ev.id)) {
-      starSvg.setAttribute("fill", "#efef88");
-    } else {
-      starSvg.setAttribute("fill", "none"); 
-    }
+    starSvg.setAttribute("fill", favorites.includes(ev.id) ? "#efef88" : "none");
 
     favStar.addEventListener("click", () => {
-      const isFav = favorites.includes(ev.id);
-      const starSvg = favStar.querySelector("svg polygon");
-
-if (isFav) {
-  favorites = favorites.filter(id => id !== ev.id);
-  starSvg.setAttribute("fill", "none"); 
-} else {
-  favorites.push(ev.id);
-  starSvg.setAttribute("fill", "#efef88"); 
-}
-localStorage.setItem("favoriteGames", JSON.stringify(favorites));
-
+      favorites = favorites.includes(ev.id) ? favorites.filter(id => id !== ev.id) : [...favorites, ev.id];
+      starSvg.setAttribute("fill", favorites.includes(ev.id) ? "#efef88" : "none");
+      localStorage.setItem("favoriteGames", JSON.stringify(favorites));
       fetchNFLGamesWindow();
-
     });
 
-    // --- Show/hide score + kickoff time ---
     const scoreDiv = card.querySelector(".score");
     const startTimeDiv = card.querySelector(".start-time");
 
-    function updateScoreAndTime() {
+    const updateScoreAndTime = () => {
       const now = new Date();
       if (now >= gameStart) {
         scoreDiv.style.display = "block";
-        if (startTimeDiv) startTimeDiv.style.display = "none";
+        startTimeDiv.style.display = "none";
       } else {
         scoreDiv.style.display = "none";
-        if (startTimeDiv) startTimeDiv.style.display = "block";
+        startTimeDiv.style.display = "block";
       }
-    }
-
+    };
     updateScoreAndTime();
     setInterval(updateScoreAndTime, 1000);
 
-    // --- Watch button logic ---
+    // Watch button
     const watchBtn = card.querySelector(".watch-btn");
     if (watchBtn) {
       watchBtn.disabled = true;
-      watchBtn.style.opacity = "0.6";
+      watchBtn.style.opacity = 0.6;
       watchBtn.style.cursor = "not-allowed";
 
-      const gameStartTime = new Date(startIso);
-      const showTime = new Date(gameStartTime.getTime() - 10 * 60 * 1000);
-
-      function updateWatchButton() {
+      const showTime = new Date(gameStart.getTime() - 10 * 60 * 1000);
+      const updateWatchButton = () => {
         const now = new Date();
-        const streamLink =
-          typeof gameStreams !== "undefined" && gameStreams[ev.id]
-            ? gameStreams[ev.id]
-            : null;
+        const streamLink = gameStreams?.[ev.id] || null;
 
         if (!streamLink && now >= showTime) {
           watchBtn.innerText = "No stream available yet";
           watchBtn.disabled = true;
-          watchBtn.style.opacity = "0.6";
-          watchBtn.style.cursor = "not-allowed";
           return;
         }
 
         if (now >= showTime) {
           watchBtn.innerText = "Watch Live";
           watchBtn.disabled = false;
-          watchBtn.style.opacity = "1";
+          watchBtn.style.opacity = 1;
           watchBtn.style.cursor = "pointer";
         } else {
           const diff = Math.max(0, Math.floor((showTime - now) / 1000));
-          const days = Math.floor(diff / 86400);
-          const hrs = Math.floor((diff % 86400) / 3600);
-          const mins = Math.floor((diff % 3600) / 60);
-          const secs = diff % 60;
-          watchBtn.innerText = `Available in ${String(days).padStart(
-            2,
-            "0"
-          )}:${String(hrs).padStart(2, "0")}:${String(mins).padStart(
-            2,
-            "0"
-          )}:${String(secs).padStart(2, "0")}`;
+          const d = pad(Math.floor(diff / 86400)), h = pad(Math.floor((diff % 86400) / 3600));
+          const m = pad(Math.floor((diff % 3600) / 60)), s = pad(diff % 60);
+          watchBtn.innerText = `Available in ${d}:${h}:${m}:${s}`;
           watchBtn.disabled = true;
-          watchBtn.style.opacity = "0.6";
-          watchBtn.style.cursor = "not-allowed";
+          watchBtn.style.opacity = 0.6;
         }
-      }
-
+      };
       updateWatchButton();
       setInterval(updateWatchButton, 1000);
 
       watchBtn.addEventListener("click", () => {
-        const streamLink =
-          typeof gameStreams !== "undefined" && gameStreams[ev.id]
-            ? gameStreams[ev.id]
-            : "DNE";
-        if (!streamLink || streamLink === "DNE") return;
-
+        const streamLink = gameStreams?.[ev.id];
+        if (!streamLink) return;
         videoIframe.src = streamLink;
         videoContainer.style.display = "flex";
         setTimeout(() => {
-          videoContainer.style.opacity = "1";
-          videoContainer.querySelector("#video-wrapper").style.transform =
-            "scale(1)";
-          try {
-            videoIframe.contentWindow && videoIframe.contentWindow.focus();
-          } catch (e) { }
+          videoContainer.style.opacity = 1;
+          videoContainer.querySelector("#video-wrapper").style.transform = "scale(1)";
+          try { videoIframe.contentWindow?.focus(); } catch { }
           videoIframe.scrollIntoView({ behavior: "smooth", block: "center" });
         }, 50);
       });
     }
 
     return card;
-  }
+  };
 
   // ---------- Pin favorites ----------
-  function pinFavorites(container) {
+  const pinFavorites = (container) => {
     const cards = Array.from(container.querySelectorAll(".game-card"));
     const favorites = JSON.parse(localStorage.getItem("favoriteGames") || "[]");
+    cards.sort((a, b) => favorites.includes(a.dataset.gameId) ? -1 : favorites.includes(b.dataset.gameId) ? 1 : 0)
+      .forEach(c => container.appendChild(c));
+  };
 
-    cards.sort((a, b) => {
-      const aId = a.dataset.gameId;
-      const bId = b.dataset.gameId;
-      const aFav = favorites.includes(aId);
-      const bFav = favorites.includes(bId);
-      if (aFav && !bFav) return -1;
-      if (!aFav && bFav) return 1;
-      return 0;
-    }).forEach(c => container.appendChild(c));
-  }
-
-  // ---------- Main fetch ----------
-  async function fetchNFLGamesWindow() {
+  // ---------- Fetch NFL Games ----------
+  const fetchForDate = async (dateStr) => {
     try {
-      const dateStrs = [];
-      for (let i = 0; i < 6; i++) dateStrs.push(getDateStr(i));
-      const results = await Promise.all(dateStrs.map((ds) => fetchForDate(ds)));
+      const resp = await fetch(`https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?dates=${dateStr}`);
+      if (!resp.ok) return [];
+      const json = await resp.json();
+      return json.events || [];
+    } catch { return []; }
+  };
+
+  const fetchNFLGamesWindow = async () => {
+    try {
+      const dateStrs = Array.from({ length: 6 }, (_, i) => getDateStr(i));
+      const results = await Promise.all(dateStrs.map(fetchForDate));
 
       const eventMap = new Map();
-      results.forEach((events) => {
-        events.forEach((ev) => {
-          if (!ev || !ev.id) return;
-          if (!eventMap.has(ev.id)) {
-            eventMap.set(ev.id, ev);
-          } else {
-            const existing = eventMap.get(ev.id);
-            try {
-              const existingDate = existing.date
-                ? new Date(existing.date).getTime()
-                : 0;
-              const newDate = ev.date ? new Date(ev.date).getTime() : 0;
-              if (newDate >= existingDate) eventMap.set(ev.id, ev);
-            } catch (e) { }
-          }
-        });
+      results.flat().forEach(ev => {
+        if (!ev?.id) return;
+        if (!eventMap.has(ev.id)) eventMap.set(ev.id, ev);
+        else if (new Date(ev.date).getTime() >= new Date(eventMap.get(ev.id).date).getTime()) eventMap.set(ev.id, ev);
       });
 
-      const events = Array.from(eventMap.values());
+      let events = Array.from(eventMap.values());
 
-      // //TEST CARD DO NOT REMOVE
-      // // --- Add test card at top ---
-      // const testKickoff = new Date();
-      // testKickoff.setHours(9, 17, 0, 0);
-      // events.unshift({
-      //   id: "1234568",
-      //   date: testKickoff.toISOString(),
-      //   competitions: [{
-      //     competitors: [
-      //       { homeAway: "home", team: { displayName: "Test Home", abbreviation: "TH", logo: "/star.png" }, score: "-" },
-      //       { homeAway: "away", team: { displayName: "Test Away", abbreviation: "TA", logo: "/star.png" }, score: "-" }
-      //     ],
-      //     status: { type: { shortDetail: "Final/OT" } }
-      //   }]
-      // });
+      // --- TEST CARD DO NOT REMOVE ---
+      const testKickoff = new Date();
+      testKickoff.setHours(9, 17, 0, 0);
+      events.unshift({
+        id: "1234568",
+        date: testKickoff.toISOString(),
+        competitions: [{
+          competitors: [
+            { homeAway: "home", team: { displayName: "Test Home", abbreviation: "TH", logo: "/star.png" }, score: "-" },
+            { homeAway: "away", team: { displayName: "Test Away", abbreviation: "TA", logo: "/star.png" }, score: "-" }
+          ],
+          status: { type: { shortDetail: "2nd quarter" } }
+        }]
+      });
 
       events.sort((a, b) => new Date(a.date) - new Date(b.date));
 
       const today = new Date();
-      const todayStart = new Date(
-        today.getFullYear(),
-        today.getMonth(),
-        today.getDate()
-      );
-      const todayEnd = new Date(todayStart.getTime() + 24 * 60 * 60 * 1000);
+      const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+      const todayEnd = new Date(todayStart.getTime() + 86400 * 1000);
 
-      const todayEvents = events.filter((ev) => {
-        const t = new Date(ev.date);
-        return t >= todayStart && t < todayEnd;
-      });
+      const todayEvents = events.filter(ev => { const t = new Date(ev.date); return t >= todayStart && t < todayEnd; });
+      const upcomingEvents = events.filter(ev => new Date(ev.date) >= todayEnd);
 
-      const upcomingEvents = events.filter((ev) => {
-        const t = new Date(ev.date);
-        return t >= todayEnd;
-      });
-
-      todayGamesList.querySelectorAll(".game-card").forEach((el) => el.remove());
-      upcomingGamesList.querySelectorAll(".game-card").forEach((el) => el.remove());
-
-      if (todayEvents.length > 0) {
-        todayEvents.forEach((ev) =>
-          todayGamesList.appendChild(renderGameCard(ev))
-        );
-      } else {
-        todayGamesList.appendChild(renderNoGamesCard("No games today"));
-      }
-
-      if (upcomingEvents.length > 0) {
-        upcomingEvents.forEach((ev) =>
-          upcomingGamesList.appendChild(renderGameCard(ev))
-        );
-      } else {
-        upcomingGamesList.appendChild(renderNoGamesCard("No upcoming games"));
-      }
+      todayGamesList.replaceChildren(...(todayEvents.length ? todayEvents.map(renderGameCard) : [renderNoGamesCard("No games today")]));
+      upcomingGamesList.replaceChildren(...(upcomingEvents.length ? upcomingEvents.map(renderGameCard) : [renderNoGamesCard("No upcoming games")]));
 
       pinFavorites(todayGamesList);
       pinFavorites(upcomingGamesList);
 
     } catch (err) {
       console.error("live.js: Critical error in fetchNFLGamesWindow:", err);
-      todayGamesList.innerHTML = `<div class="game-card"><p style="text-align:center; color:#efef88;">Could not load games.</p></div>`;
-      upcomingGamesList.innerHTML = `<div class="game-card"><p style="text-align:center; color:#efef88;">Could not load games.</p></div>`;
+      todayGamesList.innerHTML = upcomingGamesList.innerHTML = `<div class="game-card"><p style="text-align:center; color:#efef88;">Could not load games.</p></div>`;
     }
-  }
+  };
 
-  document.querySelectorAll(".games-header").forEach((header) => {
+
+  // ---------- Collapsible Toggle ----------
+  document.querySelectorAll(".games-header").forEach(header => {
     header.addEventListener("click", () => {
       const targetId = header.getAttribute("data-target");
       const section = document.getElementById(targetId);
@@ -564,47 +317,44 @@ localStorage.setItem("favoriteGames", JSON.stringify(favorites));
           section.style.maxHeight = "0";
           section.style.opacity = "0";
         });
-        section.classList.remove("open");
-        section.classList.add("closed");
+        section.classList.replace("open", "closed");
       } else {
-        section.classList.remove("closed");
-        section.classList.add("open");
+        section.classList.replace("closed", "open");
         section.style.transition = "max-height 0.5s ease, opacity 0.5s ease, padding 0.5s ease";
         section.style.maxHeight = section.scrollHeight + "px";
         section.style.opacity = "1";
-
-        setTimeout(() => {
-          if (section.classList.contains("open")) section.style.maxHeight = "none";
-        }, 500);
+        setTimeout(() => { if (section.classList.contains("open")) section.style.maxHeight = "none"; }, 500);
       }
-
-      arrow.style.transform = section.classList.contains("open")
-        ? "rotate(180deg)"
-        : "rotate(0deg)";
+      arrow.style.transform = section.classList.contains("open") ? "rotate(180deg)" : "rotate(0deg)";
     });
   });
 
-
-  // ---------- Grid Layout Adjustments ----------
-  function updateGridLayout(container) {
+  // ---------- Grid layout adjustments ----------
+  const updateGridLayout = (container) => {
     const cards = container.querySelectorAll(".game-card");
-    if (cards.length === 1 && cards[0].classList.contains("no-games-card")) {
-      container.style.gridTemplateColumns = "1fr";
-    } else {
-      container.style.removeProperty("grid-template-columns");
-    }
-  }
-
-  function observeGrid(container) {
+    container.style.gridTemplateColumns = (cards.length === 1 && cards[0].classList.contains("no-games-card")) ? "1fr" : "";
+  };
+  const observeGrid = (container) => {
     if (!container) return;
     const observer = new MutationObserver(() => updateGridLayout(container));
     observer.observe(container, { childList: true });
     updateGridLayout(container);
-  }
+  };
+  [todayGamesList, upcomingGamesList].forEach(observeGrid);
 
-  observeGrid(todayGamesList);
-  observeGrid(upcomingGamesList);
-
+  // ---------- Initial Fetch ----------
   fetchNFLGamesWindow();
   setInterval(fetchNFLGamesWindow, 10000);
+
+  // ---------- Initial collapsible open ----------
+  document.querySelectorAll(".collapsible").forEach(section => {
+    section.classList.add("open");
+    section.classList.remove("closed");
+    section.style.maxHeight = "none";
+    section.style.opacity = "1";
+  });
+  document.querySelectorAll(".games-header").forEach(header => {
+    const section = document.getElementById(header.dataset.target);
+    header.querySelector(".arrow").style.transform = section.classList.contains("open") ? "rotate(180deg)" : "rotate(0deg)";
+  });
 });
