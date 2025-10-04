@@ -1,8 +1,3 @@
-//Mobile Compatible controls
-document.getElementById("menu-toggle").addEventListener("click", () => {
-  document.getElementById("navbar").classList.toggle("active");
-});
-
 // Movie search
 const API_KEY = "16198ae6";
 const searchInput = document.getElementById("search");
@@ -411,31 +406,63 @@ function renderRecentlyWatched() {
   const container = document.getElementById("recentlyWatchedContainer");
   const recentList = document.getElementById("recently-watched");
 
-  // Hide container if no movies
   if (!recentlyWatched || recentlyWatched.length === 0) {
     if (container) container.style.display = "none";
     return;
   } else {
     if (container) container.style.display = "block";
   }
+
   recentList.innerHTML = recentlyWatched
     .map(
       (movie) => `
-      <div class="recently-watched-item" data-imdbid="${movie.imdbID}" style="display:flex; flex-direction:column; align-items:center; cursor:pointer; min-width:80px; flex:0 0 auto;">
-        <img src="${movie.Poster !== "N/A" ? movie.Poster : "https://via.placeholder.com/50x75?text=N/A"}" alt="${movie.Title}" style="width:50px; height:75px; border-radius:4px; object-fit:cover;" />
+      <div class="recently-watched-item" data-imdbid="${movie.imdbID}" style="position:relative; display:flex; flex-direction:column; align-items:center; cursor:pointer; min-width:80px; flex:0 0 auto;">
+        <div style="position:relative; display:flex; align-items:flex-start;">
+          <img src="${movie.Poster !== "N/A" ? movie.Poster : "https://via.placeholder.com/50x75?text=N/A"}" alt="${movie.Title}" style="width:50px; height:75px; border-radius:4px; object-fit:cover;" />
+          <span class="delete-recent" style="position:absolute; top:0; right:-22px; display:flex; align-items:center; justify-content:center; cursor:pointer; border-radius:50%; transition: all 0.25s ease;">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="#ffffff" viewBox="0 0 24 24" width="18" height="18">
+              <path d="M3 6h18v2H3V6zm2 3h14l-1.5 12.5c-.1.8-.8 1.5-1.6 1.5H8.1c-.8 0-1.5-.7-1.6-1.5L5 9zm5 2v8h2v-8H10zm4 0v8h2v-8h-2z"/>
+            </svg>
+          </span>
+        </div>
         <span style="color:#efef88; font-size:12px; text-align:center; margin-top:3px;">${movie.Title.length > 12 ? movie.Title.slice(0, 12) + "…" : movie.Title}</span>
       </div>
     `
     )
     .join("");
+
   document.querySelectorAll(".recently-watched-item").forEach((item) => {
-    item.addEventListener("click", async () => {
-      const imdbID = item.dataset.imdbid;
+    const imdbID = item.dataset.imdbid;
+
+    item.addEventListener("click", async (e) => {
+      if (e.target.closest(".delete-recent")) return;
       const movie = await fetchMovieDetails(imdbID);
       if (movie && movie.Response === "True") createMovieCard(movie);
     });
+
+    const deleteBtn = item.querySelector(".delete-recent");
+    if (deleteBtn) {
+      deleteBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        recentlyWatched = recentlyWatched.filter((m) => m.imdbID !== imdbID);
+        localStorage.setItem(RECENT_KEY, JSON.stringify(recentlyWatched));
+        renderRecentlyWatched();
+      });
+
+      deleteBtn.addEventListener("mouseenter", () => {
+        deleteBtn.style.transform = "scale(1.4)";
+        deleteBtn.style.background = "rgba(239,239,136,0.4)";
+        deleteBtn.style.boxShadow = "0 0 8px rgba(239,239,136,0.6)";
+      });
+      deleteBtn.addEventListener("mouseleave", () => {
+        deleteBtn.style.transform = "scale(1)";
+        deleteBtn.style.background = "rgba(0,0,0,0)";
+        deleteBtn.style.boxShadow = "none";
+      });
+    }
   });
 }
+
 
 function addToRecentlyWatched(movie) {
   recentlyWatched = recentlyWatched.filter((m) => m.imdbID !== movie.imdbID);
@@ -451,14 +478,3 @@ function addToRecentlyWatched(movie) {
 }
 
 renderRecentlyWatched();
-
-const originalWatchClick = watchBtn.onclick;
-watchBtn.onclick = () => {
-  addToRecentlyWatched({
-    imdbID: movie.imdbID,
-    Title: movie.Title,
-    Poster: movie.Poster
-  });
-
-  originalWatchClick();
-};
