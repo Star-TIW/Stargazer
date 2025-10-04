@@ -104,7 +104,7 @@ let fadeContainer = document.getElementById("particles-js");
 let isLoading = false;
 initParticles(currentEffect);
 
-document.querySelectorAll(".nav-button").forEach((btn) => {
+document.querySelectorAll(".particle-button").forEach((btn) => {
   btn.addEventListener("click", () => {
     const effect = btn.dataset.effect;
     if (effect !== currentEffect && !isLoading) switchEffect(effect);
@@ -129,4 +129,105 @@ function initParticles(effect) {
     window.pJSDom = [];
   }
   particlesJS("particles-js", particleOptions[effect]);
+}
+
+// ================= Settings Button ================= //
+const settingsBtn = document.getElementById("settings-btn");
+settingsBtn.addEventListener("click", () => {
+  let videoContainer = document.getElementById("video-container");
+  let videoIframe = document.getElementById("video-iframe");
+  let closeVideoX = document.getElementById("close-video-x");
+
+  if (!videoContainer) {
+    videoContainer = document.createElement("div");
+    videoContainer.id = "video-container";
+    Object.assign(videoContainer.style, {
+      position: "fixed",
+      top: "0",
+      left: "0",
+      width: "100%",
+      height: "100%",
+      background: "rgba(0,0,0,0.85)",
+      display: "flex",
+      justifyContent: "center",
+      alignItems: "center",
+      zIndex: "200"
+    });
+
+    const videoWrapper = document.createElement("div");
+    videoWrapper.id = "video-wrapper";
+    Object.assign(videoWrapper.style, {
+      position: "relative",
+      width: "75vw",
+      height: "75vh",
+      maxWidth: "1200px",
+      maxHeight: "800px",
+      background: "#000",
+      borderRadius: "12px",
+      boxShadow: "0 4px 20px rgba(239,239,136,0.3)",
+      overflow: "hidden"
+    });
+
+    closeVideoX = document.createElement("span");
+    closeVideoX.id = "close-video-x";
+    closeVideoX.innerHTML = "&times;";
+    Object.assign(closeVideoX.style, {
+      position: "absolute",
+      top: "10px",
+      right: "15px",
+      color: "#efef88",
+      fontSize: "32px",
+      fontWeight: "bold",
+      cursor: "pointer",
+      zIndex: "250",
+      transition: "color 0.3s ease"
+    });
+
+    videoIframe = document.createElement("iframe");
+    videoIframe.id = "video-iframe";
+    videoIframe.setAttribute("frameborder", "0");
+    videoIframe.setAttribute(
+      "allow",
+      "autoplay; fullscreen; encrypted-media; picture-in-picture"
+    );
+    videoIframe.setAttribute("allowfullscreen", "");
+    Object.assign(videoIframe.style, {
+      width: "100%",
+      height: "100%",
+      border: "none",
+      display: "block"
+    });
+
+    videoWrapper.appendChild(closeVideoX);
+    videoWrapper.appendChild(videoIframe);
+    videoContainer.appendChild(videoWrapper);
+    document.body.appendChild(videoContainer);
+  }
+
+  videoIframe.src = "/settings.html";
+  videoContainer.style.display = "flex";
+
+  const hideOverlay = () => {
+    videoIframe.src = "";
+    videoContainer.style.display = "none";
+  };
+  closeVideoX.onclick = hideOverlay;
+  videoContainer.onclick = (e) => {
+    if (e.target === videoContainer) hideOverlay();
+  };
+});
+
+window.addEventListener("message", (event) => {
+  if (!event.data || event.data.type !== "particleEffect") return;
+  const effect = event.data.effect;
+  if (effect && effect !== currentEffect) {
+    switchEffect(effect);
+  }
+});
+
+// Hamburger toggle function
+function toggleMenu(btn) {
+  btn.classList.toggle("active");
+  const navbar = document.getElementById("navbar");
+  navbar.classList.toggle("active");
 }
