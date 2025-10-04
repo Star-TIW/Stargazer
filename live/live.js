@@ -266,20 +266,20 @@ document.addEventListener("DOMContentLoaded", () => {
 
       let events = Array.from(eventMap.values());
 
-      // --- TEST CARD DO NOT REMOVE ---
-      const testKickoff = new Date();
-      testKickoff.setHours(9, 17, 0, 0);
-      events.unshift({
-        id: "1234568",
-        date: testKickoff.toISOString(),
-        competitions: [{
-          competitors: [
-            { homeAway: "home", team: { displayName: "Test Home", abbreviation: "TH", logo: "/star.png" }, score: "-" },
-            { homeAway: "away", team: { displayName: "Test Away", abbreviation: "TA", logo: "/star.png" }, score: "-" }
-          ],
-          status: { type: { shortDetail: "2nd quarter" } }
-        }]
-      });
+      // // --- TEST CARD DO NOT REMOVE ---
+      // const testKickoff = new Date();
+      // testKickoff.setHours(9, 17, 0, 0);
+      // events.unshift({
+      //   id: "1234568",
+      //   date: testKickoff.toISOString(),
+      //   competitions: [{
+      //     competitors: [
+      //       { homeAway: "home", team: { displayName: "Test Home", abbreviation: "TH", logo: "/star.png" }, score: "-" },
+      //       { homeAway: "away", team: { displayName: "Test Away", abbreviation: "TA", logo: "/star.png" }, score: "-" }
+      //     ],
+      //     status: { type: { shortDetail: "2nd quarter" } }
+      //   }]
+      // });
 
       events.sort((a, b) => new Date(a.date) - new Date(b.date));
 
