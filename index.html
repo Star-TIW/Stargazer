@@ -5,68 +5,71 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Stargazer</title>
   <link rel="icon" href="star.png" />
-<link rel="stylesheet" href="home.css" />
-<link rel="stylesheet" href="movies.css" />
+  <link rel="stylesheet" href="home.css" />
+  <link rel="stylesheet" href="movies.css" />
 </head>
 
 <body>
-<div id="shapes"></div>
-<div id="stars"></div>
-<div id="bubbles"></div>
-<div id="snow"></div>
+  <div id="shapes"></div>
+  <div id="stars"></div>
+  <div id="bubbles"></div>
+  <div id="snow"></div>
 
-<header class="header">
-<div class="brand-group">
-<img class="logo-small" src="star.png" alt="Star Logo" />
-<a href="/live/index.html" class="brand">Stargazer</a>
-</div>
-<button id="menu-toggle" class="menu-toggle">☰</button>
-<nav class="navbar" id="navbar">
-<button class="nav-button" data-effect="stars">Stars</button>
-<button class="nav-button" data-effect="shapes">Shapes</button>
-<button class="nav-button" data-effect="bubbles">Bubbles</button>
-<button class="nav-button" data-effect="snow">Snow</button>
-</nav>
-</header>
-<div id="particles-js"></div>
+  <header class="header">
+    <div class="brand-group">
+      <img class="logo-small" src="star.png" alt="Star Logo" />
+      <h1 class="brand">Stargazer</h1>
+    </div>
 
-<form id="search-container" class="flex-center">
-<input id="search" type="text" autocomplete="off" placeholder="Search movies & shows..." />
-<div id="suggestions"></div>
-</form>
-<!-- Video Container -->
-<div id="video-container" style="display:none;">
-<div id="video-wrapper">
-<span id="close-video-x">&times;</span>
-<iframe id="video-iframe" frameborder="0" allowfullscreen></iframe>
-</div>
-</div>
-<!-- Recently Watched Container -->
-<div id="recentlyWatchedContainer">
-<h3>Recently Watched</h3>
-<div id="recently-watched" class="recently-watched-scroll"></div>
-</div>
+    <div class="menu-toggle" onclick="toggleMenu(this)">
+      <span></span>
+    </div>
 
-<script src="particles.min.js"></script>
-<script src="movies.js"></script>
-<script src="particle-config.js"></script>
+    <nav class="navbar" id="navbar">
+      <a href="/live/" class="nav-button">Live</a>
+      <button class="nav-button" id="settings-btn">Settings</button>
+    </nav>
+  </header>
 
-<script>
-  document.getElementById("search-container").addEventListener("submit", function(event) {
-    event.preventDefault();
-  });
-</script>
+  <div id="particles-js"></div>
+
+  <form id="search-container" class="flex-center">
+    <input id="search" type="text" autocomplete="off" placeholder="Search movies & shows..." />
+    <div id="suggestions"></div>
+  </form>
+
+  <!-- Video Container -->
+  <div id="video-container" style="display:none;">
+    <div id="video-wrapper">
+      <span id="close-video-x">&times;</span>
+      <iframe id="video-iframe" frameborder="0" allowfullscreen></iframe>
+    </div>
+  </div>
+
+  <!-- Recently Watched Container -->
+  <div id="recentlyWatchedContainer">
+    <h3>Recently Watched</h3>
+    <div id="recently-watched" class="recently-watched-scroll"></div>
+  </div>
+
+  <script src="particles.min.js"></script>
+  <script src="movies.js"></script>
+  <script src="particle-config.js"></script>
+
+  <script>
+    document.getElementById("search-container").addEventListener("submit", function (event) {
+      event.preventDefault();
+    });
+  </script>
 
 </body>
 <!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-G0V9JTCLBP"></script>
 <script>
-window.dataLayer = window.dataLayer || [];
-
-function gtag() {
-dataLayer.push(arguments);
-}
-gtag('js', new Date());
-gtag('config', 'G-G0V9JTCLBP');
+  window.dataLayer = window.dataLayer || [];
+  function gtag() { dataLayer.push(arguments); }
+  gtag('js', new Date());
+  gtag('config', 'G-G0V9JTCLBP');
 </script>
+
 </html>
