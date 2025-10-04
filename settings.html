@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Stargazer - Particle Settings</title>
+  <style>
+    /* Font import */
+    @import url("https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap");
+
+    /* General reset */
+    * {
+      font-family: Verdana, Geneva, Tahoma, sans-serif;
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html, body {
+      height: 100%;
+      width: 100%;
+      background: linear-gradient(to bottom, rgba(23, 23, 23, 1) 0%, rgba(13, 13, 13, 1) 99%);
+      background-size: cover;
+      background-attachment: fixed;
+      animation: fadeInAnimation ease-in-out 1.2s forwards;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+    }
+
+    @keyframes fadeInAnimation {
+      0% { opacity: 0; }
+      100% { opacity: 1; }
+    }
+
+    .settings-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 25px;
+      z-index: 10;
+    }
+
+    .settings-container h1 {
+      color: #efef88;
+      font-size: 40px;
+      font-weight: 500;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .particle-buttons {
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .particle-button {
+      color: #efef88;
+      font-size: 25px;
+      background: transparent;
+      border: none;
+      transition: all 0.5s ease;
+      border-radius: 35px;
+      cursor: pointer;
+      padding: 10px 20px;
+    }
+
+    .particle-button:hover,
+    .particle-button.selected {
+      color: #000;
+      font-size: 30px;
+      background: linear-gradient(
+        90deg,
+        rgba(180, 132, 65, 1) 0%,
+        rgba(239, 239, 136, 1) 50%,
+        rgba(186, 138, 79, 1) 100%
+      );
+      border-radius: 35px;
+    }
+
+    #particles-js {
+      position: fixed;
+      width: 100%;
+      height: 100%;
+      z-index: -1;
+      opacity: 1;
+      transition: opacity 0.6s ease;
+    }
+  </style>
+</head>
+<body>
+  <div class="settings-container">
+    <h1>Particle Effects</h1>
+    <div class="particle-buttons">
+      <button class="particle-button" data-effect="stars">Stars</button>
+      <button class="particle-button" data-effect="shapes">Shapes</button>
+      <button class="particle-button" data-effect="bubbles">Bubbles</button>
+      <button class="particle-button" data-effect="snow">Snow</button>
+    </div>
+  </div>
+
+  <div id="particles-js"></div>
+
+  <script src="particles.min.js"></script>
+  <script src="particle-config.js"></script>
+  <script>
+    // Initialize selected effect from localStorage
+    let selectedEffect = localStorage.getItem("selectedEffect") || "stars";
+    const buttons = document.querySelectorAll(".particle-button");
+
+    function highlightButton(effect) {
+      buttons.forEach(btn => {
+        if (btn.dataset.effect === effect) btn.classList.add("selected");
+        else btn.classList.remove("selected");
+      });
+    }
+
+    // Init particles with the saved effect
+    highlightButton(selectedEffect);
+    initParticles(selectedEffect);
+
+    buttons.forEach(btn => {
+      btn.addEventListener("click", () => {
+        const effect = btn.dataset.effect;
+        if (effect === selectedEffect) return;
+
+        // Update localStorage and highlight
+        localStorage.setItem("selectedEffect", effect);
+        selectedEffect = effect;
+        highlightButton(effect);
+
+        // Animate fade out/in and update particles
+        const particlesContainer = document.getElementById("particles-js");
+        particlesContainer.style.opacity = 0;
+        setTimeout(() => {
+          initParticles(effect);
+          particlesContainer.style.opacity = 1;
+        }, 500);
+
+        // Send effect change to parent window (movies.html)
+        window.parent.postMessage({ type: "particleEffect", effect }, "*");
+      });
+    });
+  </script>
+</body>
+</html>
