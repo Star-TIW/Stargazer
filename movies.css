@@ -18,14 +18,12 @@
 }
 
 #search {
-  background: linear-gradient(
-    90deg,
-    rgba(25, 25, 27, 1) 0%,
-    rgba(180, 132, 65, 1) 25%,
-    rgba(239, 239, 136, 1) 50%,
-    rgba(186, 138, 79, 1) 75%,
-    rgba(30, 32, 31, 1) 100%
-  );
+  background: linear-gradient(90deg,
+      rgba(25, 25, 27, 1) 0%,
+      rgba(180, 132, 65, 1) 25%,
+      rgba(239, 239, 136, 1) 50%,
+      rgba(186, 138, 79, 1) 75%,
+      rgba(30, 32, 31, 1) 100%);
   padding: 0 17px;
   height: 48px;
   border: 1px solid rgba(255, 255, 255, 0.2);
@@ -55,6 +53,7 @@
   from {
     box-shadow: 0 0 0 rgba(239, 239, 136, 0);
   }
+
   to {
     box-shadow: 0 0 15px rgba(239, 239, 136, 0.5);
   }
@@ -110,22 +109,18 @@
 
 #suggestions::-webkit-scrollbar-thumb,
 #movie-card::-webkit-scrollbar-thumb {
-  background: linear-gradient(
-    180deg,
-    rgba(180, 132, 65, 1) 0%,
-    rgba(239, 239, 136, 1) 50%,
-    rgba(186, 138, 79, 1) 100%
-  );
+  background: linear-gradient(180deg,
+      rgba(180, 132, 65, 1) 0%,
+      rgba(239, 239, 136, 1) 50%,
+      rgba(186, 138, 79, 1) 100%);
   border-radius: 10px;
 }
 
 #suggestions::-webkit-scrollbar-thumb:hover,
 #movie-card::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(
-    180deg,
-    rgba(239, 239, 136, 1) 0%,
-    rgba(186, 138, 79, 1) 100%
-  );
+  background: linear-gradient(180deg,
+      rgba(239, 239, 136, 1) 0%,
+      rgba(186, 138, 79, 1) 100%);
 }
 
 /* Recently Watched */
@@ -163,12 +158,10 @@
 }
 
 .recently-watched-scroll::-webkit-scrollbar-thumb {
-  background: linear-gradient(
-    90deg,
-    rgba(180, 132, 65, 1) 0%,
-    rgba(239, 239, 136, 1) 50%,
-    rgba(186, 138, 79, 1) 100%
-  );
+  background: linear-gradient(90deg,
+      rgba(180, 132, 65, 1) 0%,
+      rgba(239, 239, 136, 1) 50%,
+      rgba(186, 138, 79, 1) 100%);
   border-radius: 5px;
 }
 
@@ -196,11 +189,13 @@
     Mobile Responsive Styles
    =========================== */
 @media (max-width: 768px) {
+
   /* Search */
   #search {
     width: 90% !important;
     font-size: 16px;
   }
+
   #suggestions {
     width: 90% !important;
     max-height: 250px;
@@ -213,6 +208,7 @@
     padding: 15px !important;
     font-size: 14px;
   }
+
   #movie-card img {
     max-height: 300px;
     object-fit: cover;
@@ -224,6 +220,7 @@
     left: 2.5% !important;
     font-size: 12px;
   }
+
   .recently-watched-item img {
     width: 50px !important;
     height: 75px !important;
