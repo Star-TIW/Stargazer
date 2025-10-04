@@ -18,16 +18,19 @@
   <header class="header">
     <div class="brand-group">
       <img class="logo-small" src="/star.png" alt="Star Logo" />
-      <a href="/" class="brand">Stargazer</a>
+      <h1 class="brand">Stargazer</h1>
     </div>
-    <button id="menu-toggle" class="menu-toggle">☰</button>
+  
+    <div class="menu-toggle" onclick="toggleMenu(this)">
+      <span></span>
+    </div>
+  
     <nav class="navbar" id="navbar">
-      <button class="nav-button" data-effect="stars">Stars</button>
-      <button class="nav-button" data-effect="shapes">Shapes</button>
-      <button class="nav-button" data-effect="bubbles">Bubbles</button>
-      <button class="nav-button" data-effect="snow">Snow</button>
+      <a href="/" class="nav-button">Main</a>
+      <button class="nav-button" id="settings-btn">Settings</button>
     </nav>
   </header>
+
   <div id="particles-js"></div>
   <div class="live-scroll-container">
     <div class="live-banner">
@@ -45,8 +48,6 @@
           <span class="arrow">&#9660;</span>
         </div>
         <div id="today-games" class="games-list collapsible open">
-          <!-- JS will insert today’s games here -->
-          <p class="no-games-message" style="display:none;">No games today</p>
         </div>
       </div>
 
@@ -57,8 +58,6 @@
           <span class="arrow">&#9660;</span>
         </div>
         <div id="upcoming-games" class="games-list collapsible open">
-          <!-- JS will insert upcoming games here -->
-          <p class="no-games-message" style="display:none;">No upcoming games</p>
         </div>
       </div>
 
