@@ -20,16 +20,6 @@
   animation: scrollText 15s linear infinite;
 }
 
-@keyframes scrollText {
-  0% {
-    transform: translateX(250%);
-  }
-  100% {
-    transform: translateX(-100%);
-  }
-}
-
-/* Scrollable container for banner + live games */
 .live-scroll-container {
   position: absolute;
   top: 87.5px;
@@ -39,10 +29,8 @@
   overflow-y: auto;
   overflow-x: hidden;
   scroll-behavior: smooth;
-  padding-bottom: 20px;
 }
 
-/* Optional: customize vertical scrollbar */
 .live-scroll-container::-webkit-scrollbar {
   width: 8px;
 }
@@ -56,9 +44,8 @@
   border-radius: 4px;
 }
 
-/* Live container */
 .live-container {
-  padding: 15px;
+  padding: 10px;
   text-align: center;
   color: white;
   font-family: "Poppins", sans-serif;
@@ -70,31 +57,12 @@
   color: #efef88;
 }
 
-/* Games list */
 .games-list {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   justify-items: center;
   gap: 20px;
   padding: 0 20px 20px;
-}
-
-/* Tablet */
-@media (max-width: 1024px) {
-  .games-list {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-/* Phone */
-@media (max-width: 600px) {
-  .games-list {
-    grid-template-columns: repeat(1, 1fr);
-  }
-
-  .banner-text {
-    animation: scrollText 10s linear infinite;
-  }
 }
 
 .game-card {
@@ -177,11 +145,11 @@
   overflow: hidden;
   opacity: 1;
   transition: max-height 0.5s ease, opacity 0.5s ease, padding 0.5s ease;
-  padding: 10px 20px;
+  padding: 10px;
 }
 
 .collapsible.open {
-  padding: 10px 20px;
+  padding: 10px;
   opacity: 1;
 }
 
@@ -190,4 +158,45 @@
   padding: 0;
   opacity: 0;
   border: none;
+}
+
+/* Phone Styles */
+@media (max-width: 600px) {
+  .games-list {
+    grid-template-columns: repeat(1, 1fr);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0;
+    gap: 16px;
+  }
+
+  .banner-text {
+    animation: scrollText 10s linear infinite;
+  }
+
+  .teams {
+    font-size: 3vw;
+  }
+
+  .watch-btn {
+    font-size: 3.5vw;
+  }
+}
+
+/* Tablet */
+@media (max-width: 1024px) {
+  .games-list {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@keyframes scrollText {
+  0% {
+    transform: translateX(250%);
+  }
+
+  100% {
+    transform: translateX(-100%);
+  }
 }
