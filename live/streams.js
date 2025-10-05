@@ -1,4 +1,5 @@
 window.gameStreams = {
+    "401772633": "Early 6 30 game", // Minnesota Vikings vs Cleveland Browns
     "401772743": "https://dofustream.cloud/player2?m3u8=https://r.dofustream.cloud/s3/cf/s3_401772743_nqu_Texans/index.txt", // Houston Texans vs Baltimore Ravens
     "401772744": "https://dofustream.cloud/player2?m3u8=https://r.dofustream.cloud/s3/cf/s3_401772744_cwp_Giants/index.txt", // New York Giants vs New Orleans Saints
     "401772745": "https://dofustream.cloud/player2?m3u8=https://r.dofustream.cloud/s3/cf/s3_401772745_6pa_Broncos/index.txt", // Denver Broncos vs Philadelphia Eagles
