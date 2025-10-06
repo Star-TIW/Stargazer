@@ -20,7 +20,7 @@ html {
   );
   background-size: cover;
   background-attachment: fixed;
-  animation: fadeInAnimation ease-in-out 1.2s forwards;
+  animation: fadeInAnimation ease 1.2s forwards;
   overflow: hidden;
 }
 
