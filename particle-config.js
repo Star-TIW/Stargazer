@@ -232,8 +232,8 @@ function toggleMenu(btn) {
   navbar.classList.toggle("active");
 }
 
-//Fade out to Black
-document.querySelectorAll(".nav-button").forEach((link) => {
+//Fade out to Black only on <a> with class "nav-button"
+document.querySelectorAll("a.nav-button").forEach((link) => {
   link.addEventListener("click", () => {
     let fade = document.getElementById("page-fade");
     if (!fade) {
