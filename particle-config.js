@@ -231,3 +231,30 @@ function toggleMenu(btn) {
   const navbar = document.getElementById("navbar");
   navbar.classList.toggle("active");
 }
+
+//Fade out to Black
+document.querySelectorAll(".nav-button").forEach((link) => {
+  link.addEventListener("click", () => {
+    let fade = document.getElementById("page-fade");
+    if (!fade) {
+      fade = document.createElement("div");
+      fade.id = "page-fade";
+      Object.assign(fade.style, {
+        position: "fixed",
+        top: "0",
+        left: "0",
+        width: "100%",
+        height: "100%",
+        background: "black",
+        opacity: "0",
+        transition: "opacity 0.5s ease-in",
+        zIndex: "99999",
+        pointerEvents: "none"
+      });
+      document.body.appendChild(fade);
+    }
+    requestAnimationFrame(() => {
+      fade.style.opacity = "1";
+    });
+  });
+});
