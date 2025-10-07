@@ -232,7 +232,19 @@ function toggleMenu(btn) {
   navbar.classList.toggle("active");
 }
 
-//Fade out to Black only on <a> with class "nav-button"
+// Close navbar when clicking outside of it
+document.addEventListener("click", (event) => {
+  const navbar = document.getElementById("navbar");
+  const menuToggle = document.querySelector(".menu-toggle");
+  if (navbar.classList.contains("active")) {
+    if (!navbar.contains(event.target) && !menuToggle.contains(event.target)) {
+      navbar.classList.remove("active");
+      menuToggle.classList.remove("active");
+    }
+  }
+});
+
+//Fade out to Black
 document.querySelectorAll("a.nav-button").forEach((link) => {
   link.addEventListener("click", () => {
     let fade = document.getElementById("page-fade");
