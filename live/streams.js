@@ -1,3 +1,3 @@
 window.gameStreams = {
-    "401772814": "https://copy-interstellar.vercel.app/a/hvtrs8%2F-ndlue%60ccsv.aoo%2Fnite-cjigfq.jtol", // Kansas City Chiefs vs Jacksonville Jaguars
+    "401772814": "https://dofustream.cloud/player2?m3u8=https://r.dofustream.cloud/s3/cf/s3_401772814_qnh_Chiefs/index.txt", // Kansas City Chiefs vs Jacksonville Jaguars
 };
