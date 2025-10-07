@@ -236,8 +236,14 @@ function toggleMenu(btn) {
 document.addEventListener("click", (event) => {
   const navbar = document.getElementById("navbar");
   const menuToggle = document.querySelector(".menu-toggle");
+  const closeVideoX = document.getElementById("close-video-x");
+
   if (navbar.classList.contains("active")) {
-    if (!navbar.contains(event.target) && !menuToggle.contains(event.target)) {
+    if (
+      !navbar.contains(event.target) &&
+      !menuToggle.contains(event.target) &&
+      (!closeVideoX || !closeVideoX.contains(event.target))
+    ) {
       navbar.classList.remove("active");
       menuToggle.classList.remove("active");
     }
