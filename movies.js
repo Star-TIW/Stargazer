@@ -335,18 +335,23 @@ function renderSuggestions(results) {
 }
 
 searchInput.addEventListener("input", async () => {
-  const query = searchInput.value.trim();
-  if (query.length < 1) {
+  const rawQuery = searchInput.value.trim();
+  if (rawQuery.length < 1) {
     suggestionsBox.innerHTML = "";
     return;
   }
 
+  const cleanedQuery = rawQuery.replace(/[\(\)\[\]\-]/g, " ");
+  const yearMatch = cleanedQuery.match(/\b(19|20)\d{2}\b/);
+  const year = yearMatch ? yearMatch[0] : "";
+
+  const titleQuery = year ? cleanedQuery.replace(year, "").trim() : cleanedQuery;
+
   try {
-    const res = await fetch(
-      `https://www.omdbapi.com/?apikey=${API_KEY}&s=${encodeURIComponent(
-        query
-      )}`
-    );
+    let url = `https://www.omdbapi.com/?apikey=${API_KEY}&s=${encodeURIComponent(titleQuery)}`;
+    if (year) url += `&y=${year}`;
+
+    const res = await fetch(url);
     const data = await res.json();
     if (data.Response === "True") renderSuggestions(data.Search.slice(0, 6));
     else
