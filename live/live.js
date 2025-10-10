@@ -3,6 +3,9 @@ document.addEventListener("DOMContentLoaded", () => {
   const todayGamesList = document.getElementById("today-games");
   const upcomingGamesList = document.getElementById("upcoming-games");
 
+  // ---------- Globals ----------
+  let gameStreams = {};
+
   // ---------- Helpers ----------
   const pad = (n) => String(n).padStart(2, "0");
 
@@ -110,6 +113,64 @@ document.addEventListener("DOMContentLoaded", () => {
   };
   setupVideoOverlay();
 
+  // ---------- Streamed API helpers ----------
+  const STREAMED_MATCHES_URL = "https://streamed.pk/api/matches/american-football";
+  const STREAMED_STREAM_URL = (source, id) => `https://streamed.pk/api/stream/${encodeURIComponent(source)}/${encodeURIComponent(id)}`;
+
+  const normalize = (s) => {
+    if (!s) return "";
+    return String(s)
+      .toLowerCase()
+      .replace(/[’'“”"().,:-]/g, "")
+      .replace(/\s+/g, " ")
+      .trim();
+  };
+
+  const buildTeamNameCandidates = (teamObj) => {
+    if (!teamObj) return [];
+    const names = new Set();
+    const t = teamObj.team || {};
+    if (teamObj.displayName) names.add(teamObj.displayName);
+    if (t.displayName) names.add(t.displayName);
+    if (t.name) names.add(t.name);
+    if (t.location) names.add(t.location);
+    if (t.abbreviation) names.add(t.abbreviation);
+    if (teamObj.team && teamObj.team.abbreviation) names.add(teamObj.team.abbreviation);
+    // also split multi-word names and add last word (e.g., "Philadelphia Eagles" -> "Eagles")
+    Array.from(names).forEach((nm) => {
+      const parts = String(nm).split(" ");
+      if (parts.length > 1) names.add(parts[parts.length - 1]);
+    });
+    return Array.from(names).map(normalize).filter(Boolean);
+  };
+
+  const findStreamedMatchForEvent = (ev, streamedMatches) => {
+    try {
+      const comp = ev.competitions?.[0] || {};
+      const competitors = comp.competitors || [];
+      const home = competitors.find(t => t.homeAway === "home") || competitors[0] || {};
+      const away = competitors.find(t => t.homeAway === "away") || competitors[1] || {};
+
+      const homeCandidates = buildTeamNameCandidates(home.team || home);
+      const awayCandidates = buildTeamNameCandidates(away.team || away);
+
+      if (homeCandidates.length === 0 || awayCandidates.length === 0) return null;
+
+      for (const sm of streamedMatches) {
+        const title = normalize(sm.title || "");
+        const homeMatch = homeCandidates.some(hc => title.includes(hc));
+        const awayMatch = awayCandidates.some(ac => title.includes(ac));
+        if (homeMatch && awayMatch) {
+          return sm;
+        }
+      }
+      return null;
+    } catch (e) {
+      console.warn("Error matching streamed match:", e);
+      return null;
+    }
+  };
+
   // ---------- Render Game Card ----------
   const renderGameCard = (ev) => {
     const comp = ev.competitions?.[0] || {};
@@ -126,7 +187,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const card = document.createElement("div");
     card.className = "game-card";
     card.dataset.gameId = ev.id;
-
     card.innerHTML = `
       <div class="teams" style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
         <div style="display:flex;align-items:center;gap:8px;">
@@ -200,11 +260,16 @@ document.addEventListener("DOMContentLoaded", () => {
           return;
         }
 
-        if (now >= showTime) {
+        if (now >= showTime && streamLink) {
           watchBtn.innerText = "Watch Live";
           watchBtn.disabled = false;
           watchBtn.style.opacity = 1;
           watchBtn.style.cursor = "pointer";
+        } else if (now >= showTime && !streamLink) {
+          watchBtn.innerText = "No stream available yet";
+          watchBtn.disabled = true;
+          watchBtn.style.opacity = 0.6;
+          watchBtn.style.cursor = "not-allowed";
         } else {
           const diff = Math.max(0, Math.floor((showTime - now) / 1000));
           const d = pad(Math.floor(diff / 86400)), h = pad(Math.floor((diff % 86400) / 3600));
@@ -245,11 +310,38 @@ document.addEventListener("DOMContentLoaded", () => {
   // ---------- Fetch NFL Games ----------
   const fetchForDate = async (dateStr) => {
     try {
-      const resp = await fetch(`https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?dates=${dateStr}`);
+      const apiUrl = `https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?dates=${dateStr}`;
+      const resp = await fetch(apiUrl);
       if (!resp.ok) return [];
       const json = await resp.json();
       return json.events || [];
     } catch { return []; }
+  };
+
+  const fetchStreamEmbedForSource = async (sourceObj) => {
+    try {
+      const url = STREAMED_STREAM_URL(sourceObj.source, sourceObj.id);
+      const r = await fetch(url);
+      if (!r.ok) return null;
+      const arr = await r.json();
+      if (!Array.isArray(arr) || arr.length === 0) return null;
+      return arr[0].embedUrl || null;
+    } catch (e) {
+      return null;
+    }
+  };
+
+  const fetchStreamedMatches = async () => {
+    try {
+      const r = await fetch(STREAMED_MATCHES_URL);
+      if (!r.ok) return [];
+      const arr = await r.json();
+      if (!Array.isArray(arr)) return [];
+      return arr;
+    } catch (e) {
+      console.warn("Error fetching streamed matches:", e);
+      return [];
+    }
   };
 
   const fetchNFLGamesWindow = async () => {
@@ -266,21 +358,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
       let events = Array.from(eventMap.values());
 
-      // // --- TEST CARD DO NOT REMOVE ---
-      // const testKickoff = new Date();
-      // testKickoff.setHours(9, 17, 0, 0);
-      // events.unshift({
-      //   id: "1234568",
-      //   date: testKickoff.toISOString(),
-      //   competitions: [{
-      //     competitors: [
-      //       { homeAway: "home", team: { displayName: "Test Home", abbreviation: "TH", logo: "/star.png" }, score: "-" },
-      //       { homeAway: "away", team: { displayName: "Test Away", abbreviation: "TA", logo: "/star.png" }, score: "-" }
-      //     ],
-      //     status: { type: { shortDetail: "2nd quarter" } }
-      //   }]
-      // });
-
       events.sort((a, b) => new Date(a.date) - new Date(b.date));
 
       const today = new Date();
@@ -289,6 +366,28 @@ document.addEventListener("DOMContentLoaded", () => {
 
       const todayEvents = events.filter(ev => { const t = new Date(ev.date); return t >= todayStart && t < todayEnd; });
       const upcomingEvents = events.filter(ev => new Date(ev.date) >= todayEnd);
+
+      // ---------- Streamed API ----------
+      gameStreams = {};
+      if (todayEvents.length > 0) {
+        const streamedMatches = await fetchStreamedMatches();
+
+        const embedFetchPromises = todayEvents.map(async (ev) => {
+          try {
+            const sm = findStreamedMatchForEvent(ev, streamedMatches);
+            if (!sm || !Array.isArray(sm.sources) || sm.sources.length === 0) return null;
+            const firstSource = sm.sources[0];
+            const embedUrl = await fetchStreamEmbedForSource(firstSource);
+            if (embedUrl) {
+              gameStreams[ev.id] = embedUrl;
+            }
+          } catch (e) {
+          }
+          return null;
+        });
+
+        try { await Promise.all(embedFetchPromises); } catch (e) { /* ignore */ }
+      }
 
       todayGamesList.replaceChildren(...(todayEvents.length ? todayEvents.map(renderGameCard) : [renderNoGamesCard("No games today")]));
       upcomingGamesList.replaceChildren(...(upcomingEvents.length ? upcomingEvents.map(renderGameCard) : [renderNoGamesCard("No upcoming games")]));
@@ -357,4 +456,42 @@ document.addEventListener("DOMContentLoaded", () => {
     const section = document.getElementById(header.dataset.target);
     header.querySelector(".arrow").style.transform = section.classList.contains("open") ? "rotate(180deg)" : "rotate(0deg)";
   });
+
+  // // ---------- TEST: Future Games ----------
+  // async function testUpcomingStreams() {
+  //   try {
+  //     const dateStrs = Array.from({ length: 6 }, (_, i) => getDateStr(i));
+  //     const results = await Promise.all(dateStrs.map(fetchForDate));
+  //     const allEvents = results.flat();
+
+  //     const today = new Date();
+  //     const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  //     const todayEnd = new Date(todayStart.getTime() + 86400 * 1000);
+
+  //     const upcomingEvents = allEvents.filter(ev => new Date(ev.date) >= todayEnd);
+
+  //     if (upcomingEvents.length === 0) {
+  //       console.log("No upcoming games found from ESPN.");
+  //       return;
+  //     }
+
+  //     const streamedMatches = await fetchStreamedMatches();
+
+  //     for (const ev of upcomingEvents) {
+  //       const sm = findStreamedMatchForEvent(ev, streamedMatches);
+  //       const embedUrl = sm?.sources?.[0] ? await fetchStreamEmbedForSource(sm.sources[0]) : null;
+
+  //       const comp = ev.competitions?.[0] || {};
+  //       const home = comp.competitors?.find(c => c.homeAway === "home") || comp.competitors?.[0] || {};
+  //       const away = comp.competitors?.find(c => c.homeAway === "away") || comp.competitors?.[1] || {};
+
+  //       console.log(`${away.team?.displayName || "AW"} @ ${home.team?.displayName || "HM"} -> ${embedUrl || "No stream found"}`);
+  //     }
+  //   } catch (err) {
+  //     console.error("Error testing upcoming streams:", err);
+  //   }
+  // }
+
+  // testUpcomingStreams();
+
 });
