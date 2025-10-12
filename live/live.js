@@ -357,15 +357,27 @@ document.addEventListener("DOMContentLoaded", () => {
       });
 
       let events = Array.from(eventMap.values());
-
       events.sort((a, b) => new Date(a.date) - new Date(b.date));
 
       const today = new Date();
       const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
       const todayEnd = new Date(todayStart.getTime() + 86400 * 1000);
 
-      const todayEvents = events.filter(ev => { const t = new Date(ev.date); return t >= todayStart && t < todayEnd; });
+      const todayEvents = events.filter(ev => {
+        const t = new Date(ev.date);
+        return t >= todayStart && t < todayEnd;
+      });
       const upcomingEvents = events.filter(ev => new Date(ev.date) >= todayEnd);
+
+      // sort today’s games so non-final are above finals
+      todayEvents.sort((a, b) => {
+        const aStatus = a.competitions?.[0]?.status?.type?.description?.toLowerCase() || "";
+        const bStatus = b.competitions?.[0]?.status?.type?.description?.toLowerCase() || "";
+        const aFinal = aStatus.includes("final");
+        const bFinal = bStatus.includes("final");
+        if (aFinal === bFinal) return 0;
+        return aFinal ? 1 : -1; // non-final before final
+      });
 
       // ---------- Streamed API ----------
       gameStreams = {};
@@ -381,12 +393,11 @@ document.addEventListener("DOMContentLoaded", () => {
             if (embedUrl) {
               gameStreams[ev.id] = embedUrl;
             }
-          } catch (e) {
-          }
+          } catch (e) { }
           return null;
         });
 
-        try { await Promise.all(embedFetchPromises); } catch (e) { /* ignore */ }
+        try { await Promise.all(embedFetchPromises); } catch (e) { }
       }
 
       todayGamesList.replaceChildren(...(todayEvents.length ? todayEvents.map(renderGameCard) : [renderNoGamesCard("No games today")]));
@@ -400,6 +411,7 @@ document.addEventListener("DOMContentLoaded", () => {
       todayGamesList.innerHTML = upcomingGamesList.innerHTML = `<div class="game-card"><p style="text-align:center; color:#efef88;">Could not load games.</p></div>`;
     }
   };
+
 
 
   // ---------- Collapsible Toggle ----------
