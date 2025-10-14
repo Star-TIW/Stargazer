@@ -353,10 +353,23 @@ searchInput.addEventListener("input", async () => {
 
     const res = await fetch(url);
     const data = await res.json();
-    if (data.Response === "True") renderSuggestions(data.Search.slice(0, 6));
-    else
-      suggestionsBox.innerHTML =
-        '<div class="suggestion-item">No results found.</div>';
+if (data.Response === "True") {
+  const uniqueResults = [];
+  const seen = new Set();
+
+  for (const movie of data.Search) {
+    const key = `${movie.Title.toLowerCase()}-${movie.Year}`;
+    if (!seen.has(key)) {
+      seen.add(key);
+      uniqueResults.push(movie);
+    }
+  }
+
+  renderSuggestions(uniqueResults.slice(0, 6));
+} else {
+  suggestionsBox.innerHTML =
+    '<div class="suggestion-item">No results found.</div>';
+}
   } catch (err) {
     console.error(err);
     suggestionsBox.innerHTML =
