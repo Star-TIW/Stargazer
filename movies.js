@@ -341,7 +341,7 @@ searchInput.addEventListener("input", async () => {
     return;
   }
 
-  const cleanedQuery = rawQuery.replace(/[\(\)\[\]\-]/g, " ");
+const cleanedQuery = rawQuery.replace(/['"~`!@#$%^&*()_+={[}\]|\\;:"<,>.\/?\-]/g, ' ');
   const yearMatch = cleanedQuery.match(/\b(19|20)\d{2}\b/);
   const year = yearMatch ? yearMatch[0] : "";
 
