@@ -301,9 +301,9 @@ function createMovieCard(movie) {
     }
 
     if (isMovie) {
-      videoIframe.src = `https://moviesapi.to/movie/${imdbID}`;
+      videoIframe.src = `https://vidsrc-embed.ru/movie/${imdbID}`;
     } else {
-      videoIframe.src = `https://moviesapi.to/tv/${imdbID}-${season}-${episode}`;
+      videoIframe.src = `https://vidsrc-embed.ru/tv/${imdbID}-${season}-${episode}`;
     }
 
     videoContainer.style.display = "flex";
