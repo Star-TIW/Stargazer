@@ -303,7 +303,7 @@ function createMovieCard(movie) {
     if (isMovie) {
       videoIframe.src = `https://moviesapi.club/movie/${imdbID}`;
     } else {
-      videoIframe.src = `https://moviesapi.club/tv/${imdbID}/${season}-${episode}`;
+      videoIframe.src = `https://moviesapi.club/tv/${imdbID}-${season}-${episode}`;
     }
 
     videoContainer.style.display = "flex";
