@@ -402,7 +402,6 @@ function createMovieCard(movie) {
     const episodeList = document.getElementById("episode-list");
     seasonStorageKey = `stargazer:season:${movie.tmdbID}`;
     episodeStorageKey = `stargazer:episode:${movie.tmdbID}`;
-    const seasonStorageKey = `stargazer:season:${movie.tmdbID}`;
     const totalSeasons = parseInt(movie.totalSeasons, 10) || 1;
     const storedSeason = parseInt(localStorage.getItem(seasonStorageKey), 10);
     const storedEpisodeInfo = localStorage.getItem(episodeStorageKey);
@@ -497,7 +496,6 @@ function createMovieCard(movie) {
             savedEpisodeForSeason ||
             parseInt(data.episodes?.[0]?.episode_number, 10) ||
             1;
-          selectedEpisode = parseInt(data.episodes?.[0]?.episode_number, 10) || 1;
           selectedSeason = seasonNumber;
           renderEpisodes(
             data.episodes.map((episode) => ({
