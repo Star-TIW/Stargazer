@@ -412,7 +412,7 @@ function createMovieCard(movie) {
 
     videoWrapper.appendChild(introVideo);
 
-    setTimeout(() => {
+     setTimeout(() => {
       const playAttempt = introVideo.play();
       if (playAttempt && typeof playAttempt.catch === "function") {
         playAttempt.catch(() => {
@@ -421,6 +421,7 @@ function createMovieCard(movie) {
       }
     }, 1500);
   };
+
 
   const startPlayback = ({ season, episode }) => {
     const searchEl = document.getElementById("search");
@@ -576,16 +577,21 @@ function createMovieCard(movie) {
 
     const updateSavedEpisode = (nextSeason, nextEpisode) => {
       if (!episodeStorageKey || !seasonStorageKey) return;
-      savedEpisodeInfo = { season: nextSeason, episode: nextEpisode };
+      const clampedSeason = Math.min(
+        Math.max(parseInt(nextSeason, 10) || 1, 1),
+        totalSeasons
+      );
+      const clampedEpisode = Math.max(parseInt(nextEpisode, 10) || 1, 1);
+      savedEpisodeInfo = { season: clampedSeason, episode: clampedEpisode };
       localStorage.setItem(episodeStorageKey, JSON.stringify(savedEpisodeInfo));
-      localStorage.setItem(seasonStorageKey, String(nextSeason));
+      localStorage.setItem(seasonStorageKey, String(clampedSeason));
 
       if (seasonSelect) {
-        seasonSelect.value = String(nextSeason);
+        seasonSelect.value = String(clampedSeason);
       }
 
       if (loadEpisodesForSeason) {
-        loadEpisodesForSeason(nextSeason);
+        loadEpisodesForSeason(clampedSeason);
       }
     };
 
@@ -607,9 +613,7 @@ function createMovieCard(movie) {
       if (payload.type !== "tv") return;
       if (!payload.season || !payload.episode) return;
 
-      const nextSeason = parseInt(payload.season, 10) || 1;
-      const nextEpisode = parseInt(payload.episode, 10) || 1;
-      updateSavedEpisode(nextSeason, nextEpisode);
+      updateSavedEpisode(payload.season, payload.episode);
     };
 
     window.addEventListener("message", window.stargazerPlayerListener);
