@@ -361,6 +361,65 @@ function createMovieCard(movie) {
   let episodeStorageKey = null;
   let loadEpisodesForSeason = null;
 
+  const playIntroThenLoad = (playbackUrl) => {
+    if (!videoContainer || !videoIframe) return;
+    const videoWrapper = document.getElementById("video-wrapper");
+    if (!videoWrapper) return;
+
+    const existingIntro = document.getElementById("intro-video");
+    if (existingIntro) {
+      existingIntro.pause();
+      existingIntro.remove();
+    }
+
+    if (closeVideoX) {
+      closeVideoX.style.display = "none";
+    }
+
+    videoIframe.src = "";
+    videoIframe.style.visibility = "hidden";
+
+    const introVideo = document.createElement("video");
+    introVideo.id = "intro-video";
+    introVideo.src = "intro.mp4";
+    introVideo.autoplay = true;
+    introVideo.playsInline = true;
+    introVideo.controls = false;
+    introVideo.preload = "auto";
+    introVideo.setAttribute("playsinline", "");
+    Object.assign(introVideo.style, {
+      position: "absolute",
+      inset: "0",
+      width: "100%",
+      height: "100%",
+      objectFit: "contain",
+      background: "#000",
+      zIndex: "240"
+    });
+
+    const endIntroAndLoad = () => {
+      introVideo.pause();
+      introVideo.remove();
+      videoIframe.style.visibility = "visible";
+      videoIframe.src = playbackUrl;
+      if (closeVideoX) {
+        closeVideoX.style.display = "block";
+      }
+    };
+
+    introVideo.addEventListener("ended", endIntroAndLoad, { once: true });
+    introVideo.addEventListener("error", endIntroAndLoad, { once: true });
+
+    videoWrapper.appendChild(introVideo);
+
+    const playAttempt = introVideo.play();
+    if (playAttempt && typeof playAttempt.catch === "function") {
+      playAttempt.catch(() => {
+        endIntroAndLoad();
+      });
+    }
+  };
+
   const startPlayback = ({ season, episode }) => {
     const searchEl = document.getElementById("search");
     const suggestionsEl = document.getElementById("suggestions");
@@ -382,13 +441,11 @@ function createMovieCard(movie) {
       return;
     }
 
-    if (isMovie) {
-      videoIframe.src = `https://player.videasy.net/movie/${tmdbID}?nextEpisode=true&autoplayNextEpisode=true&episodeSelector=true&overlay=true&color=efef88`;
-    } else {
-      videoIframe.src = `https://player.videasy.net/tv/${tmdbID}/${season}/${episode}/?nextEpisode=true&autoplayNextEpisode=true&episodeSelector=true&overlay=true&color=efef88`;
-    }
-
     videoContainer.style.display = "flex";
+    const playbackUrl = isMovie
+      ? `https://player.videasy.net/movie/${tmdbID}?nextEpisode=true&autoplayNextEpisode=true&episodeSelector=true&overlay=true&color=efef88`
+      : `https://player.videasy.net/tv/${tmdbID}/${season}/${episode}/?nextEpisode=true&autoplayNextEpisode=true&episodeSelector=true&overlay=true&color=efef88`;
+    playIntroThenLoad(playbackUrl);
     setTimeout(() => {
       try {
         videoIframe.contentWindow && videoIframe.contentWindow.focus();
