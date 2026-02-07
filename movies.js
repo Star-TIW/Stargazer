@@ -98,6 +98,10 @@ async function fetchMovieDetails(tmdbID, mediaType) {
 function createMovieCard(movie) {
   const existingCard = document.getElementById("movie-card");
   if (existingCard) existingCard.remove();
+  if (window.stargazerPlayerListener) {
+    window.removeEventListener("message", window.stargazerPlayerListener);
+    window.stargazerPlayerListener = null;
+  }
   const card = document.createElement("div");
   card.id = "movie-card";
   Object.assign(card.style, {
@@ -191,23 +195,26 @@ function createMovieCard(movie) {
     `;
   }
 
-  const watchBtn = document.createElement("button");
-  watchBtn.id = "watch-button";
-  watchBtn.textContent = `Watch ${isMovie ? "Movie" : "Show"}`;
-  Object.assign(watchBtn.style, {
-    marginTop: "10px",
-    padding: "10px",
-    width: "100%",
-    border: "none",
-    borderRadius: "5px",
-    cursor: "pointer",
-    fontWeight: "bold",
-    color: "#000",
-    background:
-      "linear-gradient(90deg, rgba(180, 132, 65, 1) 0%, rgba(239, 239, 136, 1) 50%, rgba(186, 138, 79, 1) 100%)"
-  });
+  let watchBtn;
+  if (isMovie) {
+    watchBtn = document.createElement("button");
+    watchBtn.id = "watch-button";
+    watchBtn.textContent = "Watch Movie";
+    Object.assign(watchBtn.style, {
+      marginTop: "10px",
+      padding: "10px",
+      width: "100%",
+      border: "none",
+      borderRadius: "5px",
+      cursor: "pointer",
+      fontWeight: "bold",
+      color: "#000",
+      background:
+        "linear-gradient(90deg, rgba(180, 132, 65, 1) 0%, rgba(239, 239, 136, 1) 50%, rgba(186, 138, 79, 1) 100%)"
+    });
 
-  controls.appendChild(watchBtn);
+    controls.appendChild(watchBtn);
+  }
   card.appendChild(controls);
   document.body.appendChild(card);
 
@@ -245,6 +252,10 @@ function createMovieCard(movie) {
     closeCardX.onclick = () => {
       const c = document.getElementById("movie-card");
       if (c) c.remove();
+      if (window.stargazerPlayerListener) {
+        window.removeEventListener("message", window.stargazerPlayerListener);
+        window.stargazerPlayerListener = null;
+      }
     };
   }
 
@@ -345,6 +356,10 @@ function createMovieCard(movie) {
 
   let selectedSeason = 1;
   let selectedEpisode = 1;
+  let savedEpisodeInfo = null;
+  let seasonStorageKey = null;
+  let episodeStorageKey = null;
+  let loadEpisodesForSeason = null;
 
   const startPlayback = ({ season, episode }) => {
     const searchEl = document.getElementById("search");
@@ -385,12 +400,23 @@ function createMovieCard(movie) {
   if (!isMovie) {
     const seasonSelect = document.getElementById("seasonSelect");
     const episodeList = document.getElementById("episode-list");
+    seasonStorageKey = `stargazer:season:${movie.tmdbID}`;
+    episodeStorageKey = `stargazer:episode:${movie.tmdbID}`;
     const seasonStorageKey = `stargazer:season:${movie.tmdbID}`;
     const totalSeasons = parseInt(movie.totalSeasons, 10) || 1;
     const storedSeason = parseInt(localStorage.getItem(seasonStorageKey), 10);
-    const initialSeason = storedSeason && storedSeason <= totalSeasons ? storedSeason : 1;
+    const storedEpisodeInfo = localStorage.getItem(episodeStorageKey);
+    savedEpisodeInfo = storedEpisodeInfo ? JSON.parse(storedEpisodeInfo) : null;
+    const savedSeason = savedEpisodeInfo?.season;
+    const initialSeason =
+      savedSeason && savedSeason <= totalSeasons
+        ? savedSeason
+        : storedSeason && storedSeason <= totalSeasons
+          ? storedSeason
+          : 1;
     selectedSeason = initialSeason;
-    selectedEpisode = 1;
+    selectedEpisode =
+      savedEpisodeInfo?.season === initialSeason ? savedEpisodeInfo.episode : 1;
 
     if (seasonSelect) {
       seasonSelect.innerHTML = Array.from({ length: totalSeasons }, (_, idx) => {
@@ -420,6 +446,9 @@ function createMovieCard(movie) {
         const button = document.createElement("button");
         button.type = "button";
         button.textContent = `Episode ${episode.Episode}: ${episode.Title}`;
+        const isSavedEpisode =
+          savedEpisodeInfo?.season === seasonNumber &&
+          String(savedEpisodeInfo?.episode) === String(episode.Episode);
         Object.assign(button.style, {
           padding: "10px 12px",
           width: "100%",
@@ -428,7 +457,7 @@ function createMovieCard(movie) {
           borderRadius: "6px",
           cursor: "pointer",
           fontWeight: "bold",
-          color: "#000",
+          color: isSavedEpisode ? "#ff4d4d" : "#000",
           background:
             "linear-gradient(90deg, rgba(180, 132, 65, 1) 0%, rgba(239, 239, 136, 1) 50%, rgba(186, 138, 79, 1) 100%)",
           boxShadow:
@@ -439,10 +468,14 @@ function createMovieCard(movie) {
 
         button.addEventListener("click", () => {
           selectedEpisode = parseInt(episode.Episode, 10) || 1;
+          savedEpisodeInfo = { season: seasonNumber, episode: selectedEpisode };
+          localStorage.setItem(episodeStorageKey, JSON.stringify(savedEpisodeInfo));
           episodeList.querySelectorAll("button").forEach((btn) => {
             btn.style.boxShadow = "none";
+            btn.style.color = "#000";
           });
           button.style.boxShadow = "0 0 12px rgba(239,239,136,0.6)";
+          button.style.color = "#ff4d4d";
           startPlayback({ season: seasonNumber, episode: selectedEpisode });
         });
 
@@ -450,12 +483,20 @@ function createMovieCard(movie) {
       });
     };
 
-    const loadEpisodesForSeason = async (seasonNumber) => {
+    loadEpisodesForSeason = async (seasonNumber) => {
       if (!episodeList) return;
       episodeList.innerHTML = `<div style="color:#f2f2a5; font-weight:600;">Loading episodes...</div>`;
       try {
         const data = await fetchTmdb(`/tv/${movie.tmdbID}/season/${seasonNumber}`);
         if (data && data.episodes) {
+          const savedEpisodeForSeason =
+            savedEpisodeInfo?.season === seasonNumber
+              ? parseInt(savedEpisodeInfo?.episode, 10)
+              : null;
+          selectedEpisode =
+            savedEpisodeForSeason ||
+            parseInt(data.episodes?.[0]?.episode_number, 10) ||
+            1;
           selectedEpisode = parseInt(data.episodes?.[0]?.episode_number, 10) || 1;
           selectedSeason = seasonNumber;
           renderEpisodes(
@@ -475,18 +516,53 @@ function createMovieCard(movie) {
     };
 
     loadEpisodesForSeason(initialSeason);
+
+    const updateSavedEpisode = (nextSeason, nextEpisode) => {
+      if (!episodeStorageKey || !seasonStorageKey) return;
+      savedEpisodeInfo = { season: nextSeason, episode: nextEpisode };
+      localStorage.setItem(episodeStorageKey, JSON.stringify(savedEpisodeInfo));
+      localStorage.setItem(seasonStorageKey, String(nextSeason));
+
+      if (seasonSelect) {
+        seasonSelect.value = String(nextSeason);
+      }
+
+      if (loadEpisodesForSeason) {
+        loadEpisodesForSeason(nextSeason);
+      }
+    };
+
+    window.stargazerPlayerListener = (event) => {
+      if (!event?.data) return;
+      let payload = null;
+      if (typeof event.data === "string") {
+        try {
+          payload = JSON.parse(event.data);
+        } catch (err) {
+          return;
+        }
+      } else if (typeof event.data === "object") {
+        payload = event.data;
+      }
+
+      if (!payload) return;
+      if (String(payload.id) !== String(movie.tmdbID)) return;
+      if (payload.type !== "tv") return;
+      if (!payload.season || !payload.episode) return;
+
+      const nextSeason = parseInt(payload.season, 10) || 1;
+      const nextEpisode = parseInt(payload.episode, 10) || 1;
+      updateSavedEpisode(nextSeason, nextEpisode);
+    };
+
+    window.addEventListener("message", window.stargazerPlayerListener);
   }
 
-  watchBtn.onclick = () => {
-    if (isMovie) {
+  if (watchBtn) {
+    watchBtn.onclick = () => {
       startPlayback({ season: null, episode: null });
-      return;
-    }
-
-    const seasonSelect = document.getElementById("seasonSelect");
-    const season = seasonSelect ? parseInt(seasonSelect.value, 10) || 1 : selectedSeason;
-    startPlayback({ season, episode: selectedEpisode || 1 });
-  };
+    };
+  }
 }
 
 
