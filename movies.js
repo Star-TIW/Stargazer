@@ -485,6 +485,7 @@ function createMovieCard(movie) {
             savedEpisodeForSeason ||
             parseInt(data.episodes?.[0]?.episode_number, 10) ||
             1;
+          selectedEpisode = parseInt(data.episodes?.[0]?.episode_number, 10) || 1;
           selectedSeason = seasonNumber;
           renderEpisodes(
             data.episodes.map((episode) => ({
