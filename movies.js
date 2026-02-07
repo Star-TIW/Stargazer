@@ -104,12 +104,11 @@ function createMovieCard(movie) {
 
   if (!isMovie) {
     controls.innerHTML += `
-      <div style="display:flex; gap:10px; align-items:center; margin-bottom:8px;">
-        <label for="seasonInput" style="color:#efef88; font-weight:600;">Season</label>
-        <input id="seasonInput" type="number" min="1" placeholder="1" style="width:80px; padding:6px; border-radius:6px; border:2px solid #efef88; background:#111; color:#fff;" />
-        <label for="episodeInput" style="color:#efef88; font-weight:600;">Episode</label>
-        <input id="episodeInput" type="number" min="1" placeholder="1" style="width:80px; padding:6px; border-radius:6px; border:2px solid #efef88; background:#111; color:#fff;" />
+      <div style="display:flex; gap:10px; align-items:center; margin-bottom:10px; flex-wrap:wrap;">
+        <label for="seasonSelect" style="color:#efef88; font-weight:600;">Season</label>
+        <select id="seasonSelect" style="min-width:110px; padding:6px 10px; border-radius:6px; border:2px solid #efef88; background:#111; color:#fff; font-weight:600;"></select>
       </div>
+      <div id="episode-list" style="display:grid; gap:8px;"></div>
     `;
   }
 
@@ -265,22 +264,10 @@ function createMovieCard(movie) {
     };
   }
 
-  watchBtn.onclick = () => {
-    let season = null;
-    let episode = null;
+  let selectedSeason = 1;
+  let selectedEpisode = 1;
 
-    if (!isMovie) {
-      const sInput = document.getElementById("seasonInput");
-      const eInput = document.getElementById("episodeInput");
-      season = sInput ? String(sInput.value).trim() : "";
-      episode = eInput ? String(eInput.value).trim() : "";
-
-      if (!season || !episode) {
-        alert("Please enter both season and episode numbers.");
-        return;
-      }
-    }
-
+  const startPlayback = ({ season, episode }) => {
     const searchEl = document.getElementById("search");
     const suggestionsEl = document.getElementById("suggestions");
     if (searchEl) searchEl.value = "";
@@ -313,6 +300,109 @@ function createMovieCard(movie) {
       } catch (e) { }
       videoIframe.scrollIntoView({ behavior: "smooth", block: "center" });
     }, 120);
+  };
+
+  if (!isMovie) {
+    const seasonSelect = document.getElementById("seasonSelect");
+    const episodeList = document.getElementById("episode-list");
+    const seasonStorageKey = `stargazer:season:${movie.imdbID}`;
+    const totalSeasons = parseInt(movie.totalSeasons, 10) || 1;
+    const storedSeason = parseInt(localStorage.getItem(seasonStorageKey), 10);
+    const initialSeason = storedSeason && storedSeason <= totalSeasons ? storedSeason : 1;
+    selectedSeason = initialSeason;
+    selectedEpisode = 1;
+
+    if (seasonSelect) {
+      seasonSelect.innerHTML = Array.from({ length: totalSeasons }, (_, idx) => {
+        const seasonNumber = idx + 1;
+        return `<option value="${seasonNumber}">Season ${seasonNumber}</option>`;
+      }).join("");
+      seasonSelect.value = String(initialSeason);
+      localStorage.setItem(seasonStorageKey, String(initialSeason));
+
+      seasonSelect.addEventListener("change", () => {
+        const nextSeason = parseInt(seasonSelect.value, 10) || 1;
+        selectedSeason = nextSeason;
+        localStorage.setItem(seasonStorageKey, String(nextSeason));
+        loadEpisodesForSeason(nextSeason);
+      });
+    }
+
+    const renderEpisodes = (episodes, seasonNumber) => {
+      if (!episodeList) return;
+      if (!episodes || episodes.length === 0) {
+        episodeList.innerHTML = `<div style="color:#f2f2a5; font-weight:600;">No episodes found for this season.</div>`;
+        return;
+      }
+
+      episodeList.innerHTML = "";
+      episodes.forEach((episode) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.textContent = `Episode ${episode.Episode}: ${episode.Title}`;
+        Object.assign(button.style, {
+          padding: "10px 12px",
+          width: "100%",
+          textAlign: "left",
+          border: "none",
+          borderRadius: "6px",
+          cursor: "pointer",
+          fontWeight: "bold",
+          color: "#000",
+          background:
+            "linear-gradient(90deg, rgba(180, 132, 65, 1) 0%, rgba(239, 239, 136, 1) 50%, rgba(186, 138, 79, 1) 100%)",
+          boxShadow:
+            String(episode.Episode) === String(selectedEpisode)
+              ? "0 0 12px rgba(239,239,136,0.6)"
+              : "none"
+        });
+
+        button.addEventListener("click", () => {
+          selectedEpisode = parseInt(episode.Episode, 10) || 1;
+          episodeList.querySelectorAll("button").forEach((btn) => {
+            btn.style.boxShadow = "none";
+          });
+          button.style.boxShadow = "0 0 12px rgba(239,239,136,0.6)";
+          startPlayback({ season: seasonNumber, episode: selectedEpisode });
+        });
+
+        episodeList.appendChild(button);
+      });
+    };
+
+    const loadEpisodesForSeason = async (seasonNumber) => {
+      if (!episodeList) return;
+      episodeList.innerHTML = `<div style="color:#f2f2a5; font-weight:600;">Loading episodes...</div>`;
+      try {
+        const response = await fetch(
+          `https://www.omdbapi.com/?apikey=${API_KEY}&i=${movie.imdbID}&Season=${seasonNumber}`
+        );
+        const data = await response.json();
+        if (data && data.Response === "True") {
+          selectedEpisode = parseInt(data.Episodes?.[0]?.Episode, 10) || 1;
+          selectedSeason = seasonNumber;
+          renderEpisodes(data.Episodes || [], seasonNumber);
+        } else {
+          renderEpisodes([], seasonNumber);
+        }
+      } catch (err) {
+        console.error(err);
+        renderEpisodes([], seasonNumber);
+      }
+    };
+
+    loadEpisodesForSeason(initialSeason);
+  }
+
+  watchBtn.onclick = () => {
+    if (isMovie) {
+      startPlayback({ season: null, episode: null });
+      return;
+    }
+
+    const seasonSelect = document.getElementById("seasonSelect");
+    const season = seasonSelect ? parseInt(seasonSelect.value, 10) || 1 : selectedSeason;
+    startPlayback({ season, episode: selectedEpisode || 1 });
   };
 }
 
