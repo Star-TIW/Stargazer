@@ -550,7 +550,7 @@ function createMovieCard(movie) {
 
       if (!payload) return;
       if (String(payload.id) !== String(movie.tmdbID)) return;
-      if (!["tv", "anime"].includes(payload.type)) return;
+      if (payload.type !== "tv") return;
       if (!payload.season || !payload.episode) return;
 
       updateSavedEpisode(payload.season, payload.episode);
