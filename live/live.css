@@ -1,3 +1,25 @@
+/* Banner */
+.live-banner {
+  left: 0;
+  width: 100%;
+  background: rgba(239, 239, 136, 0.1);
+  border-top: 1px solid #efef88;
+  border-bottom: 1px solid #efef88;
+  overflow: hidden;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  z-index: 90;
+}
+
+.banner-text {
+  white-space: nowrap;
+  color: #efef88;
+  font-size: 20px;
+  font-weight: 500;
+  animation: scrollText 15s linear infinite;
+}
+
 .live-scroll-container {
   position: absolute;
   top: 87.5px;
@@ -24,7 +46,6 @@
 
 .live-container {
   padding: 10px;
-  margin-top: 40px;
   text-align: center;
   color: white;
   font-family: "Poppins", sans-serif;
@@ -149,6 +170,10 @@
     padding: 0;
     gap: 16px;
   }
+  
+  .banner-text {
+    animation: scrollText 10s linear infinite;
+  }
 
   .teams {
     font-size: 3.5vw;
@@ -163,5 +188,15 @@
 @media (max-width: 1024px) {
   .games-list {
     grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@keyframes scrollText {
+  0% {
+    transform: translateX(250%);
+  }
+
+  100% {
+    transform: translateX(-100%);
   }
 }
