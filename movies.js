@@ -412,13 +412,16 @@ function createMovieCard(movie) {
 
     videoWrapper.appendChild(introVideo);
 
-    const playAttempt = introVideo.play();
-    if (playAttempt && typeof playAttempt.catch === "function") {
-      playAttempt.catch(() => {
-        endIntroAndLoad();
-      });
-    }
+     setTimeout(() => {
+      const playAttempt = introVideo.play();
+      if (playAttempt && typeof playAttempt.catch === "function") {
+        playAttempt.catch(() => {
+          endIntroAndLoad();
+        });
+      }
+    }, 1500);
   };
+
 
   const startPlayback = ({ season, episode }) => {
     const searchEl = document.getElementById("search");
