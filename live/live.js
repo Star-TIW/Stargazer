@@ -1,9 +1,61 @@
 document.addEventListener("DOMContentLoaded", () => {
+  // ---------- Sport Configuration ----------
+  const SPORTS_CONFIG = {
+    nfl: {
+      name: "NFL",
+      emoji: "🏈",
+      apiEndpoint: (dateStr) => `https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?dates=${dateStr}`,
+      league: "nfl",
+      sport: "football",
+      displayName: "National Football League",
+      streamedSport: "american-football"
+    },
+    nba: {
+      name: "NBA",
+      emoji: "🏀",
+      apiEndpoint: (dateStr) => `https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard?dates=${dateStr}`,
+      league: "nba",
+      sport: "basketball",
+      displayName: "National Basketball Association",
+      streamedSport: "basketball"
+    },
+    mlb: {
+      name: "MLB",
+      emoji: "⚾",
+      apiEndpoint: (dateStr) => `https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/scoreboard?dates=${dateStr}`,
+      league: "mlb",
+      sport: "baseball",
+      displayName: "Major League Baseball",
+      streamedSport: "baseball"
+    },
+    nhl: {
+      name: "NHL",
+      emoji: "🏒",
+      apiEndpoint: (dateStr) => `https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/scoreboard?dates=${dateStr}`,
+      league: "nhl",
+      sport: "hockey",
+      displayName: "National Hockey League",
+      streamedSport: "ice-hockey"
+    },
+    mls: {
+      name: "MLS",
+      emoji: "⚽",
+      apiEndpoint: (dateStr) => `https://site.api.espn.com/apis/site/v2/sports/soccer/usa.1/scoreboard?dates=${dateStr}`,
+      league: "mls",
+      sport: "soccer",
+      displayName: "Major League Soccer",
+      streamedSport: "soccer"
+    }
+  };
+
   // ---------- Elements ----------
   const todayGamesList = document.getElementById("today-games");
   const upcomingGamesList = document.getElementById("upcoming-games");
+  const bannerText = document.getElementById("banner-text");
+  const liveContainer = document.querySelector(".live-container");
 
-  // ---------- Globals ----------
+  // ---------- State ----------
+  let currentSport = localStorage.getItem("selectedSport") || "nfl";
   let gameStreams = {};
 
   // ---------- Helpers ----------
@@ -114,14 +166,14 @@ document.addEventListener("DOMContentLoaded", () => {
   setupVideoOverlay();
 
   // ---------- Streamed API helpers ----------
-  const STREAMED_MATCHES_URL = "https://streamed.pk/api/matches/american-football";
+  const STREAMED_MATCHES_URL = (sport) => `https://streamed.pk/api/matches/${sport}`;
   const STREAMED_STREAM_URL = (source, id) => `https://streamed.pk/api/stream/${encodeURIComponent(source)}/${encodeURIComponent(id)}`;
 
   const normalize = (s) => {
     if (!s) return "";
     return String(s)
       .toLowerCase()
-      .replace(/[’'“”"().,:-]/g, "")
+      .replace(/[''"""().,:-]/g, "")
       .replace(/\s+/g, " ")
       .trim();
   };
@@ -136,7 +188,6 @@ document.addEventListener("DOMContentLoaded", () => {
     if (t.location) names.add(t.location);
     if (t.abbreviation) names.add(t.abbreviation);
     if (teamObj.team && teamObj.team.abbreviation) names.add(teamObj.team.abbreviation);
-    // also split multi-word names and add last word (e.g., "Philadelphia Eagles" -> "Eagles")
     Array.from(names).forEach((nm) => {
       const parts = String(nm).split(" ");
       if (parts.length > 1) names.add(parts[parts.length - 1]);
@@ -199,13 +250,13 @@ document.addEventListener("DOMContentLoaded", () => {
           <img src="${escapeHtml(getTeamLogo(home))}" alt="${escapeHtml(home.team?.displayName || 'Home')}" style="height:36px;width:auto;"/>
         </div>
       </div>
-      <div class="start-time" style="margin-top:10px;color:#efef88;">Kickoff: ${escapeHtml(startText)}</div>
+      <div class="start-time" style="margin-top:10px;color:#efef88;">Start: ${escapeHtml(startText)}</div>
       <div class="status" style="margin-top:6px;color:#ddd;">Status: ${escapeHtml(statusText)}</div>
       <div class="score" style="margin-top:6px;font-weight:800;color:#efef88;display:none;">
         ${escapeHtml(away.team?.abbreviation || "AW")}: ${escapeHtml(String(awayScore))} &nbsp; - &nbsp;
         ${escapeHtml(home.team?.abbreviation || "HM")}: ${escapeHtml(String(homeScore))}
       </div>
-      ${statusText.includes("Final") ? "" : `<div style="margin-top:10px;display:flex;gap:8px;justify-content:center;"><button class="watch-btn">Available 10 mins before kickoff</button></div>`}
+      ${statusText.includes("Final") ? "" : `<div style="margin-top:10px;display:flex;gap:8px;justify-content:center;"><button class="watch-btn">Available 10 mins before start</button></div>`}
     `;
 
     // Favorite star
@@ -223,7 +274,7 @@ document.addEventListener("DOMContentLoaded", () => {
       favorites = favorites.includes(ev.id) ? favorites.filter(id => id !== ev.id) : [...favorites, ev.id];
       starSvg.setAttribute("fill", favorites.includes(ev.id) ? "#efef88" : "none");
       localStorage.setItem("favoriteGames", JSON.stringify(favorites));
-      fetchNFLGamesWindow();
+      fetchGamesWindow(currentSport);
     });
 
     const scoreDiv = card.querySelector(".score");
@@ -307,10 +358,10 @@ document.addEventListener("DOMContentLoaded", () => {
       .forEach(c => container.appendChild(c));
   };
 
-  // ---------- Fetch NFL Games ----------
-  const fetchForDate = async (dateStr) => {
+  // ---------- Fetch Games for Any Sport ----------
+  const fetchForDate = async (dateStr, sportConfig) => {
     try {
-      const apiUrl = `https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?dates=${dateStr}`;
+      const apiUrl = sportConfig.apiEndpoint(dateStr);
       const resp = await fetch(apiUrl);
       if (!resp.ok) return [];
       const json = await resp.json();
@@ -331,9 +382,10 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   };
 
-  const fetchStreamedMatches = async () => {
+  const fetchStreamedMatches = async (sportConfig) => {
     try {
-      const r = await fetch(STREAMED_MATCHES_URL);
+      const url = STREAMED_MATCHES_URL(sportConfig.streamedSport);
+      const r = await fetch(url);
       if (!r.ok) return [];
       const arr = await r.json();
       if (!Array.isArray(arr)) return [];
@@ -344,10 +396,16 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   };
 
-  const fetchNFLGamesWindow = async () => {
+  const fetchGamesWindow = async (sport) => {
     try {
+      const sportConfig = SPORTS_CONFIG[sport];
+      if (!sportConfig) {
+        console.error("Invalid sport:", sport);
+        return;
+      }
+
       const dateStrs = Array.from({ length: 6 }, (_, i) => getDateStr(i));
-      const results = await Promise.all(dateStrs.map(fetchForDate));
+      const results = await Promise.all(dateStrs.map(dateStr => fetchForDate(dateStr, sportConfig)));
 
       const eventMap = new Map();
       results.flat().forEach(ev => {
@@ -369,20 +427,20 @@ document.addEventListener("DOMContentLoaded", () => {
       });
       const upcomingEvents = events.filter(ev => new Date(ev.date) >= todayEnd);
 
-      // sort today’s games so non-final are above finals
+      // Sort today's games so non-final are above finals
       todayEvents.sort((a, b) => {
         const aStatus = a.competitions?.[0]?.status?.type?.description?.toLowerCase() || "";
         const bStatus = b.competitions?.[0]?.status?.type?.description?.toLowerCase() || "";
         const aFinal = aStatus.includes("final");
         const bFinal = bStatus.includes("final");
         if (aFinal === bFinal) return 0;
-        return aFinal ? 1 : -1; // non-final before final
+        return aFinal ? 1 : -1;
       });
 
       // ---------- Streamed API ----------
       gameStreams = {};
       if (todayEvents.length > 0) {
-        const streamedMatches = await fetchStreamedMatches();
+        const streamedMatches = await fetchStreamedMatches(sportConfig);
 
         const embedFetchPromises = todayEvents.map(async (ev) => {
           try {
@@ -407,38 +465,38 @@ document.addEventListener("DOMContentLoaded", () => {
       pinFavorites(upcomingGamesList);
 
     } catch (err) {
-      console.error("live.js: Critical error in fetchNFLGamesWindow:", err);
+      console.error("live.js: Critical error in fetchGamesWindow:", err);
       todayGamesList.innerHTML = upcomingGamesList.innerHTML = `<div class="game-card"><p style="text-align:center; color:#efef88;">Could not load games.</p></div>`;
     }
   };
 
-
-
   // ---------- Collapsible Toggle ----------
-  document.querySelectorAll(".games-header").forEach(header => {
-    header.addEventListener("click", () => {
-      const targetId = header.getAttribute("data-target");
-      const section = document.getElementById(targetId);
-      const arrow = header.querySelector(".arrow");
+  const setupCollapsibles = () => {
+    document.querySelectorAll(".games-header").forEach(header => {
+      header.addEventListener("click", () => {
+        const targetId = header.getAttribute("data-target");
+        const section = document.getElementById(targetId);
+        const arrow = header.querySelector(".arrow");
 
-      if (section.classList.contains("open")) {
-        section.style.maxHeight = section.scrollHeight + "px";
-        requestAnimationFrame(() => {
+        if (section.classList.contains("open")) {
+          section.style.maxHeight = section.scrollHeight + "px";
+          requestAnimationFrame(() => {
+            section.style.transition = "max-height 0.5s ease, opacity 0.5s ease, padding 0.5s ease";
+            section.style.maxHeight = "0";
+            section.style.opacity = "0";
+          });
+          section.classList.replace("open", "closed");
+        } else {
+          section.classList.replace("closed", "open");
           section.style.transition = "max-height 0.5s ease, opacity 0.5s ease, padding 0.5s ease";
-          section.style.maxHeight = "0";
-          section.style.opacity = "0";
-        });
-        section.classList.replace("open", "closed");
-      } else {
-        section.classList.replace("closed", "open");
-        section.style.transition = "max-height 0.5s ease, opacity 0.5s ease, padding 0.5s ease";
-        section.style.maxHeight = section.scrollHeight + "px";
-        section.style.opacity = "1";
-        setTimeout(() => { if (section.classList.contains("open")) section.style.maxHeight = "none"; }, 500);
-      }
-      arrow.style.transform = section.classList.contains("open") ? "rotate(180deg)" : "rotate(0deg)";
+          section.style.maxHeight = section.scrollHeight + "px";
+          section.style.opacity = "1";
+          setTimeout(() => { if (section.classList.contains("open")) section.style.maxHeight = "none"; }, 500);
+        }
+        arrow.style.transform = section.classList.contains("open") ? "rotate(180deg)" : "rotate(0deg)";
+      });
     });
-  });
+  };
 
   // ---------- Grid layout adjustments ----------
   const updateGridLayout = (container) => {
@@ -451,11 +509,48 @@ document.addEventListener("DOMContentLoaded", () => {
     observer.observe(container, { childList: true });
     updateGridLayout(container);
   };
-  [todayGamesList, upcomingGamesList].forEach(observeGrid);
 
-  // ---------- Initial Fetch ----------
-  fetchNFLGamesWindow();
-  setInterval(fetchNFLGamesWindow, 10000);
+  // ---------- Sport Selector ----------
+  const setupSportSelector = () => {
+    document.querySelectorAll(".sport-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const sport = btn.dataset.sport;
+        if (sport === currentSport) return;
+
+        // Update UI
+        document.querySelectorAll(".sport-btn").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+
+        // Update banner text
+        const sportConfig = SPORTS_CONFIG[sport];
+        bannerText.textContent = `${sportConfig.emoji} ${sportConfig.displayName} - Stargazer Live`;
+
+        // Save and fetch
+        currentSport = sport;
+        localStorage.setItem("selectedSport", sport);
+        
+        [todayGamesList, upcomingGamesList].forEach(list => {
+          list.replaceChildren(renderNoGamesCard("Loading..."));
+        });
+        
+        fetchGamesWindow(sport);
+      });
+    });
+  };
+
+  // ---------- Initialize ----------
+  setupCollapsibles();
+  setupSportSelector();
+
+  // Set initial banner text and sport button
+  const initialSportConfig = SPORTS_CONFIG[currentSport];
+  bannerText.textContent = `${initialSportConfig.emoji} ${initialSportConfig.displayName} - Stargazer Live`;
+  document.querySelector(`.sport-btn[data-sport="${currentSport}"]`)?.classList.add("active");
+
+  // Initial fetch and periodic refresh
+  [todayGamesList, upcomingGamesList].forEach(observeGrid);
+  fetchGamesWindow(currentSport);
+  setInterval(() => fetchGamesWindow(currentSport), 10000);
 
   // ---------- Initial collapsible open ----------
   document.querySelectorAll(".collapsible").forEach(section => {
@@ -468,42 +563,4 @@ document.addEventListener("DOMContentLoaded", () => {
     const section = document.getElementById(header.dataset.target);
     header.querySelector(".arrow").style.transform = section.classList.contains("open") ? "rotate(180deg)" : "rotate(0deg)";
   });
-
-  // // ---------- TEST: Future Games ----------
-  // async function testUpcomingStreams() {
-  //   try {
-  //     const dateStrs = Array.from({ length: 6 }, (_, i) => getDateStr(i));
-  //     const results = await Promise.all(dateStrs.map(fetchForDate));
-  //     const allEvents = results.flat();
-
-  //     const today = new Date();
-  //     const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-  //     const todayEnd = new Date(todayStart.getTime() + 86400 * 1000);
-
-  //     const upcomingEvents = allEvents.filter(ev => new Date(ev.date) >= todayEnd);
-
-  //     if (upcomingEvents.length === 0) {
-  //       console.log("No upcoming games found from ESPN.");
-  //       return;
-  //     }
-
-  //     const streamedMatches = await fetchStreamedMatches();
-
-  //     for (const ev of upcomingEvents) {
-  //       const sm = findStreamedMatchForEvent(ev, streamedMatches);
-  //       const embedUrl = sm?.sources?.[0] ? await fetchStreamEmbedForSource(sm.sources[0]) : null;
-
-  //       const comp = ev.competitions?.[0] || {};
-  //       const home = comp.competitors?.find(c => c.homeAway === "home") || comp.competitors?.[0] || {};
-  //       const away = comp.competitors?.find(c => c.homeAway === "away") || comp.competitors?.[1] || {};
-
-  //       console.log(`${away.team?.displayName || "AW"} @ ${home.team?.displayName || "HM"} -> ${embedUrl || "No stream found"}`);
-  //     }
-  //   } catch (err) {
-  //     console.error("Error testing upcoming streams:", err);
-  //   }
-  // }
-
-  // testUpcomingStreams();
-
 });
