@@ -1,3 +1,52 @@
+/* Sport Selector */
+.sport-selector-container {
+  position: fixed;
+  top: 87.5px;
+  left: 0;
+  width: 100%;
+  background: rgba(0, 0, 0, 0.6);
+  border-bottom: 2px solid #efef88;
+  z-index: 85;
+  padding: 8px 0;
+}
+
+.sport-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 0 10px;
+}
+
+.sport-btn {
+  padding: 8px 16px;
+  background: transparent;
+  border: 2px solid rgba(239, 239, 136, 0.5);
+  color: #efef88;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.sport-btn:hover {
+  border-color: #efef88;
+  background: rgba(239, 239, 136, 0.1);
+}
+
+.sport-btn.active {
+  background: linear-gradient(
+    90deg,
+    rgba(180, 132, 65, 1) 0%,
+    rgba(239, 239, 136, 1) 50%,
+    rgba(186, 138, 79, 1) 100%
+  );
+  border-color: #efef88;
+  color: #000;
+  font-weight: 700;
+}
+
 /* Banner */
 .live-banner {
   left: 0;
@@ -22,10 +71,10 @@
 
 .live-scroll-container {
   position: absolute;
-  top: 87.5px;
+  top: 147.5px;
   left: 0;
   width: 100%;
-  height: calc(100% - 87.5px);
+  height: calc(100% - 147.5px);
   overflow-y: auto;
   overflow-x: hidden;
   scroll-behavior: smooth;
@@ -162,6 +211,11 @@
 
 /* Phone Styles */
 @media (max-width: 600px) {
+  .sport-btn {
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+
   .games-list {
     grid-template-columns: repeat(1, 1fr);
     display: flex;
@@ -186,6 +240,11 @@
 
 /* Tablet */
 @media (max-width: 1024px) {
+  .sport-btn {
+    padding: 7px 14px;
+    font-size: 13px;
+  }
+
   .games-list {
     grid-template-columns: repeat(2, 1fr);
   }

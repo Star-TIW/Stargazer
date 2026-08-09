@@ -3,7 +3,7 @@
 
 <head>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Stargazer Live - NFL</title>
+  <title>Stargazer Live - Sports</title>
   <link rel="icon" href="/stargazer.png" />
   <link rel="stylesheet" href="/home.css" />
   <link rel="stylesheet" href="live.css" />
@@ -40,10 +40,22 @@
   </header>
 
   <div id="particles-js"></div>
+  
+  <!-- Sport Selector -->
+  <div class="sport-selector-container">
+    <div class="sport-buttons">
+      <button class="sport-btn active" data-sport="nfl">🏈 NFL</button>
+      <button class="sport-btn" data-sport="nba">🏀 NBA</button>
+      <button class="sport-btn" data-sport="mlb">⚾ MLB</button>
+      <button class="sport-btn" data-sport="nhl">🏒 NHL</button>
+      <button class="sport-btn" data-sport="mls">⚽ MLS</button>
+    </div>
+  </div>
+
   <div class="live-scroll-container">
     <div class="live-banner">
-      <div class="banner-text">
-        Superbowl Sunday - Stargazer Live
+      <div class="banner-text" id="banner-text">
+        Live Sports - Stargazer
       </div>
     </div>
 
