@@ -446,8 +446,8 @@ function createMovieCard(movie) {
 
     videoContainer.style.display = "flex";
     const playbackUrl = isMovie
-      ? `https://player.videasy.net/movie/${tmdbID}?nextEpisode=true&autoplayNextEpisode=true&episodeSelector=true&overlay=true&color=efef88`
-      : `https://player.videasy.net/tv/${tmdbID}/${season}/${episode}/?nextEpisode=true&autoplayNextEpisode=true&episodeSelector=true&overlay=true&color=efef88`;
+      ? `https://vidup.to/movie/${tmdbID}?autoPlay=true&theme=efef88`
+      : `https://vidup.to/tv/${tmdbID}/${season}/${episode}?autoPlay=true&theme=efef88`;
     playIntroThenLoad(playbackUrl);
     setTimeout(() => {
       try {
