@@ -45,6 +45,15 @@ document.addEventListener("DOMContentLoaded", () => {
       sport: "soccer",
       displayName: "Major League Soccer",
       streamedSport: "soccer"
+    },
+    cfb: {
+      name: "College Football",
+      emoji: "🏈",
+      apiEndpoint: (dateStr) => `https://site.api.espn.com/apis/site/v2/sports/football/college-football/scoreboard?dates=${dateStr}`,
+      league: "ncaaf",
+      sport: "football",
+      displayName: "College Football",
+      streamedSport: "american-football"
     }
   };
 
@@ -55,8 +64,14 @@ document.addEventListener("DOMContentLoaded", () => {
   const liveContainer = document.querySelector(".live-container");
 
   // ---------- State ----------
-  let currentSport = localStorage.getItem("selectedSport") || "nfl";
+  const savedSport = localStorage.getItem("selectedSport");
+  let currentSport = SPORTS_CONFIG[savedSport] ? savedSport : "nfl";
   let gameStreams = {};
+
+  // Keep storage valid even if an older saved value no longer has a sport page.
+  if (savedSport !== currentSport) {
+    localStorage.setItem("selectedSport", currentSport);
+  }
 
   // ---------- Helpers ----------
   const pad = (n) => String(n).padStart(2, "0");
@@ -511,28 +526,32 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   // ---------- Sport Selector ----------
+  const setActiveSportButton = (sport) => {
+    document.querySelectorAll(".sport-btn").forEach((button) => {
+      const isSelected = button.dataset.sport === sport;
+      button.classList.toggle("active", isSelected);
+      button.setAttribute("aria-pressed", String(isSelected));
+    });
+  };
+
   const setupSportSelector = () => {
-    document.querySelectorAll(".sport-btn").forEach(btn => {
+    document.querySelectorAll(".sport-btn").forEach((btn) => {
       btn.addEventListener("click", () => {
         const sport = btn.dataset.sport;
+        const sportConfig = SPORTS_CONFIG[sport];
+        if (!sportConfig) return;
+
+        setActiveSportButton(sport);
         if (sport === currentSport) return;
 
-        // Update UI
-        document.querySelectorAll(".sport-btn").forEach(b => b.classList.remove("active"));
-        btn.classList.add("active");
-
-        // Update banner text
-        const sportConfig = SPORTS_CONFIG[sport];
-        bannerText.textContent = `${sportConfig.emoji} ${sportConfig.displayName} - Stargazer Live`;
-
-        // Save and fetch
         currentSport = sport;
         localStorage.setItem("selectedSport", sport);
-        
-        [todayGamesList, upcomingGamesList].forEach(list => {
+        bannerText.textContent = `${sportConfig.emoji} ${sportConfig.displayName} - Stargazer Live`;
+
+        [todayGamesList, upcomingGamesList].forEach((list) => {
           list.replaceChildren(renderNoGamesCard("Loading..."));
         });
-        
+
         fetchGamesWindow(sport);
       });
     });
@@ -545,7 +564,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // Set initial banner text and sport button
   const initialSportConfig = SPORTS_CONFIG[currentSport];
   bannerText.textContent = `${initialSportConfig.emoji} ${initialSportConfig.displayName} - Stargazer Live`;
-  document.querySelector(`.sport-btn[data-sport="${currentSport}"]`)?.classList.add("active");
+  setActiveSportButton(currentSport);
 
   // Initial fetch and periodic refresh
   [todayGamesList, upcomingGamesList].forEach(observeGrid);
