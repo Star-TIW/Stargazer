@@ -366,6 +366,33 @@ function createMovieCard(movie) {
     const videoWrapper = document.getElementById("video-wrapper");
     if (!videoWrapper) return;
 
+    const playerOrigin = "https://vidup.to";
+    let introIsActive = true;
+
+    const sendPlayerCommand = (command) => {
+      try {
+        videoIframe.contentWindow?.postMessage(
+          { type: "PLAYER_COMMAND", data: { command } },
+          playerOrigin
+        );
+      } catch (error) {
+        console.warn("Unable to send player command:", error);
+      }
+    };
+
+    // The player reports play events to its parent. If it gets ready before
+    // the intro finishes, immediately tell it to remain paused.
+    const keepPlayerPausedDuringIntro = (event) => {
+      if (event.origin !== playerOrigin || !event.data || !introIsActive) return;
+      const payload = event.data;
+      if (
+        payload.type === "PLAYER_EVENT" &&
+        payload.data?.event === "play"
+      ) {
+        sendPlayerCommand("pause");
+      }
+    };
+
     const existingIntro = document.getElementById("intro-video");
     if (existingIntro) {
       existingIntro.pause();
@@ -376,8 +403,15 @@ function createMovieCard(movie) {
       closeVideoX.style.display = "none";
     }
 
-    videoIframe.src = "";
+    window.addEventListener("message", keepPlayerPausedDuringIntro);
     videoIframe.style.visibility = "hidden";
+    videoIframe.addEventListener("load", () => {
+      if (introIsActive) sendPlayerCommand("pause");
+    }, { once: true });
+
+    // Start the remote player immediately so its servers load in parallel
+    // with the Stargazer intro, while the message guard prevents early audio.
+    videoIframe.src = playbackUrl;
 
     const introVideo = document.createElement("video");
     introVideo.id = "intro-video";
@@ -397,29 +431,29 @@ function createMovieCard(movie) {
       zIndex: "240"
     });
 
-    const endIntroAndLoad = () => {
+    const endIntroAndResume = () => {
+      if (!introIsActive) return;
+      introIsActive = false;
+      window.removeEventListener("message", keepPlayerPausedDuringIntro);
       introVideo.pause();
       introVideo.remove();
       videoIframe.style.visibility = "visible";
-      videoIframe.src = playbackUrl;
       if (closeVideoX) {
         closeVideoX.style.display = "block";
       }
+
+      // Resume only after the intro is gone and the iframe is on screen.
+      requestAnimationFrame(() => sendPlayerCommand("play"));
     };
 
-    introVideo.addEventListener("ended", endIntroAndLoad, { once: true });
-    introVideo.addEventListener("error", endIntroAndLoad, { once: true });
-
+    introVideo.addEventListener("ended", endIntroAndResume, { once: true });
+    introVideo.addEventListener("error", endIntroAndResume, { once: true });
     videoWrapper.appendChild(introVideo);
 
-     setTimeout(() => {
-      const playAttempt = introVideo.play();
-      if (playAttempt && typeof playAttempt.catch === "function") {
-        playAttempt.catch(() => {
-          endIntroAndLoad();
-        });
-      }
-    }, 1500);
+    const playAttempt = introVideo.play();
+    if (playAttempt && typeof playAttempt.catch === "function") {
+      playAttempt.catch(endIntroAndResume);
+    }
   };
 
 

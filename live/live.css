@@ -259,3 +259,29 @@
     transform: translateX(-100%);
   }
 }
+
+/* Keep every sport reachable on narrow screens without adding a second selector row. */
+@media (max-width: 600px) {
+  .sport-selector-container {
+    padding: 6px 0;
+  }
+
+  .sport-buttons {
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    -webkit-overflow-scrolling: touch;
+    padding: 0 12px;
+    gap: 8px;
+    scrollbar-width: none;
+  }
+
+  .sport-buttons::-webkit-scrollbar {
+    display: none;
+  }
+
+  .sport-btn {
+    flex: 0 0 auto;
+  }
+}
