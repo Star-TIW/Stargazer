@@ -628,8 +628,8 @@ function createMovieCard(movie) {
     videoContainer.style.display = "flex";
     videoIframe.style.visibility = "hidden";
     const playbackUrl = isMovie
-      ? `https://vidup.to/movie/${tmdbID}?autoPlay=true&theme=efef88`
-      : `https://vidup.to/tv/${tmdbID}/${season}/${episode}?autoPlay=true&theme=efef88`;
+      ? `https://vidup.to/movie/${tmdbID}?autoPlay=true&theme=efef88&chromecast=false&poster=true&title=true`
+      : `https://vidup.to/tv/${tmdbID}/${season}/${episode}?autoPlay=true&theme=efef88&chromecast=false&poster=true&title=true`;
     playIntroThenLoad(playbackUrl);
   };
 
