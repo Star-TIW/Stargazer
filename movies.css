@@ -226,3 +226,389 @@
     height: 75px !important;
   }
 }
+
+/* =========================
+   Stargazer VidUP Player
+   ========================= */
+#video-container {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100dvh;
+  background: rgba(0, 0, 0, 0.9);
+  display: none;
+  justify-content: center;
+  align-items: center;
+  padding: 24px;
+  z-index: 1000;
+  animation: playerBackdropIn 0.35s ease both;
+}
+
+#video-container.is-open {
+  display: flex;
+}
+
+.stargazer-player-wrapper {
+  position: relative;
+  width: min(1200px, 92vw);
+  height: min(760px, 88vh);
+  min-height: 320px;
+  background: #000;
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 0 45px rgba(239, 239, 136, 0.2);
+}
+
+#video-iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  background: #000;
+}
+
+
+.stargazer-player-loader {
+  position: absolute;
+  inset: 0;
+  z-index: 1100;
+  display: block;
+  overflow: hidden;
+  background: radial-gradient(circle at 50% 46%, #17130a 0%, #050505 42%, #000 78%);
+  color: #d5a83a;
+  opacity: 1;
+  visibility: visible;
+  transition: opacity .7s cubic-bezier(.22,1,.36,1), visibility .7s ease;
+  pointer-events: all;
+}
+
+.stargazer-player-loader.is-visible {
+  opacity: 1;
+  visibility: visible;
+}
+
+.stargazer-player-loader.is-hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.loader-scene {
+  position: absolute;
+  width: min(300px, 38%);
+  height: auto;
+  aspect-ratio: 1 / 1;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%) scale(.72);
+  opacity: 0;
+  filter: drop-shadow(0 0 24px rgba(213,168,58,.12));
+  animation: sceneEnter 1.15s cubic-bezier(.16,1,.3,1) forwards;
+}
+
+.loader-logo-wrap {
+  position: absolute;
+  width: 64%;
+  height: 64%;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: logoReveal 2s cubic-bezier(.2,.75,.2,1) infinite;
+  z-index: 3;
+}
+
+.loader-logo {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+  animation: logoPulse 2s ease-in-out infinite;
+  filter: drop-shadow(0 0 7px rgba(213,168,58,.15));
+}
+
+.loader-glow {
+  position: absolute;
+  width: 48%;
+  height: 48%;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: #d5a83a;
+  opacity: .12;
+  filter: blur(30px);
+  animation: glowPulse 2s ease-in-out infinite;
+  z-index: -1;
+}
+
+.loader-orbit {
+  position: absolute;
+  border: 2px solid rgba(213,168,58,.28);
+  border-radius: 50%;
+  width: 72%;
+  height: 72%;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  animation: orbitSpin 2s linear infinite;
+  z-index: 2;
+}
+
+.loader-orbit::after {
+  content: "";
+  position: absolute;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #f5d56c;
+  box-shadow: 0 0 12px #d5a83a;
+  top: -4px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.orbit-b {
+  width: 82%;
+  height: 82%;
+  border-color: rgba(213,168,58,.10);
+  animation-direction: reverse;
+  animation-duration: 2.8s;
+}
+
+.orbit-b::after {
+  width: 4px;
+  height: 4px;
+  opacity: .75;
+}
+
+.loader-streak {
+  position: absolute;
+  height: 3px;
+  width: 28%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, transparent, #f7d96e, transparent);
+  box-shadow: 0 0 12px rgba(213,168,58,.75);
+  transform: rotate(-43deg);
+  opacity: 0;
+  animation: shoot 2s ease-in-out infinite;
+  z-index: 1;
+}
+
+.streak-a { left: 9%; top: 43%; animation-delay: .05s; }
+.streak-b { left: 23%; top: 26%; width: 22%; animation-delay: .72s; }
+.streak-c { left: 46%; top: 51%; width: 20%; animation-delay: 1.25s; }
+
+.loader-subtext {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 2%;
+  text-align: center;
+  color: #777;
+  font-size: clamp(7px, 1.1vw, 10px);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  animation: subtleBlink 2s ease-in-out infinite;
+  z-index: 4;
+}
+
+.loader-scene::after {
+  content: "";
+  position: absolute;
+  bottom: 9%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 40%;
+  height: 8px;
+  border-radius: 50%;
+  background: #d5a83a;
+  opacity: .12;
+  filter: blur(12px);
+  animation: shadowPulse 2s ease-in-out infinite;
+}
+
+@keyframes sceneEnter {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(.72); }
+  55% { opacity: 1; transform: translate(-50%, -50%) scale(1.035); }
+  78% { transform: translate(-50%, -50%) scale(.985); }
+  100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+
+@keyframes logoReveal {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(.68) rotate(-4deg); }
+  18% { opacity: 1; transform: translate(-50%, -50%) scale(1.08) rotate(1deg); }
+  36% { transform: translate(-50%, -50%) scale(.98) rotate(0); }
+  52%, 100% { opacity: 1; transform: translate(-50%, -50%) scale(1) rotate(0); }
+}
+
+@keyframes logoPulse {
+  0%, 100% { filter: drop-shadow(0 0 5px rgba(213,168,58,.12)); }
+  50% { filter: drop-shadow(0 0 18px rgba(213,168,58,.5)); }
+}
+
+@keyframes glowPulse {
+  0%, 100% { transform: translate(-50%, -50%) scale(.75); opacity: .08; }
+  50% { transform: translate(-50%, -50%) scale(1.15); opacity: .2; }
+}
+
+@keyframes orbitSpin {
+  from { transform: translate(-50%, -50%) rotate(0deg); }
+  to { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+@keyframes shoot {
+  0% { opacity: 0; transform: translate(-55px, 55px) rotate(-43deg) scaleX(.4); }
+  15% { opacity: 1; }
+  34% { opacity: 0; transform: translate(75px, -75px) rotate(-43deg) scaleX(1); }
+  100% { opacity: 0; transform: translate(75px, -75px) rotate(-43deg) scaleX(1); }
+}
+
+@keyframes subtleBlink { 0%, 100% { opacity: .45; } 50% { opacity: 1; } }
+@keyframes playerBackdropIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes shadowPulse {
+  0%, 100% { transform: translateX(-50%) scaleX(.7); opacity: .08; }
+  50% { transform: translateX(-50%) scaleX(1); opacity: .2; }
+}
+
+/* Progress bars for Recently Watched */
+.recent-progress-track {
+  width: 100%;
+  height: 4px;
+  margin-top: 4px;
+  border-radius: 999px;
+  background: rgba(255,255,255,.16);
+  overflow: hidden;
+}
+
+.recent-progress-fill {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, rgba(180,132,65,1), rgba(239,239,136,1), rgba(186,138,79,1));
+  box-shadow: 0 0 7px rgba(239,239,136,.35);
+}
+
+@media (max-width: 768px) {
+  #video-container {
+    padding: 0;
+    align-items: stretch;
+    background: #000;
+  }
+
+  .stargazer-player-wrapper {
+    width: 100vw;
+    height: 100dvh;
+    min-height: 0;
+    max-width: none;
+    max-height: none;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .loader-scene {
+    width: 44%;
+    max-width: 230px;
+    min-width: 120px;
+  }
+
+  .loader-logo-wrap {
+    width: 62%;
+    height: 62%;
+  }
+
+  .loader-orbit {
+    width: 70%;
+    height: 70%;
+    border-width: 1.5px;
+  }
+
+  .orbit-b {
+    width: 80%;
+    height: 80%;
+  }
+
+  .loader-streak {
+    height: 2px;
+  }
+
+  .loader-subtext {
+    bottom: 1%;
+    font-size: 7px;
+    letter-spacing: 1.3px;
+  }
+
+  .recently-watched-item {
+    min-width: 62px;
+  }
+
+  .recently-watched-item img {
+    width: 52px !important;
+    height: 78px !important;
+  }
+}
+
+@media (max-width: 380px) {
+  .loader-scene {
+    width: 40%;
+    max-width: 170px;
+    min-width: 110px;
+  }
+
+  .loader-logo-wrap {
+    width: 60%;
+    height: 60%;
+  }
+}
+
+@media (max-width: 768px) and (orientation: landscape) {
+  .loader-scene {
+    width: 30%;
+    max-width: 190px;
+    min-width: 110px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .loader-scene,
+  .loader-logo-wrap,
+  .loader-logo,
+  .loader-glow,
+  .loader-orbit,
+  .loader-streak,
+  .loader-subtext,
+  .loader-scene::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
+
+/* Final overrides for the original #video-wrapper styles */
+#video-wrapper.stargazer-player-wrapper {
+  width: min(1200px, 92vw);
+  height: min(760px, 88vh);
+  max-width: none;
+  max-height: none;
+  border-radius: 14px;
+}
+
+#video-wrapper.stargazer-player-wrapper iframe#video-iframe {
+  width: 100%;
+  height: 100%;
+  border-radius: 0;
+}
+
+@media (max-width: 768px) {
+  #video-wrapper.stargazer-player-wrapper {
+    width: 100vw;
+    height: 100dvh;
+    max-width: none;
+    max-height: none;
+    border-radius: 0;
+  }
+}
+
+#close-video-x { z-index: 1200; }
