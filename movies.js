@@ -85,6 +85,210 @@ function normalizeTmdbDetails(details, mediaType) {
   };
 }
 
+
+
+// ------------------------ VidUP / Stargazer Progress ------------------------ //
+const VIDUP_ORIGIN = "https://vidup.to";
+const VIDUP_PROGRESS_KEY = "vidUpProgress";
+const STARGAZER_LOGO_URL = "https://st4rg4zer.pages.dev/stargazer.png";
+
+let activePlayerContext = null;
+let playerProgressSyncTimer = null;
+
+function readVidupProgress() {
+  try {
+    const raw = localStorage.getItem(VIDUP_PROGRESS_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch (error) {
+    console.warn("Unable to read VidUP progress:", error);
+    return {};
+  }
+}
+
+function writeVidupProgress(data) {
+  try {
+    localStorage.setItem(VIDUP_PROGRESS_KEY, JSON.stringify(data));
+  } catch (error) {
+    console.warn("Unable to save VidUP progress:", error);
+  }
+}
+
+function progressKey(tmdbId, mediaType) {
+  return `${mediaType === "tv" ? "t" : "m"}${tmdbId}`;
+}
+
+function savePlayerEventProgress(data) {
+  if (!data || !data.tmdbId || !data.mediaType) return;
+
+  const store = readVidupProgress();
+  const key = progressKey(data.tmdbId, data.mediaType);
+  const existing = store[key] || {
+    id: Number(data.tmdbId),
+    type: data.mediaType,
+    title: activePlayerContext?.title || "",
+    poster_path: activePlayerContext?.posterPath || "",
+    backdrop_path: activePlayerContext?.backdropPath || ""
+  };
+
+  const watched = Number(data.currentTime) || 0;
+  const duration = Number(data.duration) || 0;
+  const progress = {
+    watched,
+    duration
+  };
+
+  existing.id = Number(data.tmdbId);
+  existing.type = data.mediaType;
+  existing.progress = progress;
+  existing.last_updated = Date.now();
+
+  if (data.mediaType === "tv" && data.season != null && data.episode != null) {
+    const season = Number(data.season) || 1;
+    const episode = Number(data.episode) || 1;
+    existing.last_season_watched = season;
+    existing.last_episode_watched = episode;
+    existing.show_progress = existing.show_progress || {};
+    existing.show_progress[`s${season}e${episode}`] = {
+      season,
+      episode,
+      progress,
+      last_updated: Date.now()
+    };
+  }
+
+  store[key] = existing;
+  writeVidupProgress(store);
+
+  if (playerProgressSyncTimer) clearTimeout(playerProgressSyncTimer);
+  playerProgressSyncTimer = setTimeout(() => {
+    renderRecentlyWatched();
+  }, 150);
+}
+
+function mergeMediaData(mediaData) {
+  if (!mediaData || typeof mediaData !== "object") return;
+  const current = readVidupProgress();
+  Object.entries(mediaData).forEach(([key, value]) => {
+    if (!value || typeof value !== "object") return;
+    current[key] = {
+      ...(current[key] || {}),
+      ...value,
+      progress: value.progress || current[key]?.progress,
+      show_progress: value.show_progress || current[key]?.show_progress,
+      last_updated: value.last_updated || current[key]?.last_updated || Date.now()
+    };
+  });
+  writeVidupProgress(current);
+  renderRecentlyWatched();
+}
+
+function parseVidupMessage(data) {
+  if (!data) return null;
+  if (typeof data === "string") {
+    try { return JSON.parse(data); } catch { return null; }
+  }
+  return typeof data === "object" ? data : null;
+}
+
+function isActivePlayerPayload(payload) {
+  if (!payload || !activePlayerContext) return false;
+  const data = payload.data || {};
+  if (payload.type === "MEDIA_DATA") return true;
+  if (payload.type !== "PLAYER_EVENT") return false;
+  if (data.tmdbId == null) return false;
+  if (String(data.tmdbId) !== String(activePlayerContext.tmdbID)) return false;
+  if (data.mediaType && data.mediaType !== activePlayerContext.mediaType) return false;
+  if (activePlayerContext.mediaType === "tv") {
+    if (activePlayerContext.season != null && data.season != null && Number(data.season) !== Number(activePlayerContext.season)) return false;
+    if (activePlayerContext.episode != null && data.episode != null && Number(data.episode) !== Number(activePlayerContext.episode)) return false;
+  }
+  return true;
+}
+
+function hideVidupLoaderWhenPlaying(data) {
+  const eventName = data?.event;
+  if (eventName !== "play" || data?.playing !== true) return;
+  const loader = document.getElementById("stargazer-player-loader");
+  if (!loader || loader.classList.contains("is-hidden")) return;
+  if (activePlayerContext) {
+    const iframe = document.getElementById("video-iframe");
+    if (iframe) iframe.style.visibility = "visible";
+  }
+  loader.classList.add("is-hidden");
+  setTimeout(() => loader.remove(), 700);
+}
+
+function installGlobalVidupListener() {
+  if (window.__stargazerVidupListenerInstalled) return;
+  window.__stargazerVidupListenerInstalled = true;
+
+  window.addEventListener("message", (event) => {
+    if (event.origin !== VIDUP_ORIGIN || !event.data) return;
+    const payload = parseVidupMessage(event.data);
+    if (!payload) return;
+
+    if (payload.type === "MEDIA_DATA") {
+      mergeMediaData(payload.data);
+      return;
+    }
+
+    if (payload.type !== "PLAYER_EVENT" || !isActivePlayerPayload(payload)) return;
+
+    const data = payload.data || {};
+    savePlayerEventProgress(data);
+    hideVidupLoaderWhenPlaying(data);
+
+    if (data.event === "ended" && activePlayerContext?.mediaType === "tv") {
+      const nextEpisode = Number(activePlayerContext.episode || 0) + 1;
+      const season = Number(activePlayerContext.season || 1);
+      const episodeKey = `stargazer:episode:${activePlayerContext.tmdbID}`;
+      const seasonKey = `stargazer:season:${activePlayerContext.tmdbID}`;
+      localStorage.setItem(episodeKey, JSON.stringify({ season, episode: nextEpisode }));
+      localStorage.setItem(seasonKey, String(season));
+    }
+  });
+}
+
+function getStoredProgress(tmdbID, mediaType) {
+  const data = readVidupProgress()[progressKey(tmdbID, mediaType)];
+  if (!data?.progress) return null;
+  const watched = Number(data.progress.watched) || 0;
+  const duration = Number(data.progress.duration) || 0;
+  if (!duration) return null;
+  return {
+    watched,
+    duration,
+    percent: Math.max(0, Math.min(100, watched / duration * 100)),
+    season: data.last_season_watched,
+    episode: data.last_episode_watched
+  };
+}
+
+function formatWatchTime(seconds) {
+  const total = Math.max(0, Math.floor(Number(seconds) || 0));
+  const hours = Math.floor(total / 3600);
+  const minutes = Math.floor((total % 3600) / 60);
+  const secs = total % 60;
+  if (hours > 0) return `${hours}:${String(minutes).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
+  return `${minutes}:${String(secs).padStart(2, "0")}`;
+}
+
+function updateMovieWatchButton(button, movie) {
+  if (!button) return;
+  const progress = getStoredProgress(movie.tmdbID, movie.mediaType);
+  if (!progress || progress.percent < 1) {
+    button.textContent = movie.mediaType === "movie" ? "Watch Movie" : "Choose Episode";
+    return;
+  }
+  if (movie.mediaType === "tv" && progress.season && progress.episode) {
+    button.textContent = `Continue S${progress.season} E${progress.episode}: ${Math.round(progress.percent)}%`;
+  } else {
+    button.textContent = `Continue Watching: ${Math.round(progress.percent)}%`;
+  }
+}
+
+installGlobalVidupListener();
+
 async function fetchMovieDetails(tmdbID, mediaType) {
   const endpoint = mediaType === "movie" ? `/movie/${tmdbID}` : `/tv/${tmdbID}`;
   const appendToResponse =
@@ -264,198 +468,130 @@ function createMovieCard(movie) {
   let videoIframe;
   let closeVideoX;
 
-  if (!videoContainer) {
-    videoContainer = document.createElement("div");
-    videoContainer.id = "video-container";
-    Object.assign(videoContainer.style, {
-      position: "fixed",
-      top: "0",
-      left: "0",
-      width: "100%",
-      height: "100%",
-      background: "rgba(0,0,0,0.85)",
-      display: "none",
-      justifyContent: "center",
-      alignItems: "center",
-      zIndex: "200"
-    });
-
-    const videoWrapper = document.createElement("div");
-    videoWrapper.id = "video-wrapper";
-    Object.assign(videoWrapper.style, {
-      position: "relative",
-      width: "75vw",
-      height: "75vh",
-      maxWidth: "1200px",
-      maxHeight: "800px",
-      background: "#000",
-      borderRadius: "12px",
-      boxShadow: "0 4px 20px rgba(239,239,136,0.3)",
-      overflow: "hidden"
-    });
-
-    closeVideoX = document.createElement("span");
-    closeVideoX.id = "close-video-x";
-    closeVideoX.innerHTML = "&times;";
-    Object.assign(closeVideoX.style, {
-      position: "absolute",
-      top: "10px",
-      right: "15px",
-      color: "#efef88",
-      fontSize: "32px",
-      fontWeight: "bold",
-      cursor: "pointer",
-      zIndex: "250",
-      transition: "color 0.3s ease"
-    });
-
-    videoIframe = document.createElement("iframe");
-    videoIframe.id = "video-iframe";
-    videoIframe.setAttribute("frameborder", "0");
-    videoIframe.setAttribute(
-      "allow",
-      "autoplay; fullscreen; encrypted-media; picture-in-picture"
-    );
-    videoIframe.setAttribute("allowfullscreen", "");
-    Object.assign(videoIframe.style, {
-      width: "100%",
-      height: "100%",
-      border: "none",
-      display: "block"
-    });
-
-    videoWrapper.appendChild(closeVideoX);
-    videoWrapper.appendChild(videoIframe);
-    videoContainer.appendChild(videoWrapper);
-    document.body.appendChild(videoContainer);
-
-    const hideOverlay = () => {
-      videoIframe.src = "";
-      videoContainer.style.display = "none";
-    };
-    closeVideoX.onclick = hideOverlay;
-    videoContainer.onclick = (e) => {
-      if (e.target === videoContainer) hideOverlay();
-    };
-  } else {
-    videoIframe = document.getElementById("video-iframe");
-    closeVideoX = document.getElementById("close-video-x");
-    if (closeVideoX) {
-      closeVideoX.onclick = () => {
-        if (videoIframe) videoIframe.src = "";
+  function createPlayerShell() {
+    if (videoContainer) {
+      videoIframe = document.getElementById("video-iframe");
+      closeVideoX = document.getElementById("close-video-x");
+      const existingWrapper = document.getElementById("video-wrapper");
+      if (existingWrapper) existingWrapper.classList.add("stargazer-player-wrapper");
+      if (existingWrapper && !document.getElementById("stargazer-player-loader")) {
+        existingWrapper.classList.add("stargazer-player-wrapper");
+        existingWrapper.insertAdjacentHTML("beforeend", `
+          <div id="stargazer-player-loader" class="stargazer-player-loader" aria-label="Loading player">
+            <div class="loader-scene">
+              <div class="loader-streak streak-a"></div>
+              <div class="loader-streak streak-b"></div>
+              <div class="loader-streak streak-c"></div>
+              <div class="loader-orbit orbit-a"></div>
+              <div class="loader-orbit orbit-b"></div>
+              <div class="loader-logo-wrap">
+                <div class="loader-glow"></div>
+                <img class="loader-logo" src="${STARGAZER_LOGO_URL}" alt="Stargazer loading" />
+              </div>
+              <div class="loader-subtext">Launching player</div>
+            </div>
+          </div>
+        `);
+      }
+      const hideExistingOverlay = () => {
+        activePlayerContext = null;
+        const loader = document.getElementById("stargazer-player-loader");
+        if (loader) loader.remove();
+        if (videoIframe) {
+          videoIframe.src = "";
+          videoIframe.style.visibility = "hidden";
+        }
+        videoContainer.classList.remove("is-open");
         videoContainer.style.display = "none";
       };
-    }
-    videoContainer.onclick = (e) => {
-      if (e.target === videoContainer) {
-        if (videoIframe) videoIframe.src = "";
-        videoContainer.style.display = "none";
+      if (closeVideoX) closeVideoX.onclick = hideExistingOverlay;
+      if (!videoContainer.dataset.stargazerOverlayBound) {
+        videoContainer.addEventListener("click", (event) => {
+          if (event.target === videoContainer) hideExistingOverlay();
+        });
+        videoContainer.dataset.stargazerOverlayBound = "true";
       }
+      videoContainer._hideOverlay = hideExistingOverlay;
+      return;
+    }
+
+    videoContainer = document.createElement("div");
+    videoContainer.id = "video-container";
+    videoContainer.innerHTML = `
+      <div id="video-wrapper" class="stargazer-player-wrapper">
+        <span id="close-video-x" aria-label="Close player">&times;</span>
+        <iframe id="video-iframe" frameborder="0" allow="autoplay; fullscreen; encrypted-media; picture-in-picture" allowfullscreen></iframe>
+        <div id="stargazer-player-loader" class="stargazer-player-loader" aria-label="Loading player">
+          <div class="loader-scene">
+            <div class="loader-streak streak-a"></div>
+            <div class="loader-streak streak-b"></div>
+            <div class="loader-streak streak-c"></div>
+            <div class="loader-orbit orbit-a"></div>
+            <div class="loader-orbit orbit-b"></div>
+            <div class="loader-logo-wrap">
+              <div class="loader-glow"></div>
+              <img class="loader-logo" src="${STARGAZER_LOGO_URL}" alt="Stargazer loading" />
+            </div>
+            <div class="loader-subtext">Launching player</div>
+          </div>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(videoContainer);
+    videoIframe = document.getElementById("video-iframe");
+    closeVideoX = document.getElementById("close-video-x");
+
+    const hideOverlay = () => {
+      activePlayerContext = null;
+      const loader = document.getElementById("stargazer-player-loader");
+      if (loader) loader.remove();
+      if (videoIframe) {
+        videoIframe.src = "";
+        videoIframe.style.visibility = "hidden";
+      }
+      videoContainer.classList.remove("is-open");
+      videoContainer.style.display = "none";
     };
+
+    closeVideoX.onclick = hideOverlay;
+    videoContainer.addEventListener("click", (event) => {
+      if (event.target === videoContainer) hideOverlay();
+    });
+    videoContainer._hideOverlay = hideOverlay;
   }
 
-  let selectedSeason = 1;
-  let selectedEpisode = 1;
-  let savedEpisodeInfo = null;
-  let seasonStorageKey = null;
-  let episodeStorageKey = null;
-  let loadEpisodesForSeason = null;
+  createPlayerShell();
 
   const playIntroThenLoad = (playbackUrl) => {
     if (!videoContainer || !videoIframe) return;
-    const videoWrapper = document.getElementById("video-wrapper");
-    if (!videoWrapper) return;
+    const loader = document.getElementById("stargazer-player-loader");
+    if (loader) {
+      loader.classList.remove("is-hidden");
+      loader.style.display = "block";
 
-    const playerOrigin = "https://vidup.to";
-    let introIsActive = true;
+      // Restart the same intro animation every time a player is opened.
+      const animatedParts = loader.querySelectorAll(
+        ".loader-scene, .loader-logo-wrap, .loader-logo, .loader-glow, .loader-orbit, .loader-streak, .loader-subtext"
+      );
+      animatedParts.forEach((part) => {
+        part.style.animation = "none";
+      });
+      void loader.offsetWidth;
+      animatedParts.forEach((part) => {
+        part.style.animation = "";
+      });
 
-    const sendPlayerCommand = (command) => {
-      try {
-        videoIframe.contentWindow?.postMessage(
-          { type: "PLAYER_COMMAND", data: { command } },
-          playerOrigin
-        );
-      } catch (error) {
-        console.warn("Unable to send player command:", error);
-      }
-    };
-
-    // The player reports play events to its parent. If it gets ready before
-    // the intro finishes, immediately tell it to remain paused.
-    const keepPlayerPausedDuringIntro = (event) => {
-      if (event.origin !== playerOrigin || !event.data || !introIsActive) return;
-      const payload = event.data;
-      if (
-        payload.type === "PLAYER_EVENT" &&
-        payload.data?.event === "play"
-      ) {
-        sendPlayerCommand("pause");
-      }
-    };
-
-    const existingIntro = document.getElementById("intro-video");
-    if (existingIntro) {
-      existingIntro.pause();
-      existingIntro.remove();
+      requestAnimationFrame(() => loader.classList.add("is-visible"));
     }
 
-    if (closeVideoX) {
-      closeVideoX.style.display = "none";
-    }
-
-    window.addEventListener("message", keepPlayerPausedDuringIntro);
     videoIframe.style.visibility = "hidden";
-    videoIframe.addEventListener("load", () => {
-      if (introIsActive) sendPlayerCommand("pause");
-    }, { once: true });
-
-    // Start the remote player immediately so its servers load in parallel
-    // with the Stargazer intro, while the message guard prevents early audio.
     videoIframe.src = playbackUrl;
 
-    const introVideo = document.createElement("video");
-    introVideo.id = "intro-video";
-    introVideo.src = "intro.mp4";
-    introVideo.autoplay = true;
-    introVideo.playsInline = true;
-    introVideo.controls = false;
-    introVideo.preload = "auto";
-    introVideo.setAttribute("playsinline", "");
-    Object.assign(introVideo.style, {
-      position: "absolute",
-      inset: "0",
-      width: "100%",
-      height: "100%",
-      objectFit: "contain",
-      background: "#000",
-      zIndex: "240"
-    });
-
-    const endIntroAndResume = () => {
-      if (!introIsActive) return;
-      introIsActive = false;
-      window.removeEventListener("message", keepPlayerPausedDuringIntro);
-      introVideo.pause();
-      introVideo.remove();
-      videoIframe.style.visibility = "visible";
-      if (closeVideoX) {
-        closeVideoX.style.display = "block";
-      }
-
-      // Resume only after the intro is gone and the iframe is on screen.
-      requestAnimationFrame(() => sendPlayerCommand("play"));
-    };
-
-    introVideo.addEventListener("ended", endIntroAndResume, { once: true });
-    introVideo.addEventListener("error", endIntroAndResume, { once: true });
-    videoWrapper.appendChild(introVideo);
-
-    const playAttempt = introVideo.play();
-    if (playAttempt && typeof playAttempt.catch === "function") {
-      playAttempt.catch(endIntroAndResume);
-    }
+    // Do not pause the iframe here. The Watch button click is the user gesture,
+    // and VidUP is loaded with autoPlay=true so it can start normally.
+    // The Stargazer loader still stays visible until VidUP confirms play + playing:true.
   };
-
 
   const startPlayback = ({ season, episode }) => {
     const searchEl = document.getElementById("search");
@@ -465,6 +601,12 @@ function createMovieCard(movie) {
     const c = document.getElementById("movie-card");
     if (c) c.remove();
 
+    const tmdbID = movie.tmdbID || "";
+    if (!tmdbID) {
+      alert("No TMDB ID available for this title.");
+      return;
+    }
+
     addToRecentlyWatched({
       tmdbID: movie.tmdbID,
       mediaType: movie.mediaType,
@@ -472,23 +614,23 @@ function createMovieCard(movie) {
       Poster: movie.Poster
     });
 
-    const tmdbID = movie.tmdbID || "";
-    if (!tmdbID) {
-      alert("No TMDB ID available for this title.");
-      return;
-    }
+    activePlayerContext = {
+      tmdbID,
+      mediaType: movie.mediaType,
+      season: season != null ? Number(season) : null,
+      episode: episode != null ? Number(episode) : null,
+      title: movie.Title,
+      posterPath: movie.Poster || "",
+      backdropPath: ""
+    };
 
+    videoContainer.classList.add("is-open");
     videoContainer.style.display = "flex";
+    videoIframe.style.visibility = "hidden";
     const playbackUrl = isMovie
       ? `https://vidup.to/movie/${tmdbID}?autoPlay=true&theme=efef88`
       : `https://vidup.to/tv/${tmdbID}/${season}/${episode}?autoPlay=true&theme=efef88`;
     playIntroThenLoad(playbackUrl);
-    setTimeout(() => {
-      try {
-        videoIframe.contentWindow && videoIframe.contentWindow.focus();
-      } catch (e) { }
-      videoIframe.scrollIntoView({ behavior: "smooth", block: "center" });
-    }, 120);
   };
 
   if (!isMovie) {
@@ -538,6 +680,7 @@ function createMovieCard(movie) {
       episodes.forEach((episode) => {
         const button = document.createElement("button");
         button.type = "button";
+        const episodeProgress = getStoredProgress(movie.tmdbID, movie.mediaType);
         button.textContent = `Episode ${episode.Episode}: ${episode.Title}`;
         const isSavedEpisode =
           savedEpisodeInfo?.season === seasonNumber &&
@@ -629,33 +772,20 @@ function createMovieCard(movie) {
       }
     };
 
-    window.stargazerPlayerListener = (event) => {
-      if (!event?.data) return;
-      let payload = null;
-      if (typeof event.data === "string") {
-        try {
-          payload = JSON.parse(event.data);
-        } catch (err) {
-          return;
-        }
-      } else if (typeof event.data === "object") {
-        payload = event.data;
-      }
-
-      if (!payload) return;
-      if (String(payload.id) !== String(movie.tmdbID)) return;
-      if (payload.type !== "tv") return;
-      if (!payload.season || !payload.episode) return;
-
-      updateSavedEpisode(payload.season, payload.episode);
-    };
-
-    window.addEventListener("message", window.stargazerPlayerListener);
   }
 
   if (watchBtn) {
+    updateMovieWatchButton(watchBtn, movie);
     watchBtn.onclick = () => {
-      startPlayback({ season: null, episode: null });
+      const progress = getStoredProgress(movie.tmdbID, movie.mediaType);
+      if (isMovie) {
+        startPlayback({ season: null, episode: null });
+      } else {
+        startPlayback({
+          season: progress?.season || selectedSeason || 1,
+          episode: progress?.episode || selectedEpisode || 1
+        });
+      }
     };
   }
 }
@@ -817,6 +947,13 @@ function renderRecentlyWatched() {
           </span>
         </div>
         <span style="color:#efef88; font-size:12px; text-align:center; margin-top:3px;">${movie.Title.length > 12 ? movie.Title.slice(0, 12) + "…" : movie.Title}</span>
+        ${(() => {
+          const p = getStoredProgress(movie.tmdbID, movie.mediaType);
+          if (!p) return "";
+          const episodeLabel = movie.mediaType === "tv" && p.season && p.episode ? `S${p.season} E${p.episode}: ` : "";
+          return `<span style="color:rgba(255,255,255,.65); font-size:10px; margin-top:2px;">${episodeLabel}${Math.round(p.percent)}%</span>
+            <div class="recent-progress-track"><div class="recent-progress-fill" style="width:${p.percent}%;"></div></div>`;
+        })()}
       </div>
     `
     )
