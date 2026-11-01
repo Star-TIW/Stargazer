@@ -183,7 +183,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // ---------- StreamFree API helpers ----------
   // ESPN remains the schedule source; StreamFree provides the playable embeds.
   const STREAMFREE_STREAMS_URL = (category) =>
-    `https://streamfree.top/api/v1/streams?category=${encodeURIComponent(category)}`;
+    `https://strmfree.st/api/v1/streams?category=${encodeURIComponent(category)}`;
   const STREAM_CACHE_TTL_MS = 2 * 60 * 1000;
   const STREAM_CACHE_KEY_PREFIX = "stargazer:streamfree:";
   const streamCache = new Map();

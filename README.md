@@ -27,6 +27,6 @@ Notable v11 changes:
 - Desktop detail cards are narrower; mobile styling is unchanged.
 - Download is presented for movies only, never TV series.
 - The player uses a six-second watchdog for each configured provider (up to five), handles explicit player errors, clears timers on close/success, and displays an unavailable message after every candidate fails. Configure extra authorized providers with `window.STARGAZER_PLAYER_PROVIDERS` before `movies.js` loads.
-- Sports matching now scores both teams and event time, uses StreamFree's category stream API, and deliberately declines ambiguous matches instead of linking the wrong game.
+- Sports matching now scores both teams and event time, uses StreamFree's `strmfree.st` category stream API, and deliberately declines ambiguous matches instead of linking the wrong game.
 
 
