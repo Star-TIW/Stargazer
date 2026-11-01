@@ -107,43 +107,46 @@
   <script src="particles.min.js"></script>
   <script src="particle-config.js"></script>
   <script>
-    // Initialize selected effect from localStorage
+    const supportedEffects = new Set(["stars", "shapes", "bubbles", "snow"]);
     let selectedEffect = localStorage.getItem("selectedEffect") || "stars";
+    if (!supportedEffects.has(selectedEffect)) selectedEffect = "stars";
     const buttons = document.querySelectorAll(".particle-button");
+    const particlesContainer = document.getElementById("particles-js");
+    let changeTimer = null;
 
     function highlightButton(effect) {
-      buttons.forEach(btn => {
-        if (btn.dataset.effect === effect) btn.classList.add("selected");
-        else btn.classList.remove("selected");
-      });
+      buttons.forEach((btn) => btn.classList.toggle("selected", btn.dataset.effect === effect));
     }
 
-    // Init particles with the saved effect
+    // Use the stored choice both for this preview and every Stargazer page.
     highlightButton(selectedEffect);
     initParticles(selectedEffect);
 
-    buttons.forEach(btn => {
+    buttons.forEach((btn) => {
       btn.addEventListener("click", () => {
         const effect = btn.dataset.effect;
-        if (effect === selectedEffect) return;
-
-        // Update localStorage and highlight
+        if (!effect || effect === selectedEffect) return;
         localStorage.setItem("selectedEffect", effect);
         selectedEffect = effect;
         highlightButton(effect);
 
-        // Animate fade out/in and update particles
-        const particlesContainer = document.getElementById("particles-js");
-        particlesContainer.style.opacity = 0;
-        setTimeout(() => {
+        // Fade the current effect away before rebuilding its particles, matching the
+        // settings interaction while preventing overlapping particle canvases.
+        particlesContainer.style.opacity = "0";
+        window.clearTimeout(changeTimer);
+        changeTimer = window.setTimeout(() => {
           initParticles(effect);
-          particlesContainer.style.opacity = 1;
+          particlesContainer.style.opacity = "1";
+          // Sending this after the fade means rapid button changes always leave the
+          // parent page on the final selected effect.
+          window.parent.postMessage({ type: "particleEffect", effect }, "*");
         }, 500);
 
-        // Send effect change to parent window (movies.html)
-        window.parent.postMessage({ type: "particleEffect", effect }, "*");
+        // The settings screen is opened in Stargazer's iframe; the parent receives
+        // the message above as soon as the new preview is ready.
       });
     });
   </script>
 </body>
 </html>
+

@@ -11,13 +11,14 @@
 
 /* Background & fade-in */
 html {
-  height: 100%;
+  min-height: 100%;
   width: 100%;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 
 body {
-  height: 100%;
+  min-height: 100vh;
   width: 100%;
  background: linear-gradient(to bottom,
       rgba(23, 23, 23, 1) 0%,
@@ -300,3 +301,247 @@ body::before {
 #close-video-x:hover {
   color: #fff;
 }
+
+.stargazer-home{position:relative;z-index:2;min-height:100vh;padding-top:88px;overflow-x:hidden}
+.hero-section{width:min(1400px,94vw);min-height:500px;margin:0 auto;padding:54px 5vw 42px;display:grid;grid-template-columns:minmax(0,1fr) minmax(280px,.75fr);gap:40px;align-items:center;position:relative;border-bottom:1px solid rgba(239,239,136,.13)}
+.hero-section:before{content:"";position:absolute;inset:8% 0 0;background:radial-gradient(circle at 70% 45%,rgba(239,239,136,.12),transparent 42%);pointer-events:none}
+.hero-content{position:relative;z-index:100}.hero-feature{position:relative;z-index:1}.hero-content{max-width:700px}
+.eyebrow,.section-kicker{color:#efef88;font-size:11px;font-weight:800;letter-spacing:3px;text-transform:uppercase}
+.hero-content h2{margin:12px 0 14px;color:#fff;font-size:clamp(38px,6vw,76px);line-height:.98;letter-spacing:-2px;font-weight:800}
+.hero-copy{color:rgba(255,255,255,.68);max-width:580px;line-height:1.65;font-size:16px}
+.search-shell{margin-top:30px;position:relative;width:min(680px,100%)}#search-container.search-shell{position:relative;top:auto;left:auto;transform:none;width:min(680px,100%);display:block}
+.search-shell #search{width:100%;height:58px;padding:0 54px 0 48px;text-align:left;color:#fff;background:rgba(8,8,8,.82);border:1px solid rgba(239,239,136,.28);box-shadow:0 12px 35px rgba(0,0,0,.25)}
+.search-shell #search:focus{border-color:rgba(239,239,136,.8);border-radius:50px;animation:none}.search-icon{position:absolute;left:19px;top:14px;z-index:3;color:#efef88;font-size:27px;line-height:1;pointer-events:none}
+.search-shell #suggestions{width:100%;top:68px;left:0;transform:none;margin-top:0}
+.hero-feature{min-height:320px;border:1px solid rgba(239,239,136,.18);border-radius:22px;overflow:hidden;background:rgba(0,0,0,.42);box-shadow:0 25px 80px rgba(0,0,0,.45)}
+.hero-feature:after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(0,0,0,.1),rgba(0,0,0,.72));pointer-events:none}.hero-feature-bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.72}
+.hero-feature-content{position:absolute;inset:auto 28px 28px;z-index:2}.hero-feature-content h3{color:#fff;font-size:clamp(24px,3vw,42px);margin:6px 0}.hero-feature-meta{color:#efef88;font-size:12px;margin-bottom:10px}.hero-feature-copy{color:rgba(255,255,255,.7);font-size:13px;line-height:1.45;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.hero-actions{display:flex;gap:9px;margin-top:16px}.hero-watch,.hero-list{border:0;border-radius:999px;padding:10px 16px;font-weight:800;cursor:pointer}.hero-watch{color:#000;background:linear-gradient(90deg,#b48441,#efef88,#ba8a4f)}.hero-list{color:#efef88;background:rgba(255,255,255,.08);border:1px solid rgba(239,239,136,.3)}
+.hero-feature-loading{height:100%;display:flex;align-items:center;justify-content:center;gap:8px}.hero-feature-loading span{width:7px;height:7px;border-radius:50%;background:#efef88;animation:heroPulse 1s infinite alternate}.hero-feature-loading span:nth-child(2){animation-delay:.2s}.hero-feature-loading span:nth-child(3){animation-delay:.4s}@keyframes heroPulse{from{opacity:.2;transform:scale(.8)}to{opacity:1;transform:scale(1.3)}}
+.content-section{width:min(1400px,94vw);margin:0 auto;padding:30px 0 5px}.section-heading{display:flex;justify-content:space-between;align-items:flex-end;gap:15px;margin-bottom:15px}.section-heading h3{color:#fff;font-size:24px;margin-top:4px}.row-button,.text-button{border:0;background:transparent;color:rgba(255,255,255,.6);cursor:pointer;font-size:12px}.row-button:hover,.text-button:hover{color:#efef88}
+.media-row{display:flex;gap:15px;overflow-x:auto;padding:4px 3px 18px;scroll-snap-type:x proximity;scrollbar-width:thin}.media-row::-webkit-scrollbar{height:7px}.media-row::-webkit-scrollbar-thumb{background:linear-gradient(90deg,#b48441,#efef88,#ba8a4f);border-radius:99px}
+.media-card{flex:0 0 155px;scroll-snap-align:start;cursor:pointer;position:relative;transition:transform .25s ease}.media-card:hover{transform:translateY(-6px)}.media-poster-wrap{aspect-ratio:2/3;position:relative;border-radius:11px;overflow:hidden;background:#0a0a0a;border:1px solid rgba(239,239,136,.12);box-shadow:0 8px 25px rgba(0,0,0,.25)}.media-poster{width:100%;height:100%;object-fit:cover;display:block}.media-poster-wrap:after{content:"";position:absolute;inset:55% 0 0;background:linear-gradient(transparent,rgba(0,0,0,.72));pointer-events:none}.media-title{color:#fff;font-size:13px;font-weight:700;margin:8px 3px 2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.media-meta{color:rgba(255,255,255,.48);font-size:10px;margin:0 3px}.media-badge{position:absolute;left:7px;top:7px;z-index:2;padding:4px 6px;border-radius:6px;color:#000;background:#efef88;font-size:9px;font-weight:900;text-transform:uppercase}.media-progress{position:absolute;left:8px;right:8px;bottom:8px;z-index:3;height:4px;background:rgba(255,255,255,.22);border-radius:10px;overflow:hidden}.media-progress>span{display:block;height:100%;background:linear-gradient(90deg,#b48441,#efef88,#ba8a4f)}.media-remove{position:absolute;right:7px;top:7px;z-index:4;width:25px;height:25px;border:1px solid rgba(255,255,255,.25);border-radius:50%;color:#fff;background:rgba(0,0,0,.65);cursor:pointer;opacity:0;transition:.2s}.media-card:hover .media-remove{opacity:1}.media-empty{width:100%;padding:30px;text-align:center;color:rgba(255,255,255,.45);border:1px dashed rgba(239,239,136,.16);border-radius:12px}
+.site-footer{width:min(1400px,94vw);margin:50px auto 0;padding:30px 0 70px;border-top:1px solid rgba(239,239,136,.1);display:flex;justify-content:space-between;gap:20px;color:rgba(255,255,255,.45);font-size:12px}.site-footer strong{color:#efef88;margin-right:12px}.site-footer a{color:#efef88;text-decoration:none}.detail-list-button{margin-top:10px;width:100%;padding:10px;border:1px solid rgba(239,239,136,.35);border-radius:7px;cursor:pointer;font-weight:800;color:#efef88;background:rgba(255,255,255,.06)}.detail-list-button:hover{background:rgba(239,239,136,.14)}
+@media(max-width:900px){.hero-section{grid-template-columns:1fr;min-height:auto;padding-top:40px}.hero-feature{min-height:340px}}@media(max-width:768px){.stargazer-home{padding-top:78px}.hero-section,.content-section,.site-footer{width:92vw}.hero-section{padding:35px 0 30px;gap:25px}.hero-content h2{letter-spacing:-1px}.hero-feature{min-height:300px}.media-card{flex-basis:125px}.section-heading h3{font-size:20px}.site-footer{flex-direction:column}}
+
+
+/* ========================= v3p4 mobile stacking fix ========================= */
+/* Only stacking is changed here. Search suggestion appearance/behavior remains unchanged. */
+.hero-section { position: relative; z-index: 20; }
+.hero-content { position: relative; z-index: 100; }
+.search-shell { position: relative; z-index: 1000; }
+#suggestions { position: absolute; z-index: 2147483647 !important; }
+.hero-feature { position: relative; z-index: 1; }
+
+@media (max-width: 768px) {
+  .hero-section { z-index: 20; }
+  .hero-content { z-index: 100; }
+  .search-shell { z-index: 1000; }
+  #suggestions { z-index: 2147483647 !important; }
+  .hero-feature { z-index: 1; }
+}
+
+
+/* Stargazer v3p5: consistent media card sizing */
+.media-card {
+  flex: 0 0 155px !important;
+  width: 155px !important;
+  min-width: 155px !important;
+  max-width: 155px !important;
+  box-sizing: border-box;
+}
+.media-poster-wrap {
+  width: 155px !important;
+  height: 233px !important;
+  aspect-ratio: auto !important;
+  box-sizing: border-box;
+}
+.media-poster {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+}
+.media-title {
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  height: 34px !important;
+  line-height: 17px !important;
+  margin: 8px 0 2px !important;
+  white-space: normal !important;
+  overflow: hidden !important;
+  display: -webkit-box !important;
+  -webkit-box-orient: vertical !important;
+  -webkit-line-clamp: 2 !important;
+  text-overflow: ellipsis !important;
+  overflow-wrap: break-word;
+}
+@media (max-width: 768px) {
+  .media-card {
+    flex-basis: 125px !important;
+    width: 125px !important;
+    min-width: 125px !important;
+    max-width: 125px !important;
+  }
+  .media-poster-wrap {
+    width: 125px !important;
+    height: 188px !important;
+  }
+  .media-title {
+    height: 32px !important;
+    line-height: 16px !important;
+  }
+}
+
+/* Stargazer v3p6: mobile search suggestions must layer above the featured movie */
+.hero-section {
+  position: relative !important;
+  z-index: 100 !important;
+  isolation: isolate !important;
+  overflow: visible !important;
+}
+.hero-content {
+  position: relative !important;
+  z-index: 1000 !important;
+  isolation: isolate !important;
+}
+.search-shell,
+#search-container.search-shell {
+  position: relative !important;
+  z-index: 10000 !important;
+  isolation: isolate !important;
+}
+#suggestions {
+  position: absolute !important;
+  z-index: 2147483647 !important;
+  isolation: isolate !important;
+}
+.hero-feature {
+  position: relative !important;
+  z-index: 0 !important;
+}
+.hero-feature::after,
+.hero-feature-bg,
+.hero-feature-content {
+  z-index: 0;
+}
+.hero-feature-content {
+  position: absolute !important;
+}
+
+@media (max-width: 768px) {
+  .hero-section {
+    z-index: 100 !important;
+    isolation: isolate !important;
+    overflow: visible !important;
+  }
+  .hero-content {
+    z-index: 1000 !important;
+  }
+  .hero-feature {
+    z-index: 0 !important;
+  }
+  #search-container.search-shell,
+  .search-shell {
+    z-index: 10000 !important;
+  }
+  #suggestions {
+    z-index: 2147483647 !important;
+  }
+}
+
+/* Stargazer v3p7: final media-card sizing normalization */
+.media-card {
+  flex: 0 0 155px !important;
+  width: 155px !important;
+  min-width: 155px !important;
+  max-width: 155px !important;
+  height: 282px !important;
+  min-height: 282px !important;
+  max-height: 282px !important;
+  box-sizing: border-box !important;
+  align-self: flex-start !important;
+}
+
+.media-poster-wrap {
+  width: 155px !important;
+  height: 233px !important;
+  min-height: 233px !important;
+  max-height: 233px !important;
+  aspect-ratio: auto !important;
+  box-sizing: border-box !important;
+}
+
+.media-poster {
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 100% !important;
+  max-height: 100% !important;
+  object-fit: cover !important;
+  display: block !important;
+}
+
+.media-title {
+  width: 149px !important;
+  height: 34px !important;
+  min-height: 34px !important;
+  max-height: 34px !important;
+  margin: 8px 3px 2px !important;
+  line-height: 17px !important;
+  white-space: normal !important;
+  overflow: hidden !important;
+  display: -webkit-box !important;
+  -webkit-box-orient: vertical !important;
+  -webkit-line-clamp: 2 !important;
+  text-overflow: ellipsis !important;
+  overflow-wrap: anywhere !important;
+  box-sizing: border-box !important;
+}
+
+.media-meta {
+  width: 149px !important;
+  height: 14px !important;
+  min-height: 14px !important;
+  max-height: 14px !important;
+  margin: 0 3px !important;
+  line-height: 14px !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  box-sizing: border-box !important;
+}
+
+@media (max-width: 768px) {
+  .media-card {
+    flex: 0 0 125px !important;
+    width: 125px !important;
+    min-width: 125px !important;
+    max-width: 125px !important;
+    height: 240px !important;
+    min-height: 240px !important;
+    max-height: 240px !important;
+  }
+
+  .media-poster-wrap {
+    width: 125px !important;
+    height: 188px !important;
+    min-height: 188px !important;
+    max-height: 188px !important;
+  }
+
+  .media-title {
+    width: 119px !important;
+    height: 32px !important;
+    min-height: 32px !important;
+    max-height: 32px !important;
+    line-height: 16px !important;
+  }
+
+  .media-meta {
+    width: 119px !important;
+    height: 14px !important;
+    min-height: 14px !important;
+    max-height: 14px !important;
+  }
+}
+

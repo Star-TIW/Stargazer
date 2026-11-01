@@ -1,87 +1,51 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
+  <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#000000">
+  <meta name="description" content="Stargazer, your galaxy of movies, shows, and live sports.">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-title" content="Stargazer">
   <title>Stargazer</title>
-  <link rel="icon" href="stargazer.png" />
-  <link rel="stylesheet" href="home.css" />
-  <link rel="stylesheet" href="movies.css" />
+  <link rel="icon" href="stargazer.png">
+  <link rel="apple-touch-icon" href="stargazer.png">
   <link rel="manifest" href="/manifest.json">
-<meta name="theme-color" content="#efef88">
-
-<link rel="apple-touch-icon" href="/stargazer.png">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Stargazer">
-<meta name="apple-mobile-web-app-status-bar-style" content="black">
-<meta name="theme-color" content="#000000">
+  <link rel="stylesheet" href="home.css">
+  <link rel="stylesheet" href="movies.css">
 </head>
-
 <body>
-  <div id="shapes"></div>
-  <div id="stars"></div>
-  <div id="bubbles"></div>
-  <div id="snow"></div>
-
+  <div id="shapes"></div><div id="stars"></div><div id="bubbles"></div><div id="snow"></div><div id="particles-js"></div>
   <header class="header">
-    <div class="brand-group">
-      <img class="logo-small" src="/stargazer-512.png" alt="Star Logo" />
-      <h1 class="brand">Stargazer</h1>
-    </div>
-
-    <div class="menu-toggle" onclick="toggleMenu(this)">
-      <span></span>
-    </div>
-
+    <div class="brand-group"><img class="logo-small" src="/stargazer-512.png" alt="Stargazer logo"><h1 class="brand">Stargazer</h1></div>
+    <div class="menu-toggle" onclick="toggleMenu(this)" aria-label="Open navigation" role="button" tabindex="0"><span></span></div>
     <nav class="navbar" id="navbar">
-      <a href="/live/" class="nav-button">Live</a>
-      <button class="nav-button" id="settings-btn">Settings</button>
+      <a href="/live/" class="nav-button">Live</a><button class="nav-button" id="settings-btn">Settings</button>
     </nav>
   </header>
-
-  <div id="particles-js"></div>
-
-  <form id="search-container" class="flex-center">
-    <input id="search" type="text" autocomplete="off" placeholder="Search movies & shows..." />
-    <div id="suggestions"></div>
-  </form>
-
-  <!-- Video Container -->
-  <div id="video-container" style="display:none;">
-    <div id="video-wrapper">
-      <span id="close-video-x">&times;</span>
-      <iframe id="video-iframe" frameborder="0" allow="autoplay; fullscreen; encrypted-media; picture-in-picture" allowfullscreen></iframe>
-    </div>
-  </div>
-
-  <!-- Recently Watched Container -->
-  <div id="recentlyWatchedContainer">
-    <h3>Recently Watched</h3>
-    <div id="recently-watched" class="recently-watched-scroll"></div>
-  </div>
-
-  <script src="particles.min.js"></script>
-  <script src="movies.js"></script>
-  <script src="particle-config.js"></script>
-
-  <script>
-    document.getElementById("search-container").addEventListener("submit", function (event) {
-      event.preventDefault();
-    });
-    if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.register("/service-worker.js");
-    }
-  </script>
-
+  <main class="stargazer-home">
+    <section class="hero-section" id="hero-section">
+      <div class="hero-content">
+        <p class="eyebrow">WELCOME TO STARGAZER</p><h2>Find something worth watching.</h2>
+        <p class="hero-copy">Search movies and shows, pick up where you left off, and discover what's trending.</p>
+        <form id="search-container" class="search-shell"><span class="search-icon" aria-hidden="true">⌕</span><input id="search" type="search" autocomplete="off" placeholder="Search movies & shows..." aria-label="Search movies and shows"><div id="suggestions"></div></form>
+      </div>
+      <div class="hero-feature" id="hero-feature"><div class="hero-feature-loading"><span></span><span></span><span></span></div></div>
+    </section>
+    <section class="content-section" id="continueWatchingContainer" hidden><div class="section-heading"><div><span class="section-kicker">PICK UP WHERE YOU LEFT OFF</span><h3>Continue Watching</h3></div><button class="text-button" data-clear-progress>Clear history</button></div><div id="continue-watching" class="media-row"></div></section>
+    <section class="content-section" id="myListSection" hidden><div class="section-heading"><div><span class="section-kicker">YOUR SAVED TITLES</span><h3>My List</h3></div><button class="text-button" data-clear-list>Clear list</button></div><div id="my-list" class="media-row"></div></section>
+    <section class="content-section" id="newlyAddedSection"><div class="section-heading"><div><span class="section-kicker">JUST ARRIVED</span><h3>Newly Added</h3></div></div><div id="newly-added-row" class="media-row"></div></section>
+    <section class="content-section" id="trendingSection"><div class="section-heading"><div><span class="section-kicker">RIGHT NOW</span><h3>Trending Right Now</h3></div></div><div id="trending-row" class="media-row"></div></section>
+    <section class="content-section" id="recommendationsSection" hidden><div class="section-heading"><div><span class="section-kicker">BASED ON YOUR WATCH HISTORY</span><h3 id="recommendationsTitle">Because You Watched</h3></div></div><div id="recommendations-row" class="media-row"></div></section>
+    <section class="content-section" id="recommendedSection"><div class="section-heading"><div><span class="section-kicker">STARGAZER PICKS</span><h3>Recommended For You</h3></div></div><div id="recommended-row" class="media-row"></div></section>
+    <section class="content-section" id="popularMoviesSection"><div class="section-heading"><div><span class="section-kicker">MOVIES</span><h3>Popular Movies</h3></div></div><div id="popular-movies-row" class="media-row"></div></section>
+    <section class="content-section" id="popularTvSection"><div class="section-heading"><div><span class="section-kicker">SERIES</span><h3>Popular TV Shows</h3></div></div><div id="popular-tv-row" class="media-row"></div></section>
+  </main>
+  <div id="video-container" style="display:none;"><div id="video-wrapper"><div id="embedded-page-controls" hidden><button id="embedded-back" type="button" aria-label="Go back">&#10094;</button><button id="embedded-refresh" type="button" aria-label="Refresh page">&#8635;</button></div><span id="close-video-x" aria-label="Close player">&times;</span><iframe id="video-iframe" frameborder="0" allow="autoplay; fullscreen; encrypted-media; picture-in-picture" allowfullscreen></iframe></div></div>
+  <script src="particles.min.js"></script><script src="movies.js"></script><script src="particle-config.js"></script>
+  <script>document.getElementById("search-container").addEventListener("submit",e=>e.preventDefault());if("serviceWorker" in navigator)navigator.serviceWorker.register("/service-worker.js");</script>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-G0V9JTCLBP"></script><script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag('js',new Date());gtag('config','G-G0V9JTCLBP');</script>
 </body>
-<!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-G0V9JTCLBP"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag() { dataLayer.push(arguments); }
-  gtag('js', new Date());
-  gtag('config', 'G-G0V9JTCLBP');
-</script>
-
 </html>
+

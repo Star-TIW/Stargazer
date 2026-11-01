@@ -99,158 +99,153 @@ const particleOptions = {
 };
 
 // Particle effect control
-let currentEffect = localStorage.getItem("selectedEffect") || "stars";
+const PARTICLE_STORAGE_KEY = "selectedEffect";
+const VALID_EFFECTS = Object.keys(particleOptions);
+let currentEffect = VALID_EFFECTS.includes(localStorage.getItem(PARTICLE_STORAGE_KEY))
+  ? localStorage.getItem(PARTICLE_STORAGE_KEY)
+  : "stars";
 let fadeContainer = document.getElementById("particles-js");
 let isLoading = false;
-initParticles(currentEffect);
 
-document.querySelectorAll(".particle-button").forEach((btn) => {
-  btn.addEventListener("click", () => {
-    const effect = btn.dataset.effect;
-    if (effect !== currentEffect && !isLoading) switchEffect(effect);
-  });
-});
-
-function switchEffect(effect) {
-  isLoading = true;
-  fadeContainer.style.opacity = 0;
-  setTimeout(() => {
-    initParticles(effect);
-    fadeContainer.style.opacity = 1;
-    isLoading = false;
-  }, 500);
-}
-
-function initParticles(effect) {
+function initParticles(effect = currentEffect) {
+  if (!VALID_EFFECTS.includes(effect)) effect = "stars";
   currentEffect = effect;
-  localStorage.setItem("selectedEffect", effect);
-  if (window.pJSDom && window.pJSDom.length > 0) {
-    window.pJSDom[0].pJS.fn.vendors.destroypJS();
+  localStorage.setItem(PARTICLE_STORAGE_KEY, effect);
+
+  if (!document.getElementById("particles-js") || typeof particlesJS !== "function") return;
+
+  if (window.pJSDom?.length) {
+    try { window.pJSDom[0].pJS.fn.vendors.destroypJS(); } catch (e) { console.warn("Particle cleanup failed", e); }
     window.pJSDom = [];
   }
+
   particlesJS("particles-js", particleOptions[effect]);
 }
 
-// ================= Settings Button ================= //
-const settingsBtn = document.getElementById("settings-btn");
-settingsBtn.addEventListener("click", () => {
-  let videoContainer = document.getElementById("video-container");
-  let videoIframe = document.getElementById("video-iframe");
-  let closeVideoX = document.getElementById("close-video-x");
+function switchEffect(effect) {
+  if (!VALID_EFFECTS.includes(effect) || effect === currentEffect || isLoading) return;
+  isLoading = true;
+  // Use two canvases briefly so changing an effect never produces a blank flash.
+  const oldLayer = document.getElementById("particles-js");
+  if (!oldLayer || typeof particlesJS !== "function") { initParticles(effect); isLoading = false; return; }
+  const nextLayer = oldLayer.cloneNode(false);
+  nextLayer.id = "particles-js-next";
+  Object.assign(nextLayer.style, {
+    position: getComputedStyle(oldLayer).position || "fixed", inset: "0", width: "100%", height: "100%",
+    opacity: "0", transition: "opacity 420ms ease", pointerEvents: "none", zIndex: getComputedStyle(oldLayer).zIndex
+  });
+  oldLayer.insertAdjacentElement("afterend", nextLayer);
+  try { particlesJS("particles-js-next", particleOptions[effect]); } catch (error) {
+    nextLayer.remove(); initParticles(effect); isLoading = false; return;
+  }
+  requestAnimationFrame(() => { oldLayer.style.opacity = "0"; nextLayer.style.opacity = "1"; });
+  window.setTimeout(() => {
+    try { window.pJSDom?.[0]?.pJS?.fn?.vendors?.destroypJS?.(); } catch (_) {}
+    oldLayer.remove();
+    nextLayer.id = "particles-js";
+    fadeContainer = nextLayer;
+    currentEffect = effect;
+    localStorage.setItem(PARTICLE_STORAGE_KEY, effect);
+    isLoading = false;
+  }, 450);
+}
 
-  if (!videoContainer) {
-    videoContainer = document.createElement("div");
-    videoContainer.id = "video-container";
-    Object.assign(videoContainer.style, {
-      position: "fixed",
-      top: "0",
-      left: "0",
-      width: "100%",
-      height: "100%",
-      background: "rgba(0,0,0,0.85)",
-      display: "flex",
-      justifyContent: "center",
-      alignItems: "center",
-      zIndex: "200"
-    });
+// Settings page controls its own buttons. Main pages only need the particles + Settings modal.
+initParticles(currentEffect);
 
-    const videoWrapper = document.createElement("div");
-    videoWrapper.id = "video-wrapper";
-    Object.assign(videoWrapper.style, {
-      position: "relative",
-      width: "75vw",
-      height: "75vh",
-      maxWidth: "1200px",
-      maxHeight: "800px",
-      background: "#000",
-      borderRadius: "12px",
-      boxShadow: "0 4px 20px rgba(239,239,136,0.3)",
-      overflow: "hidden"
-    });
+if (document.getElementById("settings-btn")) {
+  document.querySelectorAll(".particle-button").forEach((btn) => {
+    btn.addEventListener("click", () => switchEffect(btn.dataset.effect));
+  });
 
-    closeVideoX = document.createElement("span");
-    closeVideoX.id = "close-video-x";
-    closeVideoX.innerHTML = "&times;";
-    Object.assign(closeVideoX.style, {
-      position: "absolute",
-      top: "10px",
-      right: "15px",
-      color: "#efef88",
-      fontSize: "32px",
-      fontWeight: "bold",
-      cursor: "pointer",
-      zIndex: "250",
-      transition: "color 0.3s ease"
-    });
+  const settingsBtn = document.getElementById("settings-btn");
+  let settingsOverlay = null;
 
-    videoIframe = document.createElement("iframe");
-    videoIframe.id = "video-iframe";
-    videoIframe.setAttribute("frameborder", "0");
-    videoIframe.setAttribute(
-      "allow",
-      "autoplay; fullscreen; encrypted-media; picture-in-picture"
-    );
-    videoIframe.setAttribute("allowfullscreen", "");
-    Object.assign(videoIframe.style, {
-      width: "100%",
-      height: "100%",
-      border: "none",
-      display: "block"
-    });
-
-    videoWrapper.appendChild(closeVideoX);
-    videoWrapper.appendChild(videoIframe);
-    videoContainer.appendChild(videoWrapper);
-    document.body.appendChild(videoContainer);
+  function closeSettings() {
+    if (!settingsOverlay) return;
+    settingsOverlay.style.display = "none";
+    document.body.style.overflow = "";
+    const frame = settingsOverlay.querySelector("iframe");
+    if (frame) frame.src = "about:blank";
   }
 
-  videoIframe.src = "/settings.html";
-  videoContainer.style.display = "flex";
+  function openSettings() {
+    if (!settingsOverlay) {
+      settingsOverlay = document.createElement("div");
+      settingsOverlay.id = "settings-overlay";
+      settingsOverlay.innerHTML = `
+        <div class="settings-modal" role="dialog" aria-modal="true" aria-label="Particle settings">
+          <button type="button" class="settings-close" aria-label="Close settings">&times;</button>
+          <iframe title="Particle Settings" src="about:blank" frameborder="0" allowtransparency="true"></iframe>
+        </div>`;
+      Object.assign(settingsOverlay.style, {
+        position: "fixed", inset: "0", display: "flex", alignItems: "center", justifyContent: "center",
+        background: "rgba(0,0,0,.82)", zIndex: "99999", padding: "20px",
+        backdropFilter: "blur(6px)"
+      });
+      const modal = settingsOverlay.querySelector(".settings-modal");
+      Object.assign(modal.style, {
+        position: "relative", width: "min(900px, 95vw)", height: "min(650px, 90vh)",
+        background: "#0d0d0d", borderRadius: "16px", overflow: "hidden",
+        boxShadow: "0 20px 80px rgba(0,0,0,.6)"
+      });
+      const frame = settingsOverlay.querySelector("iframe");
+      Object.assign(frame.style, { width: "100%", height: "100%", border: "0" });
+      const close = settingsOverlay.querySelector(".settings-close");
+      Object.assign(close.style, {
+        position: "absolute", top: "8px", right: "12px", zIndex: "2", background: "rgba(0,0,0,.65)",
+        color: "#efef88", border: "0", borderRadius: "50%", width: "40px", height: "40px",
+        fontSize: "28px", lineHeight: "40px", cursor: "pointer"
+      });
+      close.addEventListener("click", closeSettings);
+      settingsOverlay.addEventListener("click", (e) => { if (e.target === settingsOverlay) closeSettings(); });
+      document.body.appendChild(settingsOverlay);
+    }
 
-  const hideOverlay = () => {
-    videoIframe.src = "";
-    videoContainer.style.display = "none";
-  };
-  closeVideoX.onclick = hideOverlay;
-  videoContainer.onclick = (e) => {
-    if (e.target === videoContainer) hideOverlay();
-  };
-});
-
-window.addEventListener("message", (event) => {
-  if (!event.data || event.data.type !== "particleEffect") return;
-  const effect = event.data.effect;
-  if (effect && effect !== currentEffect) {
-    switchEffect(effect);
+    const frame = settingsOverlay.querySelector("iframe");
+    frame.src = "/settings.html";
+    settingsOverlay.style.display = "flex";
+    document.body.style.overflow = "hidden";
+    settingsOverlay.querySelector(".settings-close")?.focus();
   }
-});
+
+  settingsBtn.addEventListener("click", (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    openSettings();
+  });
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") closeSettings();
+  });
+
+  window.addEventListener("message", (event) => {
+    if (event.origin !== window.location.origin) return;
+    if (event.data?.type !== "particleEffect") return;
+    const effect = event.data.effect;
+    if (VALID_EFFECTS.includes(effect) && effect !== currentEffect) switchEffect(effect);
+  });
+}
 
 // Hamburger toggle function
 function toggleMenu(btn) {
+  if (!btn) return;
   btn.classList.toggle("active");
   const navbar = document.getElementById("navbar");
-  navbar.classList.toggle("active");
+  if (navbar) navbar.classList.toggle("active");
 }
 
-// Close navbar when clicking outside of it
 document.addEventListener("click", (event) => {
   const navbar = document.getElementById("navbar");
   const menuToggle = document.querySelector(".menu-toggle");
-  const closeVideoX = document.getElementById("close-video-x");
-
-  if (navbar.classList.contains("active")) {
-    if (
-      !navbar.contains(event.target) &&
-      !menuToggle.contains(event.target) &&
-      (!closeVideoX || !closeVideoX.contains(event.target))
-    ) {
-      navbar.classList.remove("active");
-      menuToggle.classList.remove("active");
-    }
+  if (!navbar || !menuToggle) return;
+  if (navbar.classList.contains("active") && !navbar.contains(event.target) && !menuToggle.contains(event.target)) {
+    navbar.classList.remove("active");
+    menuToggle.classList.remove("active");
   }
 });
 
-//Fade out to Black
+// Fade out to black
 document.querySelectorAll("a.nav-button").forEach((link) => {
   link.addEventListener("click", () => {
     let fade = document.getElementById("page-fade");
@@ -258,21 +253,13 @@ document.querySelectorAll("a.nav-button").forEach((link) => {
       fade = document.createElement("div");
       fade.id = "page-fade";
       Object.assign(fade.style, {
-        position: "fixed",
-        top: "0",
-        left: "0",
-        width: "100%",
-        height: "100%",
-        background: "black",
-        opacity: "0",
-        transition: "opacity 0.5s ease-in",
-        zIndex: "99999",
-        pointerEvents: "none"
+        position: "fixed", top: "0", left: "0", width: "100%", height: "100%",
+        background: "black", opacity: "0", transition: "opacity 0.5s ease-in",
+        zIndex: "99999", pointerEvents: "none"
       });
       document.body.appendChild(fade);
     }
-    requestAnimationFrame(() => {
-      fade.style.opacity = "1";
-    });
+    requestAnimationFrame(() => { fade.style.opacity = "1"; });
   });
 });
+
