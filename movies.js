@@ -416,20 +416,6 @@ function isActivePlayerPayload(payload) {
   return true;
 }
 
-function hideVidupLoaderWhenPlaying(data) {
-  const eventName = data?.event;
-  if (eventName !== "play" || data?.playing !== true) return;
-  const loader = document.getElementById("stargazer-player-loader");
-  if (!loader || loader.classList.contains("is-hidden")) return;
-  if (activePlayerContext) {
-    const iframe = document.getElementById("video-iframe");
-    if (iframe) iframe.style.visibility = "visible";
-  }
-  window.stargazerClearPlayerAttempt?.();
-  loader.classList.add("is-hidden");
-  setTimeout(() => loader.remove(), 700);
-}
-
 function installGlobalVidupListener() {
   if (window.__stargazerVidupListenerInstalled) return;
   window.__stargazerVidupListenerInstalled = true;
@@ -444,7 +430,6 @@ function installGlobalVidupListener() {
 
     const data = payload.data || {};
     savePlayerEventProgress(data);
-    hideVidupLoaderWhenPlaying(data);
 
     if (data.event === "ended" && activePlayerContext?.mediaType === "tv") {
       const nextEpisode = Number(activePlayerContext.episode || 0) + 1;
@@ -751,9 +736,8 @@ function createMovieCard(movie) {
       window.removeEventListener("message", window.stargazerPlayerListener);
       window.stargazerPlayerListener = null;
     }
-    document.getElementById("player-source-controls")?.remove();
+    document.getElementById("player-retry")?.remove();
   };
-  window.stargazerClearPlayerAttempt = () => playerController?.hold();
 
   function openEmbeddedStargazerPage(url) {
     if (!videoContainer || !videoIframe) return;
@@ -907,59 +891,87 @@ function createMovieCard(movie) {
     if (!videoContainer || !videoIframe) return;
     clearPlayerAttempt();
     const wrapper = document.getElementById("video-wrapper");
-    const controls = document.createElement("div");
-    controls.id = "player-source-controls";
-    controls.innerHTML = `<label for="player-source-select">Source</label><select id="player-source-select" aria-label="Playback source"></select><button type="button" id="player-next-source">Try next source</button><span id="player-source-status" role="status" aria-live="polite"></span>`;
-    wrapper.appendChild(controls);
-    const select = controls.querySelector("select");
-    sources.forEach((source, i) => {
-      const option = document.createElement("option");
-      option.value = String(i); option.textContent = `${i + 1}. ${source.name}`;
-      select.appendChild(option);
-    });
-    const status = controls.querySelector("[role=status]");
-    const next = controls.querySelector("button");
+    const loader = document.getElementById("stargazer-player-loader");
+    if (!loader) return;
+    const scene = loader.innerHTML;
+    const retry = document.createElement("button");
+    retry.id = "player-retry";
+    retry.type = "button";
+    retry.setAttribute("aria-label", "Retry playback");
+    retry.title = "Retry playback";
+    retry.textContent = "↻";
+    retry.hidden = true;
+    retry.onclick = () => playerController?.next();
+    wrapper.appendChild(retry);
     const reveal = () => {
       videoIframe.style.visibility = "visible";
-      document.getElementById("stargazer-player-loader")?.classList.add("is-hidden");
+      loader.classList.add("is-hidden");
+      retry.hidden = false;
+    };
+    const showLoading = index => {
+      retry.hidden = true;
+      loader.innerHTML = scene;
+      loader.classList.remove("is-hidden");
+      loader.classList.add("is-visible");
+      loader.style.display = "block";
+      const status = loader.querySelector(".loader-subtext");
+      if (status) {
+        status.textContent = `Loading player ${index + 1}/${sources.length}`;
+        status.setAttribute("role", "status");
+        status.setAttribute("aria-live", "polite");
+      }
+      const play = document.createElement("button");
+      play.type = "button";
+      play.className = "player-start-button";
+      play.textContent = "Play";
+      play.hidden = true;
+      play.onclick = () => {
+        playerController?.hold();
+        const source = sources[playerController?.index];
+        if (source?.commands) videoIframe.contentWindow?.postMessage({ command: "play" }, source.origin);
+      };
+      loader.appendChild(play);
     };
     playerController = window.StargazerSources.createController({
       sources,
+      send(message, origin) { videoIframe.contentWindow?.postMessage(message, origin); },
       navigate(source, token) {
-        videoIframe.onload = () => playerController?.loaded(token);
-        videoIframe.onerror = () => playerController?.next();
-        videoIframe.style.visibility = "visible";
-        videoIframe.style.filter = "none";
-        videoIframe.style.transform = "none";
-        videoIframe.style.opacity = "1";
-        // Leave the external player's Play button usable, including when autoplay is blocked.
-        videoIframe.src = source.url;
+        // A new frame gives each attempt its own window identity, so a late
+        // event from a previous API at the same origin cannot switch players.
+        const frame = videoIframe.cloneNode(false);
+        frame.onload = () => { if (frame === videoIframe) playerController?.loaded(token); };
+        frame.onerror = () => { if (frame === videoIframe) playerController?.next(); };
+        frame.style.visibility = "visible";
+        frame.style.filter = "none";
+        frame.style.transform = "none";
+        frame.style.opacity = "1";
+        frame.src = source.url;
+        videoIframe.replaceWith(frame);
+        videoIframe = frame;
       },
-      update({ index, source, state }) {
-        select.value = String(index);
-        next.disabled = false;
-        status.textContent = state === "loading"
-          ? `Trying ${index + 1} of ${sources.length}: ${source.name}`
-          : state === "playing" ? `Playing with ${source.name}`
-          : `${source.name}: press Play. If it fails, try the next source.`;
-        if (state !== "loading") reveal();
+      update({ index, state }) {
+        if (state === "loading") showLoading(index);
+        else if (state === "playing" || state === "interactive") reveal();
+        else if (state === "loaded" || state === "ready") {
+          // Autoplay may be blocked. Offer a quiet way to reach the native Play
+          // control while leaving automatic verification active until clicked.
+          const play = loader.querySelector(".player-start-button");
+          if (play) play.hidden = false;
+        }
       },
       exhausted() {
         videoIframe.onload = null; videoIframe.onerror = null;
         videoIframe.src = "about:blank";
-        status.textContent = "All sources tried. Choose a source to retry, or try again later.";
-        next.disabled = true;
-        select.selectedIndex = -1;
-        reveal();
+        retry.hidden = true;
+        loader.classList.remove("is-hidden");
+        loader.classList.add("is-visible");
+        loader.innerHTML = `<div class="player-unavailable" role="status"><strong>This title is unavailable right now.</strong><span>Please try again later.</span><button type="button" class="player-restart-button">Try again</button></div>`;
+        loader.querySelector("button").onclick = () => playerController?.restart();
       }
     });
-    select.onchange = () => playerController?.select(Number(select.value));
-    next.onclick = () => playerController?.next();
     const onPlayerMessage = event => playerController?.message(event, videoIframe.contentWindow, activePlayerContext || {});
     window.stargazerPlayerListener = onPlayerMessage;
     window.addEventListener("message", onPlayerMessage);
-    // An intentional click into the player must not race the autoplay deadline.
-    videoIframe.onfocus = () => playerController?.hold();
     playerController.start();
   };
 
