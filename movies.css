@@ -1178,16 +1178,15 @@ body.stargazer-scroll-locked {
   font-size: 23px; cursor: pointer; opacity: .45; transition: opacity .2s;
 }
 #player-retry:hover, #player-retry:focus-visible { opacity: 1; }
-#player-retry[hidden], .player-start-button[hidden] { display: none; }
-.player-start-button, .player-restart-button {
+#player-retry[hidden] { display: none; }
+.player-restart-button {
   min-height: 44px; padding: 10px 28px; color: #efef88; font: inherit;
   border: 1px solid rgba(239,239,136,.4); border-radius: 24px;
   background: rgba(239,239,136,.07); cursor: pointer;
 }
-.player-start-button { position: absolute; bottom: 12%; left: 50%; transform: translateX(-50%); }
 .player-restart-button { margin-top: 18px; }
-.player-start-button:hover, .player-restart-button:hover { background: rgba(239,239,136,.15); }
-#player-retry:focus-visible, .player-start-button:focus-visible, .player-restart-button:focus-visible { outline: 2px solid #efef88; outline-offset: 3px; }
+.player-restart-button:hover { background: rgba(239,239,136,.15); }
+#player-retry:focus-visible, .player-restart-button:focus-visible { outline: 2px solid #efef88; outline-offset: 3px; }
 @media (prefers-reduced-motion: reduce) {
   .stargazer-player-loader, #player-retry { transition: none; }
   .stargazer-player-loader * { animation: none !important; }

@@ -99,7 +99,7 @@
       clearTimers(); generation++; index = i; tried.add(i); confirmed = false; lastTime = null;
       const token = generation;
       publish('loading');
-      timer = schedule(() => { if (!stopped && token === generation) next(); }, 20000);
+      timer = schedule(() => { if (!stopped && token === generation) next(); }, 7000);
       navigate(sources[i], token);
     }
     function next() {
@@ -119,8 +119,8 @@
       restart() { if (!stopped) { tried.clear(); select(0); } },
       loaded(token) {
         if (stopped || index < 0 || token !== generation || confirmed) return;
-        // A loaded document only enables manual Play. It never cancels the
-        // playback deadline or marks an unavailable/error page successful.
+        // A loaded document never cancels the playback deadline or marks
+        // an unavailable/error page successful.
         publish('loaded');
         if (sources[index].commands) { cancel(poll); queryStatus(token); }
       },
@@ -136,7 +136,6 @@
           lastTime = result.time;
         } else if (!confirmed) publish('ready');
       },
-      hold() { if (!stopped && index >= 0) { clearTimers(); publish('interactive'); } },
       stop() { stopped = true; generation++; clearTimers(); },
       get index() { return index; }
     };

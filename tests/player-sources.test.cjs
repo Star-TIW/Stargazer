@@ -118,9 +118,18 @@ test('VidFast getStatus uses exact origin and polling stops on confirmed playbac
   const frame={};c.message({source:frame,origin:'https://vidfast.vc',data:{type:'PLAYER_EVENT',data:{event:'playerstatus',playing:true,tmdbId:550}}},frame,context);
   assert.equal(jobs.size,0);
 });
-test('restart resets exhausted candidates; manual Play cancels only the deadline', () => {
+test('restart resets exhausted candidates and failures still advance', () => {
   const h=harness();h.controller.start();for(let i=0;i<10;i++)h.tick();
-  h.controller.restart();assert.equal(h.controller.index,0);h.controller.hold();assert.equal(h.jobs.size,0);
+  h.controller.restart();assert.equal(h.controller.index,0);assert.equal(h.jobs.size,1);
   const frame={};h.controller.message({source:frame,origin:'https://vidup.to',data:{type:'error'}},frame,context);
   assert.equal(h.controller.index,1);
+});
+
+test('every source receives exactly seven seconds, without frame loads extending it', () => {
+  const durations=[],jobs=new Map();let id=0,token;
+  const c=createController({sources:buildSources(context,primary),navigate:(s,t)=>token=t,update(){},exhausted(){},schedule:(fn,ms)=>{durations.push(ms);jobs.set(++id,fn);return id},cancel:i=>jobs.delete(i)});
+  c.start();assert.equal(durations[0],7000);
+  c.loaded(token);assert.deepEqual(durations,[7000]);
+  for(let n=1;n<10;n++){c.next();assert.equal(durations.at(-1),7000)}
+  assert.equal(durations.length,10);c.stop();assert.equal(jobs.size,0);
 });

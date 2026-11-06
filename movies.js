@@ -920,17 +920,6 @@ function createMovieCard(movie) {
         status.setAttribute("role", "status");
         status.setAttribute("aria-live", "polite");
       }
-      const play = document.createElement("button");
-      play.type = "button";
-      play.className = "player-start-button";
-      play.textContent = "Play";
-      play.hidden = true;
-      play.onclick = () => {
-        playerController?.hold();
-        const source = sources[playerController?.index];
-        if (source?.commands) videoIframe.contentWindow?.postMessage({ command: "play" }, source.origin);
-      };
-      loader.appendChild(play);
     };
     playerController = window.StargazerSources.createController({
       sources,
@@ -951,13 +940,7 @@ function createMovieCard(movie) {
       },
       update({ index, state }) {
         if (state === "loading") showLoading(index);
-        else if (state === "playing" || state === "interactive") reveal();
-        else if (state === "loaded" || state === "ready") {
-          // Autoplay may be blocked. Offer a quiet way to reach the native Play
-          // control while leaving automatic verification active until clicked.
-          const play = loader.querySelector(".player-start-button");
-          if (play) play.hidden = false;
-        }
+        else if (state === "playing") reveal();
       },
       exhausted() {
         videoIframe.onload = null; videoIframe.onerror = null;
