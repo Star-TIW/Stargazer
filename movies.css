@@ -1169,3 +1169,26 @@ body.stargazer-scroll-locked {
   }
 }
 
+
+/* Source controls stay outside the video surface and remain usable on phones. */
+#video-wrapper.stargazer-player-wrapper:has(#player-source-controls) { padding-top: 96px !important; box-sizing: border-box; }
+#video-wrapper.stargazer-player-wrapper iframe#video-iframe { height: 100% !important; }
+#player-source-controls {
+  position: absolute; top: 8px; left: 12px; right: 48px; z-index: 1201;
+  display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px;
+  color: #efef88; font: 13px/1.35 Arial, sans-serif;
+}
+#player-source-controls select, #player-source-controls button {
+  min-height: 36px; max-width: 100%; border: 1px solid #777747; border-radius: 6px;
+  background: #171719; color: #fff; padding: 6px 10px; font: inherit;
+}
+#player-source-controls select { flex: 1; min-width: 100px; }
+#player-source-controls button { cursor: pointer; }
+#player-source-controls button:disabled { opacity: .5; cursor: default; }
+#player-source-controls :focus-visible { outline: 2px solid #efef88; outline-offset: 2px; }
+#player-source-status { flex-basis: 100%; font-size: 12px; color: #ddd; }
+@media (max-width: 480px) {
+  #player-source-controls { left: 8px; gap: 5px; font-size: 12px; }
+  #player-source-controls label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+  #player-source-controls select, #player-source-controls button { padding: 5px; }
+}

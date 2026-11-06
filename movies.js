@@ -435,7 +435,8 @@ function installGlobalVidupListener() {
   window.__stargazerVidupListenerInstalled = true;
 
   window.addEventListener("message", (event) => {
-    if (event.origin !== VIDUP_ORIGIN || !event.data) return;
+    if (event.origin !== VIDUP_ORIGIN || event.source !== document.getElementById("video-iframe")?.contentWindow || !event.data) return;
+    if (!document.getElementById("video-iframe")?.src.startsWith(`${VIDUP_ORIGIN}/`)) return;
     const payload = parseVidupMessage(event.data);
     if (!payload) return;
 
@@ -741,27 +742,22 @@ function createMovieCard(movie) {
   let videoContainer = document.getElementById("video-container");
   let videoIframe;
   let closeVideoX;
-  let playerAttemptTimer = null;
-  let playerAttemptToken = 0;
-
+  let playerController = null;
   const clearPlayerAttempt = () => {
-    if (playerAttemptTimer) window.clearTimeout(playerAttemptTimer);
-    playerAttemptTimer = null;
-    playerAttemptToken += 1;
+    playerController?.stop();
+    playerController = null;
+    if (videoIframe) { videoIframe.onload = null; videoIframe.onerror = null; videoIframe.onfocus = null; }
+    if (window.stargazerPlayerListener) {
+      window.removeEventListener("message", window.stargazerPlayerListener);
+      window.stargazerPlayerListener = null;
+    }
+    document.getElementById("player-source-controls")?.remove();
   };
-  window.stargazerClearPlayerAttempt = clearPlayerAttempt;
-
-  const showUnavailable = () => {
-    clearPlayerAttempt();
-    const loader = document.getElementById("stargazer-player-loader");
-    if (!loader) return;
-    loader.classList.add("is-visible");
-    loader.innerHTML = `<div class="player-unavailable" role="status"><strong>This movie is not yet available.</strong><span>Please try again later.</span></div>`;
-    if (videoIframe) { videoIframe.src = "about:blank"; videoIframe.style.visibility = "hidden"; }
-  };
+  window.stargazerClearPlayerAttempt = () => playerController?.hold();
 
   function openEmbeddedStargazerPage(url) {
     if (!videoContainer || !videoIframe) return;
+    clearPlayerAttempt();
     activePlayerContext = { embeddedPage: true, embeddedUrl: url };
     const loader = document.getElementById("stargazer-player-loader");
     if (loader) loader.remove();
@@ -830,7 +826,7 @@ function createMovieCard(movie) {
       if (closeVideoX) closeVideoX.onclick = hideExistingOverlay;
       if (!videoContainer.dataset.stargazerOverlayBound) {
         videoContainer.addEventListener("click", (event) => {
-          if (event.target === videoContainer) hideExistingOverlay();
+          if (event.target === videoContainer) videoContainer._hideOverlay?.();
         });
         videoContainer.dataset.stargazerOverlayBound = "true";
       }
@@ -885,7 +881,7 @@ function createMovieCard(movie) {
 
     closeVideoX.onclick = hideOverlay;
     videoContainer.addEventListener("click", (event) => {
-      if (event.target === videoContainer) hideOverlay();
+      if (event.target === videoContainer) videoContainer._hideOverlay?.();
     });
     videoContainer._hideOverlay = hideOverlay;
   }
@@ -907,70 +903,64 @@ function createMovieCard(movie) {
     }
   };
 
-  const playIntroThenLoad = (playbackUrls) => {
+  const playIntroThenLoad = (sources) => {
     if (!videoContainer || !videoIframe) return;
     clearPlayerAttempt();
-    const loader = document.getElementById("stargazer-player-loader");
-    if (loader) {
-      loader.classList.remove("is-hidden");
-      loader.style.display = "block";
-
-      // Restart the same intro animation every time a player is opened.
-      const animatedParts = loader.querySelectorAll(
-        ".loader-scene, .loader-logo-wrap, .loader-logo, .loader-glow, .loader-orbit, .loader-streak, .loader-subtext"
-      );
-      animatedParts.forEach((part) => {
-        part.style.animation = "none";
-      });
-      void loader.offsetWidth;
-      animatedParts.forEach((part) => {
-        part.style.animation = "";
-      });
-
-      requestAnimationFrame(() => loader.classList.add("is-visible"));
-    }
-
-    videoIframe.style.visibility = "hidden";
-    videoIframe.style.filter = "none";
-    videoIframe.style.transform = "none";
-    videoIframe.style.opacity = "1";
-    const sources = Array.isArray(playbackUrls) ? playbackUrls.filter(Boolean).slice(0, 5) : [playbackUrls].filter(Boolean);
-    let sourceIndex = 0;
-    const attempt = () => {
-      const url = sources[sourceIndex];
-      if (!url) { showUnavailable(); return; }
-      const token = ++playerAttemptToken;
-      if (loader) {
-        const status = loader.querySelector(".loader-subtext");
-        if (status) status.textContent = `Trying player ${sourceIndex + 1} of ${sources.length}`;
+    const wrapper = document.getElementById("video-wrapper");
+    const controls = document.createElement("div");
+    controls.id = "player-source-controls";
+    controls.innerHTML = `<label for="player-source-select">Source</label><select id="player-source-select" aria-label="Playback source"></select><button type="button" id="player-next-source">Try next source</button><span id="player-source-status" role="status" aria-live="polite"></span>`;
+    wrapper.appendChild(controls);
+    const select = controls.querySelector("select");
+    sources.forEach((source, i) => {
+      const option = document.createElement("option");
+      option.value = String(i); option.textContent = `${i + 1}. ${source.name}`;
+      select.appendChild(option);
+    });
+    const status = controls.querySelector("[role=status]");
+    const next = controls.querySelector("button");
+    const reveal = () => {
+      videoIframe.style.visibility = "visible";
+      document.getElementById("stargazer-player-loader")?.classList.add("is-hidden");
+    };
+    playerController = window.StargazerSources.createController({
+      sources,
+      navigate(source, token) {
+        videoIframe.onload = () => playerController?.loaded(token);
+        videoIframe.onerror = () => playerController?.next();
+        videoIframe.style.visibility = "visible";
+        videoIframe.style.filter = "none";
+        videoIframe.style.transform = "none";
+        videoIframe.style.opacity = "1";
+        // Leave the external player's Play button usable, including when autoplay is blocked.
+        videoIframe.src = source.url;
+      },
+      update({ index, source, state }) {
+        select.value = String(index);
+        next.disabled = false;
+        status.textContent = state === "loading"
+          ? `Trying ${index + 1} of ${sources.length}: ${source.name}`
+          : state === "playing" ? `Playing with ${source.name}`
+          : `${source.name}: press Play. If it fails, try the next source.`;
+        if (state !== "loading") reveal();
+      },
+      exhausted() {
+        videoIframe.onload = null; videoIframe.onerror = null;
+        videoIframe.src = "about:blank";
+        status.textContent = "All sources tried. Choose a source to retry, or try again later.";
+        next.disabled = true;
+        select.selectedIndex = -1;
+        reveal();
       }
-      videoIframe.src = url;
-      // Cross-origin iframes cannot reliably expose their internal errors. A six-second
-      // watchdog is therefore the fallback, while explicit postMessage errors advance sooner.
-      playerAttemptTimer = window.setTimeout(() => {
-        if (token !== playerAttemptToken) return;
-        sourceIndex += 1;
-        attempt();
-      }, 6000);
-    };
-    const onPlayerMessage = (event) => {
-      if (event.source !== videoIframe.contentWindow) return;
-      const type = String(event.data?.type || event.data?.event || "").toLowerCase();
-      if (!["error", "playererror", "playbackerror", "unavailable"].includes(type)) return;
-      if (playerAttemptTimer) window.clearTimeout(playerAttemptTimer);
-      sourceIndex += 1;
-      attempt();
-    };
-    const onIframeError = () => {
-      if (playerAttemptTimer) window.clearTimeout(playerAttemptTimer);
-      sourceIndex += 1;
-      attempt();
-    };
-    videoIframe.onerror = onIframeError;
-    if (window.stargazerPlayerListener) window.removeEventListener("message", window.stargazerPlayerListener);
+    });
+    select.onchange = () => playerController?.select(Number(select.value));
+    next.onclick = () => playerController?.next();
+    const onPlayerMessage = event => playerController?.message(event, videoIframe.contentWindow, activePlayerContext || {});
     window.stargazerPlayerListener = onPlayerMessage;
     window.addEventListener("message", onPlayerMessage);
-    attempt();
+    // An intentional click into the player must not race the autoplay deadline.
+    videoIframe.onfocus = () => playerController?.hold();
+    playerController.start();
   };
 
   const startPlayback = ({ season, episode }) => {
@@ -1018,13 +1008,9 @@ function createMovieCard(movie) {
     const playbackUrl = isMovie
       ? `https://vidup.to/movie/${tmdbID}?autoPlay=true&theme=efef88&chromecast=false&poster=true&title=true${startParam}`
       : `https://vidup.to/tv/${tmdbID}/${season}/${episode}?autoPlay=true&theme=efef88&chromecast=false&poster=true&title=true${startParam}`;
-    // Additional authorized providers may be configured as functions or URL templates.
-    // They are capped at five, with six seconds allowed for each candidate.
     const configuredProviders = Array.isArray(window.STARGAZER_PLAYER_PROVIDERS) ? window.STARGAZER_PLAYER_PROVIDERS : [];
-    const providerUrls = [playbackUrl, ...configuredProviders.map((provider) => {
-      try { return typeof provider === "function" ? provider(activePlayerContext) : String(provider).replace("{url}", encodeURIComponent(playbackUrl)); } catch (_) { return null; }
-    })];
-    playIntroThenLoad(providerUrls);
+    const sources = window.StargazerSources.buildSources(activePlayerContext, playbackUrl, configuredProviders);
+    playIntroThenLoad(sources);
   };
 
   if (!isMovie) {
