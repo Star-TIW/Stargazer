@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <script src="/sync.js"></script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Stargazer - Particle Settings</title>
@@ -26,7 +27,8 @@
       display: flex;
       justify-content: center;
       align-items: center;
-      overflow: hidden;
+      overflow-x: hidden;
+      overflow-y: auto;
     }
 
     @keyframes fadeInAnimation {
@@ -89,6 +91,12 @@
       opacity: 1;
       transition: opacity 0.6s ease;
     }
+    .settings-container{margin:auto;padding:28px 12px}
+    .account-section{display:flex;flex-direction:column;align-items:center;gap:12px;margin-top:10px;padding:18px 22px;max-width:440px;border:1px solid rgba(239,239,136,.3);border-radius:24px;background:rgba(0,0,0,.35)}
+    .account-section h2{color:#efef88;font-size:28px;font-weight:500}
+    .account-section p{color:#bdbdbd;font-size:14px;text-align:center;line-height:1.45}
+    .account-section .particle-button{font-size:20px;border:1px solid rgba(239,239,136,.5)}
+    .account-section .particle-button:hover{font-size:21px}
   </style>
 </head>
 <body>
@@ -99,6 +107,11 @@
       <button class="particle-button" data-effect="shapes">Shapes</button>
       <button class="particle-button" data-effect="bubbles">Bubbles</button>
       <button class="particle-button" data-effect="snow">Snow</button>
+    </div>
+    <div class="account-section">
+      <h2>Account</h2>
+      <p data-sgs-status>Sign in to sync My List, Continue Watching, favorites and settings across your devices.</p>
+      <button class="particle-button" type="button" data-sgs-open>Sign in / Sign up</button>
     </div>
   </div>
 
