@@ -8,7 +8,7 @@ var SP=Storage.prototype,oSet=SP.setItem,oRem=SP.removeItem,oClr=SP.clear,oGet=S
 var API='/api/account',lastPull=0,applying=0,busy=0,again=0,tmr=0,t0=Date.now(),touched=0;
 function g(k){return oGet.call(LS,k)}function sv(k,v){oSet.call(LS,k,v)}
 function J(k,d){try{return JSON.parse(g(k))||d}catch(e){return d}}
-function ok(k){return k&&k.length<=120&&!/^sgs_/.test(k)&&!/cache|_tmp|^debug/i.test(k)}
+function ok(k){return k&&k.length<=120&&!/^sgs_/.test(k)&&!/cache|_tmp|^debug|^stargazer:streamfree:/i.test(k)}
 function tok(){return g('sgs_tok')}
 function mark(k){if(applying||!ok(k))return;var m=J('sgs_meta',{});m[k]=Date.now();sv('sgs_meta',JSON.stringify(m));if(tok()){if(PAR)PAR.later();else soon(20000)}}
 SP.setItem=function(k,v){if(this===LS&&ok(k)&&!applying){var o=g(k);var r=oSet.apply(this,arguments);if(o!==String(v))mark(k);return r}return oSet.apply(this,arguments)};
