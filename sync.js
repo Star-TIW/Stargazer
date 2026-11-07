@@ -10,12 +10,13 @@ function g(k){return oGet.call(LS,k)}function sv(k,v){oSet.call(LS,k,v)}
 function J(k,d){try{return JSON.parse(g(k))||d}catch(e){return d}}
 function ok(k){return k&&k.length<=120&&!/^sgs_/.test(k)&&!/cache|_tmp|^debug|^stargazer:streamfree:/i.test(k)}
 function tok(){return g('sgs_tok')}
-function mark(k){if(applying||!ok(k))return;var m=J('sgs_meta',{});m[k]=Date.now();sv('sgs_meta',JSON.stringify(m));if(tok()){if(PAR)PAR.later();else soon(20000)}}
+function mark(k){if(applying||!ok(k))return;var m=J('sgs_meta',{});m[k]=Date.now();sv('sgs_meta',JSON.stringify(m));if(tok()){var w=/progress/i.test(k)?15000:1500;if(PAR)PAR.later(w);else soon(w)}}
 SP.setItem=function(k,v){if(this===LS&&ok(k)&&!applying){var o=g(k);var r=oSet.apply(this,arguments);if(o!==String(v))mark(k);return r}return oSet.apply(this,arguments)};
 SP.removeItem=function(k){if(this===LS&&ok(k)&&!applying&&g(k)!=null){var r=oRem.apply(this,arguments);mark(k);return r}return oRem.apply(this,arguments)};
 SP.clear=function(){if(this===LS&&!applying){var ks=[];for(var i=0;i<LS.length;i++)ks.push(LS.key(i));var r=oClr.apply(this,arguments);ks.forEach(mark);return r}return oClr.apply(this,arguments)};
 function call(b){var t=tok(),h={'content-type':'application/json'};if(t)h.authorization='Bearer '+t;return fetch(API,{method:'POST',credentials:'omit',headers:h,body:JSON.stringify(b)}).then(function(r){return r.json().catch(function(){return{}}).then(function(j){j._st=r.status;return j})})}
-function soon(ms){clearTimeout(tmr);tmr=setTimeout(sync,ms)}
+var due=0;function soon(ms){var t=Date.now()+ms;if(tmr&&due<=t)return;clearTimeout(tmr);due=t;tmr=setTimeout(function(){tmr=0;due=0;sync()},ms)}
+setInterval(function(){if(tok()&&!IFR&&document.visibilityState==='visible')sync()},30000);
 function stamp(){var m=J('sgs_meta',{}),ch=0;for(var i=0;i<LS.length;i++){var k=LS.key(i);if(ok(k)&&!m[k]){m[k]=1;ch=1}}if(ch)sv('sgs_meta',JSON.stringify(m))}
 function lockOK(){var l=+g('sgs_lock')||0,n=Date.now();if(n-l<15000)return false;sv('sgs_lock',String(n));return true}
 function sync(manual){
@@ -70,7 +71,7 @@ function open(mode){addCss();close();var bg=document.createElement('div');bg.cla
 function close(){var o=document.querySelector('.sgs-bg');if(o)o.remove()}
 function mount(){addCss();document.querySelectorAll('[data-sgs-open]').forEach(function(b){b.onclick=function(){if(PAR)PAR.open();else open()}});ui();
  if(tok()&&!IFR)setTimeout(function(){sync()},50)}
-window.SGS={open:open,later:function(){soon(20000)},sync:function(){return sync(true)},toast:toast,ui:ui,signedIn:function(){return!!tok()},user:function(){return g('sgs_user')}};
+window.SGS={open:open,later:function(w){soon(w||1500)},sync:function(){return sync(true)},toast:toast,ui:ui,signedIn:function(){return!!tok()},user:function(){return g('sgs_user')}};
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',mount);else mount();
 window.addEventListener('storage',function(e){if(e.key==='sgs_tok'||e.key==='sgs_user'||e.key==='sgs_last')ui()});
 })();
