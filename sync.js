@@ -25,17 +25,18 @@ function sync(manual){
  busy=1;stamp();var m=J('sgs_meta',{}),sent=J('sgs_sent',{}),pend=J('sgs_pend',{}),NOW=Date.now(),big=[],batches=[{}],sz=0;
  Object.keys(m).forEach(function(k){if(!ok(k)||(sent[k]||0)>=m[k])return;var pd=pend[k];if(pd&&pd.t>=m[k]&&NOW-pd.at<90000)return;var v=g(k);var n=v?v.length:0;if(n>1.5e6){big.push(k);return}
   if(sz+n>2.5e6){batches.push({});sz=0}batches[batches.length-1][k]={v:v,t:m[k]};sz+=n+k.length});
- var changed=0,pushed=0;
+ var changed=0,pushed=0,ck=[];
  var chain=batches.reduce(function(p,items){return p.then(function(){if(!Object.keys(items).length)return;return call({action:'syncPush',items:items}).then(function(j){if(j._st===401)throw{out:1};if(j._st!==200)throw{err:j.error||'Sync failed'};
   var p2=J('sgs_pend',{});Object.keys(items).forEach(function(k){p2[k]={t:items[k].t,at:Date.now()}});sv('sgs_pend',JSON.stringify(p2));pushed=1})})},Promise.resolve());
  return chain.then(function(){return call({action:'syncPull',since:+g('sgs_since')||0})}).then(function(j){if(j._st===401)throw{out:1};if(j._st!==200)throw{err:j.error||'Sync failed'};
   var m2=J('sgs_meta',{}),s2=J('sgs_sent',{}),p2=J('sgs_pend',{});applying=1;try{Object.keys(j.items||{}).forEach(function(k){var x=j.items[k];if(!ok(k))return;if((s2[k]||0)<x.t)s2[k]=x.t;if(p2[k]&&x.t>=p2[k].t)delete p2[k];if((m2[k]||0)>=x.t)return;
-   try{if(x.v==null)oRem.call(LS,k);else oSet.call(LS,k,x.v);m2[k]=x.t;changed++}catch(e){}})}finally{applying=0}
+   try{if(x.v==null)oRem.call(LS,k);else oSet.call(LS,k,x.v);m2[k]=x.t;changed++;ck.push(k)}catch(e){}})}finally{applying=0}
   sv('sgs_meta',JSON.stringify(m2));sv('sgs_sent',JSON.stringify(s2));sv('sgs_pend',JSON.stringify(p2));lastPull=Date.now();if(pushed||Object.keys(p2).length)soon(75000);sv('sgs_since',String(j.now||0));sv('sgs_last',String(Date.now()));if(j.user)sv('sgs_user',j.user);
   busy=0;sv('sgs_lock','0');if(again){again=0;soon(1500)}
-  if(changed)onChanged(changed);if(big.length)toast(big.length+' item(s) too big to sync (over 1.5 MB).');ui();return{ok:1,changed:changed}})
+  if(changed)onChanged(changed,ck);if(big.length)toast(big.length+' item(s) too big to sync (over 1.5 MB).');ui();return{ok:1,changed:changed}})
  .catch(function(e){busy=0;sv('sgs_lock','0');if(e&&e.out){forget(false);toast('You were signed out. Log in again to keep syncing.');ui();return{out:1}}if(manual)toast((e&&e.err)||'Could not reach the sync server.');return{err:1}})}
-function onChanged(n){try{window.dispatchEvent(new CustomEvent('sgs:change',{detail:{n:n}}))}catch(e){}
+function onChanged(n,ck){try{window.dispatchEvent(new CustomEvent('sgs:change',{detail:{n:n,keys:ck}}))}catch(e){}
+ var LV=window.SGS_LIVE||[];if(ck&&ck.length&&ck.every(function(k){return LV.indexOf(k)>=0||/^stargazer:(season|episode):/.test(k)}))return;
  var lastR=+sessionStorage.getItem('sgs_rl')||0;
  if(!touched&&Date.now()-t0<6000&&Date.now()-lastR>30000){sessionStorage.setItem('sgs_rl',String(Date.now()));location.reload();return}
  toast('Updated from your account.',{label:'Reload',fn:function(){location.reload()}})}

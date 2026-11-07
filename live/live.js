@@ -66,6 +66,8 @@ document.addEventListener("DOMContentLoaded", () => {
   // ---------- State ----------
   const savedSport = localStorage.getItem("selectedSport");
   let currentSport = SPORTS_CONFIG[savedSport] ? savedSport : "nfl";
+  window.SGS_LIVE=(window.SGS_LIVE||[]).concat(['favoriteGames']);
+  window.addEventListener('sgs:change',()=>{try{fetchGamesWindow(currentSport)}catch(e){}});
   let gameStreams = {};
 
   // Keep storage valid even if an older saved value no longer has a sport page.

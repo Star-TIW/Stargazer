@@ -1412,6 +1412,8 @@ suggestionsBox.addEventListener("click", async (e) => {
     }));
   }
 
+  window.SGS_LIVE=(window.SGS_LIVE||[]).concat(['stargazerMyList','vidUpProgress','stargazerStartedTitles']);
+  window.addEventListener('sgs:change',()=>{try{renderMyList();renderContinue()}catch(e){}});
   async function renderContinue(){
     const section=document.getElementById("continueWatchingContainer");
     const items=progressItems();
