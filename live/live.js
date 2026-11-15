@@ -123,67 +123,8 @@ document.addEventListener("DOMContentLoaded", () => {
     return card;
   };
 
-  // ---------- Video Overlay ----------
-  let videoContainer = document.getElementById("video-container");
-  let videoIframe, closeVideoX;
-
-  const setupVideoOverlay = () => {
-    if (!videoContainer) {
-      videoContainer = document.createElement("div");
-      videoContainer.id = "video-container";
-      Object.assign(videoContainer.style, {
-        position: "fixed", top: 0, left: 0, width: "100%", height: "100%",
-        background: "rgba(0,0,0,0.85)", display: "none", justifyContent: "center",
-        alignItems: "center", zIndex: 200, opacity: 0, transition: "opacity 0.4s ease"
-      });
-
-      const videoWrapper = document.createElement("div");
-      videoWrapper.id = "video-wrapper";
-      Object.assign(videoWrapper.style, {
-        position: "relative", width: "75vw", height: "75vh",
-        maxWidth: "1200px", maxHeight: "800px", background: "#000",
-        borderRadius: "12px", boxShadow: "0 4px 20px rgba(239,239,136,0.3)",
-        overflow: "hidden", transform: "scale(0.8)", transition: "transform 0.4s ease"
-      });
-
-      closeVideoX = document.createElement("span");
-      closeVideoX.id = "close-video-x";
-      closeVideoX.innerHTML = "&times;";
-      Object.assign(closeVideoX.style, {
-        position: "absolute", top: "10px", right: "15px",
-        color: "#efef88", fontSize: "32px", fontWeight: "bold",
-        cursor: "pointer", zIndex: 250, transition: "color 0.3s ease"
-      });
-
-      videoIframe = document.createElement("iframe");
-      videoIframe.id = "video-iframe";
-      videoIframe.setAttribute("frameborder", "0");
-      videoIframe.setAttribute("allow", "autoplay; fullscreen; encrypted-media; picture-in-picture");
-      videoIframe.setAttribute("allowfullscreen", "");
-      Object.assign(videoIframe.style, { width: "100%", height: "100%", border: "none", display: "block" });
-
-      videoWrapper.append(closeVideoX, videoIframe);
-      videoContainer.appendChild(videoWrapper);
-      document.body.appendChild(videoContainer);
-    } else {
-      videoIframe = document.getElementById("video-iframe");
-      closeVideoX = document.getElementById("close-video-x");
-    }
-
-    const hideOverlay = () => {
-      videoIframe.src = "";
-      videoContainer.style.opacity = "0";
-      videoContainer.querySelector("#video-wrapper").style.transform = "scale(0.8)";
-      setTimeout(() => videoContainer.style.display = "none", 400);
-    };
-
-    closeVideoX.onclick = hideOverlay;
-    videoContainer.onclick = (e) => { if (e.target === videoContainer) hideOverlay(); };
-  };
-  setupVideoOverlay();
-
   // ---------- StreamFree API helpers ----------
-  // ESPN remains the schedule source; StreamFree provides the playable embeds.
+  // ESPN remains the schedule source; StreamFree handles playback and selects direct or backup feeds.
   const STREAMFREE_ORIGIN = "https://strmfree.st";
   const STREAMFREE_STREAMS_URL = (category) =>
     `${STREAMFREE_ORIGIN}/api/v1/streams?category=${encodeURIComponent(category)}`;
@@ -262,27 +203,6 @@ document.addEventListener("DOMContentLoaded", () => {
       console.warn("Error matching StreamFree stream:", e);
       return null;
     }
-  };
-
-  const getEmbedUrl = (source) => {
-    if (!source || typeof source.url !== "string") return null;
-    try {
-      const url = new URL(source.url);
-      const approvedHost = url.hostname === "strmfree.st" || url.hostname === "streamfree.top";
-      return url.protocol === "https:" && approvedHost && url.pathname.startsWith("/embed/") ? url.href : null;
-    } catch {
-      return null;
-    }
-  };
-
-  const pickBestStreamFreeEmbed = (stream) => {
-    const qualityRank = { "4K": 4, FHD: 3, HD: 2, SD: 1 };
-    const sortByQuality = (a, b) => (qualityRank[b.quality] || 0) - (qualityRank[a.quality] || 0);
-    const live = Array.isArray(stream?.live_sources) ? stream.live_sources : [];
-    const all = Array.isArray(stream?.sources) ? stream.sources : [];
-    return [...live, ...all.filter(source => source?.live === true)]
-      .filter(source => source && source.live !== false)
-      .sort(sortByQuality).map(getEmbedUrl).find(Boolean) || null;
   };
 
   const getStreamFreePlayerUrl = (stream, category) => {
@@ -409,10 +329,10 @@ document.addEventListener("DOMContentLoaded", () => {
       const showTime = new Date(gameStart.getTime() - 10 * 60 * 1000);
       const updateWatchButton = () => {
         const now = new Date();
-        const stream = gameStreams[ev.id];
+        const playerUrl = gameStreams[ev.id];
 
-        if (now >= showTime && stream) {
-          watchBtn.innerText = stream.embedUrl ? "Watch Live" : "Open stream provider";
+        if (now >= showTime && playerUrl) {
+          watchBtn.innerText = "Watch Live";
           watchBtn.disabled = false;
           watchBtn.style.opacity = 1;
           watchBtn.style.cursor = "pointer";
@@ -434,20 +354,9 @@ document.addEventListener("DOMContentLoaded", () => {
       setInterval(updateWatchButton, 1000);
 
       watchBtn.addEventListener("click", () => {
-        const stream = gameStreams[ev.id];
-        if (!stream || Date.now() < showTime.getTime()) return;
-        if (!stream.embedUrl) {
-          window.open(stream.playerUrl, "_blank", "noopener,noreferrer");
-          return;
-        }
-        videoIframe.src = stream.embedUrl;
-        videoContainer.style.display = "flex";
-        setTimeout(() => {
-          videoContainer.style.opacity = 1;
-          videoContainer.querySelector("#video-wrapper").style.transform = "scale(1)";
-          try { videoIframe.contentWindow?.focus(); } catch { }
-          videoIframe.scrollIntoView({ behavior: "smooth", block: "center" });
-        }, 50);
+        const playerUrl = gameStreams[ev.id];
+        if (!playerUrl || Date.now() < showTime.getTime()) return;
+        window.open(playerUrl, "_blank", "noopener,noreferrer");
       });
     }
 
@@ -522,9 +431,8 @@ document.addEventListener("DOMContentLoaded", () => {
         todayEvents.forEach((ev) => {
           const stream = findStreamFreeStreamForEvent(ev, streamFreeStreams);
           if (!stream) return;
-          const embedUrl = pickBestStreamFreeEmbed(stream);
           const playerUrl = getStreamFreePlayerUrl(stream, sportConfig.streamFreeCategory);
-          if (embedUrl || playerUrl) nextGameStreams[ev.id] = { embedUrl, playerUrl };
+          if (playerUrl) nextGameStreams[ev.id] = playerUrl;
         });
       }
       if (sport !== currentSport) return;
