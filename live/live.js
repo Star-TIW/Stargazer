@@ -195,7 +195,8 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!s) return "";
     return String(s)
       .toLowerCase()
-      .replace(/[''"""().,:-]/g, "")
+      .replace(/['’"().,:]/g, "")
+      .replace(/[-_/]+/g, " ")
       .replace(/\s+/g, " ")
       .trim();
   };
@@ -203,7 +204,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const buildTeamNameCandidates = (teamObj) => {
     if (!teamObj) return [];
     const names = new Set();
-    const t = teamObj.team || {};
+    // ESPN callers may pass either a competitor or its nested team object.
+    const t = teamObj.team || teamObj;
     if (teamObj.displayName) names.add(teamObj.displayName);
     if (t.displayName) names.add(t.displayName);
     if (t.name) names.add(t.name);
