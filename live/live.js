@@ -69,6 +69,7 @@ document.addEventListener("DOMContentLoaded", () => {
   window.SGS_LIVE=(window.SGS_LIVE||[]).concat(['favoriteGames']);
   window.addEventListener('sgs:change',()=>{try{fetchGamesWindow(currentSport)}catch(e){}});
   let gameStreams = {};
+  let streamLookupFailed = false;
 
   // Keep storage valid even if an older saved value no longer has a sport page.
   if (savedSport !== currentSport) {
@@ -316,16 +317,19 @@ document.addEventListener("DOMContentLoaded", () => {
     if (cached) return cached;
 
     try {
-      const response = await fetch(STREAMFREE_STREAMS_URL(category));
-      if (!response.ok) return [];
+      streamLookupFailed = false;
+      const response = await fetch(STREAMFREE_STREAMS_URL(category), { cache: "no-store" });
+      if (!response.ok) throw new Error(`Stream API HTTP ${response.status}`);
       const payload = await response.json();
-      const streams = Array.isArray(payload?.streams) ? payload.streams : [];
+      if (!Array.isArray(payload?.streams)) throw new Error("Stream API returned an unexpected response");
+      const streams = payload.streams;
       const entry = { savedAt: Date.now(), streams };
       streamCache.set(category, entry);
       try { sessionStorage.setItem(`${STREAM_CACHE_KEY_PREFIX}${category}`, JSON.stringify(entry)); } catch { }
       return streams;
     } catch (error) {
       console.warn("Unable to fetch StreamFree streams:", error);
+      streamLookupFailed = true;
       return [];
     }
   };
@@ -419,7 +423,7 @@ document.addEventListener("DOMContentLoaded", () => {
           watchBtn.style.opacity = 1;
           watchBtn.style.cursor = "pointer";
         } else if (now >= showTime) {
-          watchBtn.innerText = "No stream available yet";
+          watchBtn.innerText = streamLookupFailed ? "Stream lookup unavailable" : "No stream available yet";
           watchBtn.disabled = true;
           watchBtn.style.opacity = 0.6;
           watchBtn.style.cursor = "not-allowed";
@@ -522,7 +526,6 @@ document.addEventListener("DOMContentLoaded", () => {
           const stream = findStreamFreeStreamForEvent(ev, streamFreeStreams);
           if (!stream) return;
           const embedUrl = pickBestStreamFreeEmbed(stream);
-          const playerUrl = getStreamFreePlayerUrl(stream, sportConfig.streamFreeCategory);
           if (embedUrl) nextGameStreams[ev.id] = { embedUrl };
         });
       }
