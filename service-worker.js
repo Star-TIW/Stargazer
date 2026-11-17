@@ -1,4 +1,4 @@
-const CACHE_NAME = "stargazer-cache-v21";
+const CACHE_NAME = "stargazer-cache-v22";
 const STATIC_ASSETS = [
   "/", "/index.html", "/home.css", "/movies.css", "/movies.js", "/player-sources.js",
   "/particle-config.js", "/sync.js", "/particles.min.js", "/settings.html", "/manifest.json",
@@ -22,7 +22,7 @@ self.addEventListener("fetch", (event) => {
   const request = event.request;
   if (request.method !== "GET") return;
   const url = new URL(request.url);
-  if (url.origin !== self.location.origin) return;
+  if (url.origin !== self.location.origin || url.pathname.startsWith("/media/")) return;
 
   // Always prefer fresh app code. Fall back to cache when offline.
   event.respondWith(

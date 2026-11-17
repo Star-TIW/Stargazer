@@ -7,8 +7,7 @@ document.addEventListener("DOMContentLoaded", () => {
       apiEndpoint: (dateStr) => `https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?dates=${dateStr}`,
       league: "nfl",
       sport: "football",
-      displayName: "National Football League",
-      streamFreeCategory: "football"
+      displayName: "National Football League"
     },
     nba: {
       name: "NBA",
@@ -16,8 +15,7 @@ document.addEventListener("DOMContentLoaded", () => {
       apiEndpoint: (dateStr) => `https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard?dates=${dateStr}`,
       league: "nba",
       sport: "basketball",
-      displayName: "National Basketball Association",
-      streamFreeCategory: "basketball"
+      displayName: "National Basketball Association"
     },
     mlb: {
       name: "MLB",
@@ -25,8 +23,7 @@ document.addEventListener("DOMContentLoaded", () => {
       apiEndpoint: (dateStr) => `https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/scoreboard?dates=${dateStr}`,
       league: "mlb",
       sport: "baseball",
-      displayName: "Major League Baseball",
-      streamFreeCategory: "baseball"
+      displayName: "Major League Baseball"
     },
     nhl: {
       name: "NHL",
@@ -34,8 +31,7 @@ document.addEventListener("DOMContentLoaded", () => {
       apiEndpoint: (dateStr) => `https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/scoreboard?dates=${dateStr}`,
       league: "nhl",
       sport: "hockey",
-      displayName: "National Hockey League",
-      streamFreeCategory: "hockey"
+      displayName: "National Hockey League"
     },
     mls: {
       name: "MLS",
@@ -43,8 +39,7 @@ document.addEventListener("DOMContentLoaded", () => {
       apiEndpoint: (dateStr) => `https://site.api.espn.com/apis/site/v2/sports/soccer/usa.1/scoreboard?dates=${dateStr}`,
       league: "mls",
       sport: "soccer",
-      displayName: "Major League Soccer",
-      streamFreeCategory: "soccer"
+      displayName: "Major League Soccer"
     },
     cfb: {
       name: "College Football",
@@ -52,8 +47,7 @@ document.addEventListener("DOMContentLoaded", () => {
       apiEndpoint: (dateStr) => `https://site.api.espn.com/apis/site/v2/sports/football/college-football/scoreboard?dates=${dateStr}`,
       league: "ncaaf",
       sport: "football",
-      displayName: "College Football",
-      streamFreeCategory: "football"
+      displayName: "College Football"
     }
   };
 
@@ -68,8 +62,6 @@ document.addEventListener("DOMContentLoaded", () => {
   let currentSport = SPORTS_CONFIG[savedSport] ? savedSport : "nfl";
   window.SGS_LIVE=(window.SGS_LIVE||[]).concat(['favoriteGames']);
   window.addEventListener('sgs:change',()=>{try{fetchGamesWindow(currentSport)}catch(e){}});
-  let gameStreams = {};
-  let streamLookupFailed = false;
 
   // Keep storage valid even if an older saved value no longer has a sport page.
   if (savedSport !== currentSport) {
@@ -124,240 +116,6 @@ document.addEventListener("DOMContentLoaded", () => {
     return card;
   };
 
-  // ---------- Video Overlay ----------
-  let videoContainer = document.getElementById("video-container");
-  let videoIframe, closeVideoX;
-  let activeEmbeds = [];
-  let activeEmbedIndex = 0;
-  let hideVideoTimer;
-
-  const nextSource = document.createElement("button");
-  nextSource.type = "button";
-  nextSource.className = "watch-btn";
-  nextSource.hidden = true;
-  Object.assign(nextSource.style, { position: "absolute", top: "0", left: "12px", zIndex: 250 });
-
-  const showEmbed = () => {
-    videoIframe.src = activeEmbeds[activeEmbedIndex];
-    nextSource.hidden = activeEmbeds.length < 2;
-    nextSource.textContent = `Next source (${activeEmbedIndex + 1}/${activeEmbeds.length})`;
-  };
-
-  nextSource.onclick = () => {
-    activeEmbedIndex = (activeEmbedIndex + 1) % activeEmbeds.length;
-    showEmbed();
-  };
-
-  const setupVideoOverlay = () => {
-    if (!videoContainer) {
-      videoContainer = document.createElement("div");
-      videoContainer.id = "video-container";
-      Object.assign(videoContainer.style, {
-        position: "fixed", top: 0, left: 0, width: "100%", height: "100%",
-        background: "rgba(0,0,0,0.85)", display: "none", justifyContent: "center",
-        alignItems: "center", zIndex: 200, opacity: 0, transition: "opacity 0.4s ease"
-      });
-
-      const videoWrapper = document.createElement("div");
-      videoWrapper.id = "video-wrapper";
-      Object.assign(videoWrapper.style, {
-        position: "relative", width: "75vw", height: "75vh",
-        maxWidth: "1200px", maxHeight: "800px", background: "#000",
-        borderRadius: "12px", boxShadow: "0 4px 20px rgba(239,239,136,0.3)",
-        overflow: "hidden", transform: "scale(0.8)", transition: "transform 0.4s ease"
-      });
-
-      closeVideoX = document.createElement("span");
-      closeVideoX.id = "close-video-x";
-      closeVideoX.innerHTML = "&times;";
-      Object.assign(closeVideoX.style, {
-        position: "absolute", top: "10px", right: "15px",
-        color: "#efef88", fontSize: "32px", fontWeight: "bold",
-        cursor: "pointer", zIndex: 250, transition: "color 0.3s ease"
-      });
-
-      videoIframe = document.createElement("iframe");
-      videoIframe.id = "video-iframe";
-      videoIframe.setAttribute("frameborder", "0");
-      videoIframe.setAttribute("allow", "autoplay; fullscreen; encrypted-media; picture-in-picture");
-      videoIframe.setAttribute("allowfullscreen", "");
-      Object.assign(videoIframe.style, { width: "100%", height: "100%", border: "none", display: "block" });
-
-      videoWrapper.append(closeVideoX, videoIframe);
-      videoContainer.appendChild(videoWrapper);
-      document.body.appendChild(videoContainer);
-    } else {
-      videoIframe = document.getElementById("video-iframe");
-      closeVideoX = document.getElementById("close-video-x");
-    }
-
-    videoIframe.title = "Live game player";
-    videoContainer.querySelector("#video-wrapper").appendChild(nextSource);
-
-    const hideOverlay = () => {
-      clearTimeout(hideVideoTimer);
-      activeEmbeds = [];
-      nextSource.hidden = true;
-      videoIframe.src = "about:blank";
-      videoContainer.style.opacity = "0";
-      videoContainer.querySelector("#video-wrapper").style.transform = "scale(0.8)";
-      hideVideoTimer = setTimeout(() => videoContainer.style.display = "none", 400);
-    };
-
-    closeVideoX.onclick = hideOverlay;
-    videoContainer.onclick = (e) => { if (e.target === videoContainer) hideOverlay(); };
-  };
-  setupVideoOverlay();
-
-  // ---------- StreamFree API helpers ----------
-  // ESPN remains the schedule source; StreamFree provides the playable embeds.
-  const STREAMFREE_ORIGINS = ["https://streamfree.top", "https://strmfree.st"];
-  const STREAM_CACHE_TTL_MS = 2 * 60 * 1000;
-  const STREAM_CACHE_KEY_PREFIX = "stargazer:streamfree:";
-  const streamCache = new Map();
-
-  const normalize = (s) => {
-    if (!s) return "";
-    return String(s)
-      .toLowerCase()
-      .replace(/['’"().,:]/g, "")
-      .replace(/[-_/]+/g, " ")
-      .replace(/\s+/g, " ")
-      .trim();
-  };
-
-  const buildTeamNameCandidates = (teamObj) => {
-    if (!teamObj) return [];
-    const names = new Set();
-    // ESPN callers may pass either a competitor or its nested team object.
-    const t = teamObj.team || teamObj;
-    if (teamObj.displayName) names.add(teamObj.displayName);
-    if (t.displayName) names.add(t.displayName);
-    if (t.name) names.add(t.name);
-    if (t.location) names.add(t.location);
-    if (t.abbreviation) names.add(t.abbreviation);
-    if (teamObj.team && teamObj.team.abbreviation) names.add(teamObj.team.abbreviation);
-    Array.from(names).forEach((nm) => {
-      const parts = String(nm).split(" ");
-      if (parts.length > 1) names.add(parts[parts.length - 1]);
-    });
-    return Array.from(names).map(normalize).filter(Boolean);
-  };
-
-  const findStreamFreeStreamForEvent = (ev, streams) => {
-    try {
-      const comp = ev.competitions?.[0] || {};
-      const competitors = comp.competitors || [];
-      const home = competitors.find(t => t.homeAway === "home") || competitors[0] || {};
-      const away = competitors.find(t => t.homeAway === "away") || competitors[1] || {};
-
-      const homeCandidates = buildTeamNameCandidates(home.team || home);
-      const awayCandidates = buildTeamNameCandidates(away.team || away);
-
-      if (homeCandidates.length === 0 || awayCandidates.length === 0) return null;
-
-      // StreamFree and ESPN often reverse team order or use a mascot-only name. Score every
-      // possible event instead of accepting the first substring match, then reject ties.
-      const eventTime = new Date(ev.date).getTime();
-      const scoreCandidate = (candidates, title) => Math.max(...candidates.map((name) => {
-        if (title === name) return 12;
-        if (title.includes(name)) return name.length <= 3 ? 4 : 9;
-        const nameWords = name.split(" ").filter(word => word.length > 2);
-        const overlap = nameWords.filter(word => title.split(" ").includes(word)).length;
-        return nameWords.length ? overlap / nameWords.length * 6 : 0;
-      }), 0);
-      const ranked = streams.map((stream) => {
-        const title = normalize([stream.name, stream.league, stream.stream_key].filter(Boolean).join(" "));
-        const homeScore = scoreCandidate(homeCandidates, title);
-        const awayScore = scoreCandidate(awayCandidates, title);
-        const timestamp = Number(stream.match_timestamp || 0);
-        const streamTime = Number.isFinite(timestamp) && timestamp > 0 ? timestamp * 1000 : 0;
-        const timeScore = Number.isFinite(streamTime) && streamTime > 0 && Number.isFinite(eventTime)
-          ? Math.max(0, 3 - Math.abs(streamTime - eventTime) / 3600000) : 0;
-        return { stream, score: homeScore + awayScore + timeScore, homeScore, awayScore };
-      }).filter(item => item.homeScore >= 4 && item.awayScore >= 4).sort((a, b) => b.score - a.score);
-      if (!ranked.length) return null;
-      const best = ranked[0];
-      const runnerUp = ranked[1];
-      // Avoid silently linking a game when two events look equally plausible.
-      if (best.score < 10 || (runnerUp && best.score - runnerUp.score < 1.25)) {
-        console.info("No unambiguous StreamFree stream", { event: ev.name, candidates: ranked.slice(0, 2) });
-        return null;
-      }
-      return best.stream;
-    } catch (e) {
-      console.warn("Error matching StreamFree stream:", e);
-      return null;
-    }
-  };
-
-  const getEmbedUrl = (value) => {
-    if (typeof value !== "string") return null;
-    try {
-      const url = new URL(value);
-      if (STREAMFREE_ORIGINS.includes(url.origin) && !url.username && !url.password && url.pathname.startsWith("/embed/")) {
-        return url.href;
-      }
-    } catch { }
-    return null;
-  };
-
-  const getStreamFreeEmbeds = (stream) => {
-    const qualityRank = { "4K": 4, FHD: 3, HD: 2, SD: 1 };
-    const additional = Array.isArray(stream.additional_sources) ? stream.additional_sources : [];
-    const live = Array.isArray(stream.live_sources) ? stream.live_sources : [];
-    const legacy = Array.isArray(stream.sources) ? stream.sources : [];
-    const variants = [...additional, ...legacy].filter(source => source?.live === true)
-      .concat(live.filter(source => source && source.live !== false))
-      .sort((a, b) => (qualityRank[b.quality] || 0) - (qualityRank[a.quality] || 0));
-    const embeds = [stream.iframe, ...variants.map(source => source.url)].map(getEmbedUrl).filter(Boolean);
-    const mirrors = embeds.map(embed => {
-      const url = new URL(embed);
-      const mirror = STREAMFREE_ORIGINS.find(origin => origin !== url.origin);
-      return `${mirror}${url.pathname}${url.search}`;
-    });
-    return [...new Set([...embeds, ...mirrors])];
-  };
-
-  const getCachedStreamFreeStreams = (category) => {
-    const now = Date.now();
-    const memoryEntry = streamCache.get(category);
-    if (memoryEntry && now - memoryEntry.savedAt < STREAM_CACHE_TTL_MS) return memoryEntry.streams;
-
-    try {
-      const stored = JSON.parse(sessionStorage.getItem(`${STREAM_CACHE_KEY_PREFIX}${category}`) || "null");
-      if (stored && Array.isArray(stored.streams) && now - stored.savedAt < STREAM_CACHE_TTL_MS) {
-        streamCache.set(category, stored);
-        return stored.streams;
-      }
-    } catch { /* A blocked or malformed cache should never break the schedule. */ }
-    return null;
-  };
-
-  const fetchStreamFreeStreams = async (sportConfig) => {
-    const category = sportConfig.streamFreeCategory;
-    const cached = getCachedStreamFreeStreams(category);
-    if (cached) return cached;
-
-    for (const origin of STREAMFREE_ORIGINS) {
-      try {
-        const url = new URL("/api/v1/streams", origin);
-        url.searchParams.set("category", category);
-        const response = await fetch(url, { cache: "no-store", signal: AbortSignal.timeout(5000) });
-        if (!response.ok) throw new Error(`Stream API HTTP ${response.status}`);
-        const { streams } = await response.json();
-        if (!Array.isArray(streams)) throw new Error("Stream API returned an unexpected response");
-        const entry = { savedAt: Date.now(), streams };
-        streamCache.set(category, entry);
-        try { sessionStorage.setItem(`${STREAM_CACHE_KEY_PREFIX}${category}`, JSON.stringify(entry)); } catch { }
-        return streams;
-      } catch (error) {
-        console.warn("Unable to fetch StreamFree streams from", origin, error);
-      }
-    }
-    return null;
-  };
-
   // ---------- Render Game Card ----------
   const renderGameCard = (ev) => {
     const comp = ev.competitions?.[0] || {};
@@ -392,7 +150,6 @@ document.addEventListener("DOMContentLoaded", () => {
         ${escapeHtml(away.team?.abbreviation || "AW")}: ${escapeHtml(String(awayScore))} &nbsp; - &nbsp;
         ${escapeHtml(home.team?.abbreviation || "HM")}: ${escapeHtml(String(homeScore))}
       </div>
-      ${statusText.includes("Final") ? "" : `<div style="margin-top:10px;display:flex;gap:8px;justify-content:center;"><button class="watch-btn">Available 10 mins before start</button></div>`}
     `;
 
     // Favorite star
@@ -428,57 +185,6 @@ document.addEventListener("DOMContentLoaded", () => {
     };
     updateScoreAndTime();
     setInterval(updateScoreAndTime, 1000);
-
-    // Watch button
-    const watchBtn = card.querySelector(".watch-btn");
-    if (watchBtn) {
-      watchBtn.disabled = true;
-      watchBtn.style.opacity = 0.6;
-      watchBtn.style.cursor = "not-allowed";
-
-      const showTime = new Date(gameStart.getTime() - 10 * 60 * 1000);
-      const updateWatchButton = () => {
-        const now = new Date();
-        const stream = gameStreams[ev.id];
-
-        if (now >= showTime && stream) {
-          watchBtn.innerText = "Watch Live";
-          watchBtn.disabled = false;
-          watchBtn.style.opacity = 1;
-          watchBtn.style.cursor = "pointer";
-        } else if (now >= showTime) {
-          watchBtn.innerText = streamLookupFailed ? "Stream lookup unavailable" : "No stream available yet";
-          watchBtn.disabled = true;
-          watchBtn.style.opacity = 0.6;
-          watchBtn.style.cursor = "not-allowed";
-        } else {
-          const diff = Math.max(0, Math.floor((showTime - now) / 1000));
-          const d = pad(Math.floor(diff / 86400)), h = pad(Math.floor((diff % 86400) / 3600));
-          const m = pad(Math.floor((diff % 3600) / 60)), s = pad(diff % 60);
-          watchBtn.innerText = `Available in ${d}:${h}:${m}:${s}`;
-          watchBtn.disabled = true;
-          watchBtn.style.opacity = 0.6;
-        }
-      };
-      updateWatchButton();
-      setInterval(updateWatchButton, 1000);
-
-      watchBtn.addEventListener("click", () => {
-        const stream = gameStreams[ev.id];
-        if (!stream || Date.now() < showTime.getTime()) return;
-        clearTimeout(hideVideoTimer);
-        activeEmbeds = stream;
-        activeEmbedIndex = 0;
-        showEmbed();
-        videoContainer.style.display = "flex";
-        setTimeout(() => {
-          videoContainer.style.opacity = 1;
-          videoContainer.querySelector("#video-wrapper").style.transform = "scale(1)";
-          try { videoIframe.contentWindow?.focus(); } catch { }
-          videoIframe.scrollIntoView({ behavior: "smooth", block: "center" });
-        }, 50);
-      });
-    }
 
     return card;
   };
@@ -543,23 +249,7 @@ document.addEventListener("DOMContentLoaded", () => {
         return aFinal ? 1 : -1;
       });
 
-      // ---------- StreamFree API ----------
-      const nextGameStreams = {};
-      let lookupFailed = false;
-      if (todayEvents.length > 0) {
-        const streamFreeStreams = await fetchStreamFreeStreams(sportConfig);
-        lookupFailed = streamFreeStreams === null;
-
-        todayEvents.forEach((ev) => {
-          const stream = findStreamFreeStreamForEvent(ev, streamFreeStreams || []);
-          if (!stream) return;
-          const embeds = getStreamFreeEmbeds(stream);
-          if (embeds.length) nextGameStreams[ev.id] = embeds;
-        });
-      }
       if (sport !== currentSport) return;
-      gameStreams = nextGameStreams;
-      streamLookupFailed = lookupFailed;
 
       todayGamesList.replaceChildren(...(todayEvents.length ? todayEvents.map(renderGameCard) : [renderNoGamesCard("No games today")]));
       upcomingGamesList.replaceChildren(...(upcomingEvents.length ? upcomingEvents.map(renderGameCard) : [renderNoGamesCard("No upcoming games")]));

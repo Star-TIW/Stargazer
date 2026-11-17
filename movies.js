@@ -115,13 +115,10 @@ function normalizeTmdbDetails(details, mediaType) {
 
 
 
-// ------------------------ VidUP / Stargazer Progress ------------------------ //
-const VIDUP_ORIGIN = "https://vidup.to";
-const VIDUP_PROGRESS_KEY = "vidUpProgress";
+// Keep the storage key so existing watch history still works.
+const PLAYBACK_PROGRESS_KEY = "vidUpProgress";
 const STARGAZER_STARTED_KEY = "stargazerStartedTitles";
-const STARGAZER_LOGO_URL = "https://st4rg4zer.pages.dev/stargazer.png";
-const STARGAZER_SITE_ORIGIN = "https://st4rg4zer.pages.dev";
-const STARGAZER_IMAGE_MODE_PARAM = "cover";
+const STARGAZER_LOGO_URL = "/stargazer.png";
 
 function getQueryParams() {
   try { return new URLSearchParams(window.location.search); } catch { return new URLSearchParams(); }
@@ -193,8 +190,7 @@ async function renderImageDownloadPage() {
       anchor.remove();
       setTimeout(() => URL.revokeObjectURL(url), 1500);
     } catch (error) {
-      // Fallback stays in the iframe rather than opening a new tab.
-      window.location.href = movie.Poster;
+      downloadButton.textContent = "Download failed. Try again";
     }
   });
 
@@ -252,12 +248,12 @@ function setupHorizontalRowControls() {
   });
 }
 
-let activePlayerContext = null;
+let stopNativePlayback = null;
 let playerProgressSyncTimer = null;
 
-function readVidupProgress() {
+function readPlaybackProgress() {
   try {
-    const raw = localStorage.getItem(VIDUP_PROGRESS_KEY);
+    const raw = localStorage.getItem(PLAYBACK_PROGRESS_KEY);
     return raw ? JSON.parse(raw) : {};
   } catch (error) {
     console.warn("Unable to read VidUP progress:", error);
@@ -265,9 +261,9 @@ function readVidupProgress() {
   }
 }
 
-function writeVidupProgress(data) {
+function writePlaybackProgress(data) {
   try {
-    localStorage.setItem(VIDUP_PROGRESS_KEY, JSON.stringify(data));
+    localStorage.setItem(PLAYBACK_PROGRESS_KEY, JSON.stringify(data));
   } catch (error) {
     console.warn("Unable to save VidUP progress:", error);
   }
@@ -313,10 +309,10 @@ function markTitleStarted(tmdbId, mediaType, context = {}) {
 
 function removeTitleProgress(tmdbId, mediaType) {
   const key = progressKey(tmdbId, mediaType);
-  const progress = readVidupProgress();
+  const progress = readPlaybackProgress();
   if (progress[key]) {
     delete progress[key];
-    writeVidupProgress(progress);
+    writePlaybackProgress(progress);
   }
   const started = readStartedTitles();
   if (started[key]) {
@@ -329,7 +325,7 @@ function removeTitleProgress(tmdbId, mediaType) {
 
 function cleanOrphanedProgress() {
   const started = readStartedTitles();
-  const progress = readVidupProgress();
+  const progress = readPlaybackProgress();
   let changed = false;
   Object.keys(progress).forEach(key => {
     if (!started[key]) {
@@ -337,22 +333,22 @@ function cleanOrphanedProgress() {
       changed = true;
     }
   });
-  if (changed) writeVidupProgress(progress);
+  if (changed) writePlaybackProgress(progress);
 }
 
-function savePlayerEventProgress(data) {
+function savePlaybackProgress(data, context) {
   if (!data || !data.tmdbId || !data.mediaType) return;
   const started = readStartedTitles();
   const key = progressKey(data.tmdbId, data.mediaType);
   if (!started[key]) return;
 
-  const store = readVidupProgress();
+  const store = readPlaybackProgress();
   const existing = store[key] || {
     id: Number(data.tmdbId),
     type: data.mediaType,
-    title: activePlayerContext?.title || "",
-    poster_path: activePlayerContext?.posterPath || "",
-    backdrop_path: activePlayerContext?.backdropPath || ""
+    title: context.title || "",
+    poster_path: context.posterPath || "",
+    backdrop_path: context.backdropPath || ""
   };
 
   const watched = Number(data.currentTime) || 0;
@@ -364,8 +360,8 @@ function savePlayerEventProgress(data) {
 
   existing.id = Number(data.tmdbId);
   existing.type = data.mediaType;
-  existing.title = existing.title || started[key]?.title || activePlayerContext?.title || "";
-  existing.poster_path = existing.poster_path || started[key]?.poster_path || activePlayerContext?.posterPath || "";
+  existing.title = existing.title || started[key]?.title || context.title || "";
+  existing.poster_path = existing.poster_path || started[key]?.poster_path || context.posterPath || "";
   existing.year = existing.year || started[key]?.year || "N/A";
   existing.rating = existing.rating || started[key]?.rating || "N/A";
   existing.progress = progress;
@@ -386,7 +382,7 @@ function savePlayerEventProgress(data) {
   }
 
   store[key] = existing;
-  writeVidupProgress(store);
+  writePlaybackProgress(store);
 
   if (playerProgressSyncTimer) clearTimeout(playerProgressSyncTimer);
   playerProgressSyncTimer = setTimeout(() => {
@@ -394,56 +390,8 @@ function savePlayerEventProgress(data) {
   }, 150);
 }
 
-function parseVidupMessage(data) {
-  if (!data) return null;
-  if (typeof data === "string") {
-    try { return JSON.parse(data); } catch { return null; }
-  }
-  return typeof data === "object" ? data : null;
-}
-
-function isActivePlayerPayload(payload) {
-  if (!payload || !activePlayerContext) return false;
-  const data = payload.data || {};
-  if (payload.type !== "PLAYER_EVENT") return false;
-  if (data.tmdbId == null) return false;
-  if (String(data.tmdbId) !== String(activePlayerContext.tmdbID)) return false;
-  if (data.mediaType && data.mediaType !== activePlayerContext.mediaType) return false;
-  if (activePlayerContext.mediaType === "tv") {
-    if (activePlayerContext.season != null && data.season != null && Number(data.season) !== Number(activePlayerContext.season)) return false;
-    if (activePlayerContext.episode != null && data.episode != null && Number(data.episode) !== Number(activePlayerContext.episode)) return false;
-  }
-  return true;
-}
-
-function installGlobalVidupListener() {
-  if (window.__stargazerVidupListenerInstalled) return;
-  window.__stargazerVidupListenerInstalled = true;
-
-  window.addEventListener("message", (event) => {
-    if (event.origin !== VIDUP_ORIGIN || event.source !== document.getElementById("video-iframe")?.contentWindow || !event.data) return;
-    if (!document.getElementById("video-iframe")?.src.startsWith(`${VIDUP_ORIGIN}/`)) return;
-    const payload = parseVidupMessage(event.data);
-    if (!payload) return;
-
-    if (payload.type !== "PLAYER_EVENT" || !isActivePlayerPayload(payload)) return;
-
-    const data = payload.data || {};
-    savePlayerEventProgress(data);
-
-    if (data.event === "ended" && activePlayerContext?.mediaType === "tv") {
-      const nextEpisode = Number(activePlayerContext.episode || 0) + 1;
-      const season = Number(activePlayerContext.season || 1);
-      const episodeKey = `stargazer:episode:${activePlayerContext.tmdbID}`;
-      const seasonKey = `stargazer:season:${activePlayerContext.tmdbID}`;
-      localStorage.setItem(episodeKey, JSON.stringify({ season, episode: nextEpisode }));
-      localStorage.setItem(seasonKey, String(season));
-    }
-  });
-}
-
 function getStoredProgress(tmdbID, mediaType) {
-  const data = readVidupProgress()[progressKey(tmdbID, mediaType)];
+  const data = readPlaybackProgress()[progressKey(tmdbID, mediaType)];
   if (!data?.progress) return null;
   const watched = Number(data.progress.watched) || 0;
   const duration = Number(data.progress.duration) || 0;
@@ -480,8 +428,6 @@ function updateMovieWatchButton(button, movie) {
   }
 }
 
-installGlobalVidupListener();
-
 async function fetchMovieDetails(tmdbID, mediaType) {
   const endpoint = mediaType === "movie" ? `/movie/${tmdbID}` : `/tv/${tmdbID}`;
   const appendToResponse =
@@ -507,10 +453,6 @@ function createMovieCard(movie) {
   if (existingCard) existingCard.remove();
   const existingBackdrop = document.getElementById("movie-modal-backdrop");
   if (existingBackdrop) existingBackdrop.remove();
-  if (window.stargazerPlayerListener) {
-    window.removeEventListener("message", window.stargazerPlayerListener);
-    window.stargazerPlayerListener = null;
-  }
   const backdrop = document.createElement("div");
   backdrop.id = "movie-modal-backdrop";
   backdrop.setAttribute("aria-hidden", "true");
@@ -663,10 +605,10 @@ function createMovieCard(movie) {
     <svg class="download-button-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
       <path d="M12 3v11m0 0 4-4m-4 4-4-4M5 18h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
     </svg>
-    <span>Download</span>`;
+    <span>Download poster</span>`;
     downloadBtn.onclick = (event) => {
       event.stopPropagation();
-      openEmbeddedStargazerPage(`https://vidvault.to/movie/${encodeURIComponent(movie.tmdbID)}`);
+      openPoster();
     };
     actionRow.append(listBtn, downloadBtn);
   } else {
@@ -716,246 +658,170 @@ function createMovieCard(movie) {
       if (b) b.remove();
       if (b) b.style.pointerEvents = "none";
       unlockPageScroll();
-      if (window.stargazerPlayerListener) {
-        window.removeEventListener("message", window.stargazerPlayerListener);
-        window.stargazerPlayerListener = null;
-      }
     };
   }
 
-  // ------------------------ Video Iframe / Watch Button ------------------------ //
-  let videoContainer = document.getElementById("video-container");
-  let videoIframe;
-  let closeVideoX;
-  let playerController = null;
-  const clearPlayerAttempt = () => {
-    playerController?.stop();
-    playerController = null;
-    if (videoIframe) { videoIframe.onload = null; videoIframe.onerror = null; videoIframe.onfocus = null; }
-    if (window.stargazerPlayerListener) {
-      window.removeEventListener("message", window.stargazerPlayerListener);
-      window.stargazerPlayerListener = null;
-    }
-    document.getElementById("player-retry")?.remove();
+  const videoContainer = document.getElementById("video-container");
+  const videoFrame = document.getElementById("video-iframe");
+  const embeddedControls = document.getElementById("embedded-page-controls");
+  const playerWrapper = document.getElementById("video-wrapper");
+  const closeVideo = document.getElementById("close-video-x");
+  playerWrapper.classList.add("stargazer-player-wrapper");
+
+  const resetPlayer = () => {
+    stopNativePlayback?.();
+    stopNativePlayback = null;
+    playerWrapper.querySelector("#stargazer-player-loader")?.remove();
+    videoFrame.hidden = true;
+    videoFrame.removeAttribute("src");
+    embeddedControls.hidden = true;
   };
 
-  function openEmbeddedStargazerPage(url) {
-    if (!videoContainer || !videoIframe) return;
-    clearPlayerAttempt();
-    activePlayerContext = { embeddedPage: true, embeddedUrl: url };
-    const loader = document.getElementById("stargazer-player-loader");
-    if (loader) loader.remove();
-    videoIframe.style.visibility = "visible";
-    videoIframe.style.filter = "none";
-    videoIframe.style.transform = "none";
-    videoIframe.style.opacity = "1";
-    videoIframe.src = url;
+  const showOverlay = () => {
     videoContainer.classList.add("is-open");
     videoContainer.style.display = "flex";
     videoContainer.style.pointerEvents = "auto";
     lockPageScroll();
-    const controls = document.getElementById("embedded-page-controls");
-    if (controls) controls.hidden = false;
-    const close = document.getElementById("close-video-x");
-    if (close) close.style.display = "block";
+  };
+
+  const hideOverlay = () => {
+    resetPlayer();
+    videoContainer.classList.remove("is-open");
+    videoContainer.style.display = "none";
+    videoContainer.style.pointerEvents = "none";
+    if (!document.getElementById("movie-card")) unlockPageScroll();
+  };
+
+  closeVideo.onclick = hideOverlay;
+  videoContainer.onclick = event => {
+    if (event.target === videoContainer) hideOverlay();
+  };
+
+  function openPoster() {
+    const tmdbID = String(movie.tmdbID);
+    if (!/^\d+$/.test(tmdbID)) return;
+    resetPlayer();
+    videoFrame.src = `/?id=${tmdbID}&cover=1`;
+    videoFrame.hidden = false;
+    embeddedControls.hidden = false;
+    showOverlay();
   }
 
-  function setEmbeddedControlsVisible(visible) {
-    const controls = document.getElementById("embedded-page-controls");
-    if (controls) controls.hidden = !visible;
-  }
+  document.getElementById("embedded-back").onclick = hideOverlay;
+  document.getElementById("embedded-refresh").onclick = () => {
+    if (!videoFrame.hidden) videoFrame.contentWindow.location.reload();
+  };
 
-  function createPlayerShell() {
-    if (videoContainer) {
-      videoIframe = document.getElementById("video-iframe");
-      closeVideoX = document.getElementById("close-video-x");
-      const existingWrapper = document.getElementById("video-wrapper");
-      if (existingWrapper) existingWrapper.classList.add("stargazer-player-wrapper");
-      if (existingWrapper && !document.getElementById("stargazer-player-loader")) {
-        existingWrapper.classList.add("stargazer-player-wrapper");
-        existingWrapper.insertAdjacentHTML("beforeend", `
-          <div id="stargazer-player-loader" class="stargazer-player-loader" aria-label="Loading player">
-            <div class="loader-scene">
-              <div class="loader-streak streak-a"></div>
-              <div class="loader-streak streak-b"></div>
-              <div class="loader-streak streak-c"></div>
-              <div class="loader-orbit orbit-a"></div>
-              <div class="loader-orbit orbit-b"></div>
-              <div class="loader-logo-wrap">
-                <div class="loader-glow"></div>
-                <img class="loader-logo" src="${STARGAZER_LOGO_URL}" alt="Stargazer loading" />
-              </div>
-              <div class="loader-subtext">Launching player</div>
-            </div>
-          </div>
-        `);
-      }
-      const hideExistingOverlay = () => {
-        clearPlayerAttempt();
-        activePlayerContext = null;
-        const loader = document.getElementById("stargazer-player-loader");
-        if (loader) loader.remove();
-        if (videoIframe) {
-          videoIframe.src = "";
-          videoIframe.style.visibility = "hidden";
-        }
-        videoContainer.classList.remove("is-open");
-        videoContainer.style.display = "none";
-        videoContainer.style.pointerEvents = "none";
-        setEmbeddedControlsVisible(false);
-        unlockPageScroll();
-        const backdrop = document.getElementById("movie-modal-backdrop");
-        if (backdrop) backdrop.remove();
-      };
-      if (closeVideoX) closeVideoX.onclick = hideExistingOverlay;
-      if (!videoContainer.dataset.stargazerOverlayBound) {
-        videoContainer.addEventListener("click", (event) => {
-          if (event.target === videoContainer) videoContainer._hideOverlay?.();
-        });
-        videoContainer.dataset.stargazerOverlayBound = "true";
-      }
-      videoContainer._hideOverlay = hideExistingOverlay;
+  const playApprovedVideo = context => {
+    resetPlayer();
+    showOverlay();
+
+    const status = document.createElement("div");
+    status.id = "stargazer-player-loader";
+    status.className = "stargazer-player-loader";
+    status.setAttribute("role", "status");
+    playerWrapper.appendChild(status);
+
+    const showUnavailable = message => {
+      status.innerHTML = `<div class="player-unavailable"><strong>${message}</strong></div>`;
+    };
+
+    const source = window.StargazerSources.getSource(context);
+    if (!source) {
+      showUnavailable("Ad-free playback is unavailable for this title.");
       return;
     }
 
-    videoContainer = document.createElement("div");
-    videoContainer.id = "video-container";
-    videoContainer.innerHTML = `
-      <div id="video-wrapper" class="stargazer-player-wrapper">
-        <span id="close-video-x" aria-label="Close player">&times;</span>
-        <iframe id="video-iframe" frameborder="0" allow="autoplay; fullscreen; encrypted-media; picture-in-picture" allowfullscreen></iframe>
-        <div id="stargazer-player-loader" class="stargazer-player-loader" aria-label="Loading player">
-          <div class="loader-scene">
-            <div class="loader-streak streak-a"></div>
-            <div class="loader-streak streak-b"></div>
-            <div class="loader-streak streak-c"></div>
-            <div class="loader-orbit orbit-a"></div>
-            <div class="loader-orbit orbit-b"></div>
-            <div class="loader-logo-wrap">
-              <div class="loader-glow"></div>
-              <img class="loader-logo" src="${STARGAZER_LOGO_URL}" alt="Stargazer loading" />
-            </div>
-            <div class="loader-subtext">Launching player</div>
-          </div>
+    status.innerHTML = `
+      <div class="loader-scene">
+        <div class="loader-streak streak-a"></div>
+        <div class="loader-streak streak-b"></div>
+        <div class="loader-orbit orbit-a"></div>
+        <div class="loader-orbit orbit-b"></div>
+        <div class="loader-logo-wrap">
+          <div class="loader-glow"></div>
+          <img class="loader-logo" src="${STARGAZER_LOGO_URL}" alt="" />
         </div>
+        <div class="loader-subtext">Loading player</div>
       </div>
     `;
 
-    document.body.appendChild(videoContainer);
-    videoIframe = document.getElementById("video-iframe");
-    closeVideoX = document.getElementById("close-video-x");
+    const video = document.createElement("video");
+    video.id = "native-video-player";
+    video.controls = true;
+    video.playsInline = true;
+    video.preload = "metadata";
+    video.setAttribute("aria-label", context.title);
 
-    const hideOverlay = () => {
-      clearPlayerAttempt();
-      activePlayerContext = null;
-      const loader = document.getElementById("stargazer-player-loader");
-      if (loader) loader.remove();
-      if (videoIframe) {
-        videoIframe.src = "";
-        videoIframe.style.visibility = "hidden";
-      }
-      videoContainer.classList.remove("is-open");
-      videoContainer.style.display = "none";
-      videoContainer.style.pointerEvents = "none";
-      setEmbeddedControlsVisible(false);
-      unlockPageScroll();
-      const backdrop = document.getElementById("movie-modal-backdrop");
-      if (backdrop) backdrop.remove();
+    const listeners = new AbortController();
+    const options = { signal: listeners.signal };
+    const fail = () => {
+      stopNativePlayback?.();
+      stopNativePlayback = null;
+      if (!status.isConnected) playerWrapper.appendChild(status);
+      showUnavailable("The video could not be loaded. Try again later.");
+    };
+    const loadDeadline = setTimeout(fail, 15000);
+    let started = false;
+    let lastSavedSecond = -1;
+    const savePosition = () => {
+      if (!started || !Number.isFinite(video.duration) || video.duration <= 0) return;
+      const currentTime = Math.floor(video.currentTime);
+      if (currentTime === lastSavedSecond) return;
+      lastSavedSecond = currentTime;
+      savePlaybackProgress({
+        tmdbId: context.tmdbID,
+        mediaType: context.mediaType,
+        season: context.season,
+        episode: context.episode,
+        currentTime,
+        duration: video.duration
+      }, context);
     };
 
-    closeVideoX.onclick = hideOverlay;
-    videoContainer.addEventListener("click", (event) => {
-      if (event.target === videoContainer) videoContainer._hideOverlay?.();
-    });
-    videoContainer._hideOverlay = hideOverlay;
-  }
-
-  createPlayerShell();
-
-  const embeddedBack = document.getElementById("embedded-back");
-  const embeddedRefresh = document.getElementById("embedded-refresh");
-  if (embeddedBack) embeddedBack.onclick = () => {
-    try {
-      if (videoIframe?.contentWindow) videoIframe.contentWindow.history.back();
-    } catch (error) { console.warn("Embedded back navigation failed:", error); }
-  };
-  if (embeddedRefresh) embeddedRefresh.onclick = () => {
-    try {
-      if (videoIframe?.contentWindow) videoIframe.contentWindow.location.reload();
-    } catch (error) {
-      if (activePlayerContext?.embeddedUrl && videoIframe) videoIframe.src = activePlayerContext.embeddedUrl;
-    }
-  };
-
-  const playIntroThenLoad = (sources) => {
-    if (!videoContainer || !videoIframe) return;
-    clearPlayerAttempt();
-    const wrapper = document.getElementById("video-wrapper");
-    const loader = document.getElementById("stargazer-player-loader");
-    if (!loader) return;
-    const scene = loader.innerHTML;
-    const retry = document.createElement("button");
-    retry.id = "player-retry";
-    retry.type = "button";
-    retry.setAttribute("aria-label", "Retry playback");
-    retry.title = "Retry playback";
-    retry.textContent = "↻";
-    retry.hidden = true;
-    retry.onclick = () => playerController?.next();
-    wrapper.appendChild(retry);
-    const reveal = () => {
-      videoIframe.style.visibility = "visible";
-      loader.classList.add("is-hidden");
-      retry.hidden = false;
+    stopNativePlayback = () => {
+      clearTimeout(loadDeadline);
+      savePosition();
+      listeners.abort();
+      video.pause();
+      video.removeAttribute("src");
+      video.load();
+      video.remove();
     };
-    const showLoading = index => {
-      retry.hidden = true;
-      loader.innerHTML = scene;
-      loader.classList.remove("is-hidden");
-      loader.classList.add("is-visible");
-      loader.style.display = "block";
-      const status = loader.querySelector(".loader-subtext");
-      if (status) {
-        status.textContent = `Loading player ${index + 1}/${sources.length}`;
-        status.setAttribute("role", "status");
-        status.setAttribute("aria-live", "polite");
+
+    video.addEventListener("loadedmetadata", () => {
+      clearTimeout(loadDeadline);
+      const stored = readPlaybackProgress()[progressKey(context.tmdbID, context.mediaType)];
+      const sameEpisode = Number(stored?.last_season_watched) === context.season
+        && Number(stored?.last_episode_watched) === context.episode;
+      const progress = context.mediaType === "tv"
+        ? stored?.show_progress?.[`s${context.season}e${context.episode}`]?.progress ?? (sameEpisode ? stored?.progress : null)
+        : stored?.progress;
+      const savedTime = Number(progress?.watched);
+      if (savedTime > 0 && savedTime < video.duration * 0.98) video.currentTime = savedTime;
+      status.remove();
+    }, options);
+    video.addEventListener("playing", () => {
+      if (started) return;
+      started = true;
+      markTitleStarted(context.tmdbID, context.mediaType, {
+        title: context.title, posterPath: context.posterPath, year: movie.Year, rating: movie.Rating
+      });
+    }, options);
+    video.addEventListener("timeupdate", savePosition, options);
+    video.addEventListener("error", fail, options);
+    video.addEventListener("ended", () => {
+      savePosition();
+      if (context.mediaType === "tv") {
+        localStorage.setItem(`stargazer:episode:${context.tmdbID}`, JSON.stringify({
+          season: context.season, episode: context.episode + 1
+        }));
+        localStorage.setItem(`stargazer:season:${context.tmdbID}`, String(context.season));
       }
-    };
-    playerController = window.StargazerSources.createController({
-      sources,
-      send(message, origin) { videoIframe.contentWindow?.postMessage(message, origin); },
-      navigate(source, token) {
-        // A new frame gives each attempt its own window identity, so a late
-        // event from a previous API at the same origin cannot switch players.
-        const frame = videoIframe.cloneNode(false);
-        frame.onload = () => { if (frame === videoIframe) playerController?.loaded(token); };
-        frame.onerror = () => { if (frame === videoIframe) playerController?.next(); };
-        frame.style.visibility = "visible";
-        frame.style.filter = "none";
-        frame.style.transform = "none";
-        frame.style.opacity = "1";
-        frame.src = source.url;
-        videoIframe.replaceWith(frame);
-        videoIframe = frame;
-      },
-      update({ index, state }) {
-        if (state === "loading") showLoading(index);
-        else if (state === "playing") reveal();
-      },
-      exhausted() {
-        videoIframe.onload = null; videoIframe.onerror = null;
-        videoIframe.src = "about:blank";
-        retry.hidden = true;
-        loader.classList.remove("is-hidden");
-        loader.classList.add("is-visible");
-        loader.innerHTML = `<div class="player-unavailable" role="status"><strong>This title is unavailable right now.</strong><span>Please try again later.</span><button type="button" class="player-restart-button">Try again</button></div>`;
-        loader.querySelector("button").onclick = () => playerController?.restart();
-      }
-    });
-    const onPlayerMessage = event => playerController?.message(event, videoIframe.contentWindow, activePlayerContext || {});
-    window.stargazerPlayerListener = onPlayerMessage;
-    window.addEventListener("message", onPlayerMessage);
-    playerController.start();
+    }, options);
+    playerWrapper.appendChild(video);
+    video.src = source;
+    video.play().catch(() => {});
   };
 
   const startPlayback = ({ season, episode }) => {
@@ -975,9 +841,7 @@ function createMovieCard(movie) {
       return;
     }
 
-    markTitleStarted(tmdbID, movie.mediaType, { title: movie.Title, posterPath: movie.Poster, year: movie.Year, rating: movie.Rating });
-    setEmbeddedControlsVisible(false);
-    activePlayerContext = {
+    playApprovedVideo({
       tmdbID,
       mediaType: movie.mediaType,
       season: season != null ? Number(season) : null,
@@ -985,27 +849,7 @@ function createMovieCard(movie) {
       title: movie.Title,
       posterPath: movie.Poster || "",
       backdropPath: ""
-    };
-
-    videoContainer.classList.add("is-open");
-    videoContainer.style.display = "flex";
-    videoContainer.style.pointerEvents = "auto";
-    lockPageScroll();
-    videoIframe.style.visibility = "hidden";
-    videoIframe.style.filter = "none";
-    videoIframe.style.transform = "none";
-    videoIframe.style.opacity = "1";
-    const storedProgress = getStoredProgress(tmdbID, movie.mediaType);
-    const startAt = storedProgress && storedProgress.percent > 0 && storedProgress.percent < 98
-      ? Math.floor(storedProgress.watched)
-      : 0;
-    const startParam = `&startAt=${encodeURIComponent(startAt)}`;
-    const playbackUrl = isMovie
-      ? `https://vidup.to/movie/${tmdbID}?autoPlay=true&theme=efef88&chromecast=false&poster=true&title=true${startParam}`
-      : `https://vidup.to/tv/${tmdbID}/${season}/${episode}?autoPlay=true&theme=efef88&chromecast=false&poster=true&title=true${startParam}`;
-    const configuredProviders = Array.isArray(window.STARGAZER_PLAYER_PROVIDERS) ? window.STARGAZER_PLAYER_PROVIDERS : [];
-    const sources = window.StargazerSources.buildSources(activePlayerContext, playbackUrl, configuredProviders);
-    playIntroThenLoad(sources);
+    });
   };
 
   if (!isMovie) {
@@ -1369,7 +1213,7 @@ suggestionsBox.addEventListener("click", async (e) => {
   }
 
   function progressItems(){
-    const store=readVidupProgress();
+    const store=readPlaybackProgress();
     const started=readStartedTitles();
     return Object.entries(store).map(([key,value])=>{
       if(!started[key] || !value?.progress || !value.id || !value.type) return null;
@@ -1391,14 +1235,14 @@ suggestionsBox.addEventListener("click", async (e) => {
     await Promise.all(missing.map(async x=>{
       const m=await fetchMovieDetails(x.tmdbID,x.mediaType);
       if(!m)return;
-      const store=readVidupProgress(),key=progressKey(x.tmdbID,x.mediaType);
+      const store=readPlaybackProgress(),key=progressKey(x.tmdbID,x.mediaType);
       if(store[key]){
         store[key].title=m.Title;
         store[key].poster_path=m.Poster;
         store[key].year=m.Year;
         store[key].rating=m.Rating;
         store[key].last_updated=store[key].last_updated||Date.now();
-        writeVidupProgress(store);
+        writePlaybackProgress(store);
       }
       const started=readStartedTitles();
       if(started[key]){
@@ -1448,7 +1292,7 @@ suggestionsBox.addEventListener("click", async (e) => {
     if(getList().length&&confirm('Clear everything in My List?')){localStorage.removeItem(MY_LIST_KEY);renderMyList()}
   });
   document.querySelector('[data-clear-progress]')?.addEventListener('click',()=>{
-    if(confirm('Clear everything in Continue Watching?')){localStorage.removeItem(VIDUP_PROGRESS_KEY);localStorage.removeItem(STARGAZER_STARTED_KEY);renderContinue()}
+    if(confirm('Clear everything in Continue Watching?')){localStorage.removeItem(PLAYBACK_PROGRESS_KEY);localStorage.removeItem(STARGAZER_STARTED_KEY);renderContinue()}
   });
 
   async function homeRows(){
