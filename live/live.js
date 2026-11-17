@@ -127,6 +127,26 @@ document.addEventListener("DOMContentLoaded", () => {
   // ---------- Video Overlay ----------
   let videoContainer = document.getElementById("video-container");
   let videoIframe, closeVideoX;
+  let activeEmbeds = [];
+  let activeEmbedIndex = 0;
+  let hideVideoTimer;
+
+  const nextSource = document.createElement("button");
+  nextSource.type = "button";
+  nextSource.className = "watch-btn";
+  nextSource.hidden = true;
+  Object.assign(nextSource.style, { position: "absolute", top: "0", left: "12px", zIndex: 250 });
+
+  const showEmbed = () => {
+    videoIframe.src = activeEmbeds[activeEmbedIndex];
+    nextSource.hidden = activeEmbeds.length < 2;
+    nextSource.textContent = `Next source (${activeEmbedIndex + 1}/${activeEmbeds.length})`;
+  };
+
+  nextSource.onclick = () => {
+    activeEmbedIndex = (activeEmbedIndex + 1) % activeEmbeds.length;
+    showEmbed();
+  };
 
   const setupVideoOverlay = () => {
     if (!videoContainer) {
@@ -171,11 +191,17 @@ document.addEventListener("DOMContentLoaded", () => {
       closeVideoX = document.getElementById("close-video-x");
     }
 
+    videoIframe.title = "Live game player";
+    videoContainer.querySelector("#video-wrapper").appendChild(nextSource);
+
     const hideOverlay = () => {
-      videoIframe.src = "";
+      clearTimeout(hideVideoTimer);
+      activeEmbeds = [];
+      nextSource.hidden = true;
+      videoIframe.src = "about:blank";
       videoContainer.style.opacity = "0";
       videoContainer.querySelector("#video-wrapper").style.transform = "scale(0.8)";
-      setTimeout(() => videoContainer.style.display = "none", 400);
+      hideVideoTimer = setTimeout(() => videoContainer.style.display = "none", 400);
     };
 
     closeVideoX.onclick = hideOverlay;
@@ -185,9 +211,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // ---------- StreamFree API helpers ----------
   // ESPN remains the schedule source; StreamFree provides the playable embeds.
-  const STREAMFREE_ORIGIN = "https://strmfree.st";
-  const STREAMFREE_STREAMS_URL = (category) =>
-    `${STREAMFREE_ORIGIN}/api/v1/streams?category=${encodeURIComponent(category)}`;
+  const STREAMFREE_ORIGINS = ["https://streamfree.top", "https://strmfree.st"];
   const STREAM_CACHE_TTL_MS = 2 * 60 * 1000;
   const STREAM_CACHE_KEY_PREFIX = "stargazer:streamfree:";
   const streamCache = new Map();
@@ -267,31 +291,32 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   };
 
-  const getEmbedUrl = (source) => {
-    if (!source || typeof source.url !== "string") return null;
+  const getEmbedUrl = (value) => {
+    if (typeof value !== "string") return null;
     try {
-      const url = new URL(source.url);
-      const approvedHost = url.hostname === "strmfree.st" || url.hostname === "streamfree.top";
-      return url.protocol === "https:" && approvedHost && url.pathname.startsWith("/embed/") ? url.href : null;
-    } catch {
-      return null;
-    }
+      const url = new URL(value);
+      if (STREAMFREE_ORIGINS.includes(url.origin) && !url.username && !url.password && url.pathname.startsWith("/embed/")) {
+        return url.href;
+      }
+    } catch { }
+    return null;
   };
 
-  const pickBestStreamFreeEmbed = (stream) => {
+  const getStreamFreeEmbeds = (stream) => {
     const qualityRank = { "4K": 4, FHD: 3, HD: 2, SD: 1 };
-    const sortByQuality = (a, b) => (qualityRank[b.quality] || 0) - (qualityRank[a.quality] || 0);
-    const live = Array.isArray(stream?.live_sources) ? stream.live_sources : [];
-    const all = Array.isArray(stream?.sources) ? stream.sources : [];
-    return [...live, ...all.filter(source => source?.live === true)]
-      .filter(source => source && source.live !== false)
-      .sort(sortByQuality).map(getEmbedUrl).find(Boolean) || null;
-  };
-
-  const getStreamFreePlayerUrl = (stream, category) => {
-    const key = stream.stream_key;
-    if (typeof key !== "string" || !/^[a-z0-9][a-z0-9_-]*$/i.test(key)) return null;
-    return `${STREAMFREE_ORIGIN}/player/${category}/${encodeURIComponent(key)}`;
+    const additional = Array.isArray(stream.additional_sources) ? stream.additional_sources : [];
+    const live = Array.isArray(stream.live_sources) ? stream.live_sources : [];
+    const legacy = Array.isArray(stream.sources) ? stream.sources : [];
+    const variants = [...additional, ...legacy].filter(source => source?.live === true)
+      .concat(live.filter(source => source && source.live !== false))
+      .sort((a, b) => (qualityRank[b.quality] || 0) - (qualityRank[a.quality] || 0));
+    const embeds = [stream.iframe, ...variants.map(source => source.url)].map(getEmbedUrl).filter(Boolean);
+    const mirrors = embeds.map(embed => {
+      const url = new URL(embed);
+      const mirror = STREAMFREE_ORIGINS.find(origin => origin !== url.origin);
+      return `${mirror}${url.pathname}${url.search}`;
+    });
+    return [...new Set([...embeds, ...mirrors])];
   };
 
   const getCachedStreamFreeStreams = (category) => {
@@ -311,27 +336,26 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const fetchStreamFreeStreams = async (sportConfig) => {
     const category = sportConfig.streamFreeCategory;
-    if (!category) return [];
-
     const cached = getCachedStreamFreeStreams(category);
     if (cached) return cached;
 
-    try {
-      streamLookupFailed = false;
-      const response = await fetch(STREAMFREE_STREAMS_URL(category), { cache: "no-store" });
-      if (!response.ok) throw new Error(`Stream API HTTP ${response.status}`);
-      const payload = await response.json();
-      if (!Array.isArray(payload?.streams)) throw new Error("Stream API returned an unexpected response");
-      const streams = payload.streams;
-      const entry = { savedAt: Date.now(), streams };
-      streamCache.set(category, entry);
-      try { sessionStorage.setItem(`${STREAM_CACHE_KEY_PREFIX}${category}`, JSON.stringify(entry)); } catch { }
-      return streams;
-    } catch (error) {
-      console.warn("Unable to fetch StreamFree streams:", error);
-      streamLookupFailed = true;
-      return [];
+    for (const origin of STREAMFREE_ORIGINS) {
+      try {
+        const url = new URL("/api/v1/streams", origin);
+        url.searchParams.set("category", category);
+        const response = await fetch(url, { cache: "no-store", signal: AbortSignal.timeout(5000) });
+        if (!response.ok) throw new Error(`Stream API HTTP ${response.status}`);
+        const { streams } = await response.json();
+        if (!Array.isArray(streams)) throw new Error("Stream API returned an unexpected response");
+        const entry = { savedAt: Date.now(), streams };
+        streamCache.set(category, entry);
+        try { sessionStorage.setItem(`${STREAM_CACHE_KEY_PREFIX}${category}`, JSON.stringify(entry)); } catch { }
+        return streams;
+      } catch (error) {
+        console.warn("Unable to fetch StreamFree streams from", origin, error);
+      }
     }
+    return null;
   };
 
   // ---------- Render Game Card ----------
@@ -442,8 +466,10 @@ document.addEventListener("DOMContentLoaded", () => {
       watchBtn.addEventListener("click", () => {
         const stream = gameStreams[ev.id];
         if (!stream || Date.now() < showTime.getTime()) return;
-        if (!stream.embedUrl) return;
-        videoIframe.src = stream.embedUrl;
+        clearTimeout(hideVideoTimer);
+        activeEmbeds = stream;
+        activeEmbedIndex = 0;
+        showEmbed();
         videoContainer.style.display = "flex";
         setTimeout(() => {
           videoContainer.style.opacity = 1;
@@ -519,18 +545,21 @@ document.addEventListener("DOMContentLoaded", () => {
 
       // ---------- StreamFree API ----------
       const nextGameStreams = {};
+      let lookupFailed = false;
       if (todayEvents.length > 0) {
         const streamFreeStreams = await fetchStreamFreeStreams(sportConfig);
+        lookupFailed = streamFreeStreams === null;
 
         todayEvents.forEach((ev) => {
-          const stream = findStreamFreeStreamForEvent(ev, streamFreeStreams);
+          const stream = findStreamFreeStreamForEvent(ev, streamFreeStreams || []);
           if (!stream) return;
-          const embedUrl = pickBestStreamFreeEmbed(stream);
-          if (embedUrl) nextGameStreams[ev.id] = { embedUrl };
+          const embeds = getStreamFreeEmbeds(stream);
+          if (embeds.length) nextGameStreams[ev.id] = embeds;
         });
       }
       if (sport !== currentSport) return;
       gameStreams = nextGameStreams;
+      streamLookupFailed = lookupFailed;
 
       todayGamesList.replaceChildren(...(todayEvents.length ? todayEvents.map(renderGameCard) : [renderNoGamesCard("No games today")]));
       upcomingGamesList.replaceChildren(...(upcomingEvents.length ? upcomingEvents.map(renderGameCard) : [renderNoGamesCard("No upcoming games")]));
