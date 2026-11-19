@@ -241,14 +241,15 @@ matchMedia("(min-width:769px)").addEventListener("change", () => setMenu(false))
 
 // Fade out to black
 document.querySelectorAll("a.nav-button").forEach((link) => {
-  link.addEventListener("click", () => {
+  link.addEventListener("click", event => {
+    if (event.defaultPrevented || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
     let fade = document.getElementById("page-fade");
     if (!fade) {
       fade = document.createElement("div");
       fade.id = "page-fade";
       Object.assign(fade.style, {
         position: "fixed", top: "0", left: "0", width: "100%", height: "100%",
-        background: "black", opacity: "0", transition: "opacity 0.5s ease-in",
+        background: "black", opacity: "0", transition: "opacity .16s ease-out",
         zIndex: "99999", pointerEvents: "none"
       });
       document.body.appendChild(fade);
@@ -257,3 +258,5 @@ document.querySelectorAll("a.nav-button").forEach((link) => {
   });
 });
 
+
+window.addEventListener("pageshow", () => document.getElementById("page-fade")?.remove());

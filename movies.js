@@ -727,7 +727,7 @@ function createMovieCard(movie, autoplay = false) {
       const playback = providerPlayback({
         navigate(fail) {
           const provider = sources[index];
-          status.classList.remove("is-hidden", "awaiting-input");
+          status.classList.remove("is-hidden", "source-error");
           caption.textContent = "Loading " + provider.name;
           const frame = videoFrame.cloneNode(false);
           frame.onerror = fail;
@@ -746,13 +746,12 @@ function createMovieCard(movie, autoplay = false) {
         },
         ready() { status.classList.add("is-hidden"); },
         showControls() {
-          caption.textContent = "Press play in the player";
-          status.classList.add("awaiting-input");
+          status.classList.add("is-hidden");
         },
         unavailable() {
           status.classList.remove("is-hidden");
           caption.textContent = "Source unavailable. Switch source to retry.";
-          status.classList.add("awaiting-input");
+          status.classList.add("source-error");
         }
       });
       next.onclick = () => { index = (index + 1) % sources.length; playback.start(); };

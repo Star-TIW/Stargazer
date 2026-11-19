@@ -7,9 +7,6 @@
   <link rel="icon" type="image/png" sizes="192x192" href="/stargazer-192.png">
   <title>Stargazer - Particle Settings</title>
   <style>
-    /* Font import */
-    @import url("https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap");
-
     /* General reset */
     * {
       font-family: Verdana, Geneva, Tahoma, sans-serif;
@@ -18,13 +15,15 @@
       box-sizing: border-box;
     }
 
+    body { isolation: isolate; }
     html, body {
       height: 100%;
       width: 100%;
       background: linear-gradient(to bottom, rgba(23, 23, 23, 1) 0%, rgba(13, 13, 13, 1) 99%);
       background-size: cover;
-      background-attachment: fixed;
-      animation: fadeInAnimation ease-in-out 1.2s forwards;
+      background-color: #0d0d0d;
+      color-scheme: dark;
+      animation: fadeInAnimation .2s ease-out;
       display: flex;
       justify-content: center;
       align-items: center;
@@ -117,8 +116,8 @@
       <button class="particle-button" data-effect="snow">Snow</button>
     </div>
     <div class="account-section">
-      <label style="color:white"><input id="popup-protection" type="checkbox"> Block player popups and redirects</label>
-      <p>Applies to movies, live streams and downloads. Some sources require this turned off. Ads inside a player can still appear.</p>
+      <label style="color:white"><input id="popup-protection" type="checkbox" aria-describedby="popup-help"> Block player popups and redirects</label>
+      <p id="popup-help">While this is on, some movies, live streams, and downloads may stop working. If that happens, turn it off and reopen the player. Ads inside the player can still appear.</p>
     </div>
     <label style="color:white">Movie titles and descriptions <select id="language"><option value="en-US">English</option><option value="es-ES">Español</option><option value="fr-FR">Français</option></select></label>
     <div class="account-section">

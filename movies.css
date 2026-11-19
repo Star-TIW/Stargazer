@@ -282,7 +282,7 @@
   color: #d5a83a;
   opacity: 1;
   visibility: visible;
-  transition: opacity .7s cubic-bezier(.22,1,.36,1), visibility .7s ease;
+  transition: opacity .2s ease-out, visibility .2s;
   pointer-events: all;
 }
 
@@ -1225,10 +1225,10 @@ main#movie-card { width: min(94vw,1080px) !important; padding: clamp(16px,3vw,36
 .detail-plot { max-width:66ch; line-height:1.65; }
 .detail-credits { display:grid; grid-template-columns:auto 1fr; gap:8px 14px; margin-top:16px; }
 .detail-credits dt { color:#efef88; }
-.stargazer-player-loader.awaiting-input { inset:auto 12px 48px auto; width:min(235px,80%); height:34px; border-radius:10px; pointer-events:none; }
-.awaiting-input .loader-scene { position:static; width:auto; height:100%; transform:none; animation:none; opacity:1; display:grid; place-items:center; }
-.awaiting-input .loader-scene > :not(.loader-subtext), .awaiting-input .loader-scene::after { display:none; }
-.awaiting-input .loader-subtext { position:static; transform:none; animation:none; opacity:1; text-align:center; }
+.stargazer-player-loader.source-error { inset:auto 12px 48px auto; width:min(235px,80%); height:34px; border-radius:10px; pointer-events:none; }
+.source-error .loader-scene { position:static; width:auto; height:100%; transform:none; animation:none; opacity:1; display:grid; place-items:center; }
+.source-error .loader-scene > :not(.loader-subtext), .source-error .loader-scene::after { display:none; }
+.source-error .loader-subtext { position:static; transform:none; animation:none; opacity:1; text-align:center; }
 @media(max-width:600px) {
   .detail-layout { grid-template-columns:minmax(78px,28%) 1fr; gap:12px 16px; }
   .detail-info { display:contents; }
