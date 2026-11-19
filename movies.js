@@ -463,34 +463,20 @@ function createMovieCard(movie, autoplay = false) {
   const fullPlot = movie.Plot || "N/A";
 
   card.innerHTML = `
-    <div style="display:flex; justify-content:flex-end;">
-      <button type="button" id="close-card-x">‹ Back to browse</button>
+    <button type="button" id="close-card-x">‹ Back to browse</button>
+    <div class="detail-layout">
+      <div id="poster-container">
+        <img src="${escapeHtml(movie.Poster)}" alt="" class="movie-detail-poster" width="400" height="600">
+      </div>
+      <div class="detail-info">
+        <p class="detail-meta">${[isMovie ? "Movie" : "Series", movie.Year, movie.Rated, movie.Runtime].filter(x => x && x !== "N/A").map(escapeHtml).join(" · ")}</p>
+        <h2>${escapeHtml(movie.Title)}</h2>
+        <p class="detail-genres">${escapeHtml(movie.Genre === "N/A" ? "" : movie.Genre)}</p>
+        <div class="detail-actions"></div>
+        <p class="detail-plot">${escapeHtml(fullPlot === "N/A" ? "" : fullPlot)}</p>
+        <dl class="detail-credits">${[["Director", movie.Director], ["Cast", movie.Actors]].filter(([,v]) => v && v !== "N/A").map(([label,value]) => `<dt>${label}</dt><dd>${escapeHtml(value)}</dd>`).join("")}</dl>
+      </div>
     </div>
-    <h2 style="margin:6px 0 10px 0;">${escapeHtml(movie.Title)} (${escapeHtml(movie.Year)})</h2>
-    <div style="position:relative;" id="poster-container">
-      <img src="${escapeHtml(movie.Poster !== "N/A" ? movie.Poster : "https://via.placeholder.com/200x300?text=N/A")}" 
-           alt="${escapeHtml(movie.Title)}" class="movie-detail-poster" />
-    </div>
-    <p><strong>Type:</strong> ${escapeHtml(movie.Type.charAt(0).toUpperCase() + movie.Type.slice(1))}</p>
-    <br>
-    <p><strong>Rating:</strong> ${escapeHtml(movie.Rated)}</p>
-    <br>
-    <p><strong>Genre:</strong> ${escapeHtml(movie.Genre || "N/A")}</p>
-    <br>
-    <p><strong>Runtime:</strong> ${escapeHtml(movie.Runtime || "N/A")}</p>
-    <br>
-    <p><strong>Director:</strong> ${escapeHtml(movie.Director || "N/A")}</p>
-    <br>
-    <p><strong>Actors:</strong> ${escapeHtml(movie.Actors || "N/A")}</p>
-    <br>
-    <div id="plot-container" style="overflow:hidden; transition:max-height 0.4s ease;">
-      <p id="plot-text" style="display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">
-        <strong>Plot:</strong> ${escapeHtml(fullPlot)}
-      </p>
-    </div>
-    <button id="toggle-plot" style="margin-top:6px; padding:6px 10px; border:none; border-radius:5px; cursor:pointer; font-weight:bold; background:#efef88; color:#000;">
-      See More
-    </button>
   `;
 
   // --- Secret Lincoln Scroll Button ---
@@ -593,40 +579,13 @@ function createMovieCard(movie, autoplay = false) {
     actionRow.append(listBtn);
   }
 
-  controls.insertBefore(actionRow, controls.firstChild);
-  card.querySelector("h2").after(controls);
+  if (isMovie) controls.append(actionRow);
+  else controls.prepend(actionRow);
+  card.querySelector(".detail-actions").append(controls);
   home.hidden = true;
   home.after(card);
   window.scrollTo(0, 0);
   card.querySelector("#close-card-x").focus({preventScroll:true});
-
-  // --- See More / See Less ---
-  const toggleBtn = card.querySelector("#toggle-plot");
-  if (toggleBtn) {
-    let expanded = false;
-    const plotText = document.getElementById("plot-text");
-
-    plotText.style.display = "-webkit-box";
-    plotText.style.webkitLineClamp = "2";
-    plotText.style.webkitBoxOrient = "vertical";
-    plotText.style.overflow = "hidden";
-
-    toggleBtn.addEventListener("click", () => {
-      if (!expanded) {
-        plotText.style.display = "block";
-        plotText.style.overflow = "visible";
-        toggleBtn.textContent = "See Less";
-        expanded = true;
-      } else {
-        plotText.style.display = "-webkit-box";
-        plotText.style.webkitLineClamp = "2";
-        plotText.style.webkitBoxOrient = "vertical";
-        plotText.style.overflow = "hidden";
-        toggleBtn.textContent = "See More";
-        expanded = false;
-      }
-    });
-  }
 
   // --- Close Card ---
   const closeCardX = document.getElementById("close-card-x");
@@ -743,38 +702,47 @@ function createMovieCard(movie, autoplay = false) {
       next.className = "next-provider";
       const tools = document.createElement("div");
       tools.className = "provider-toolbar";
-      const mode = providerModeControl(select);
-      tools.append(next, mode.label);
-      let revealTimer;
-      function select() {
-        clearTimeout(revealTimer);
-        status.classList.remove("is-hidden");
-        if (!status.isConnected) playerWrapper.append(status);
-        const opened = performance.now();
-        const provider = sources[index];
-        const frame = videoFrame.cloneNode(false);
-        mode.configure(frame);
-        const reveal = () => {
-          if (frame !== videoFrame) return;
-          clearTimeout(revealTimer);
-          revealTimer = setTimeout(() => status.classList.add("is-hidden"), Math.max(0, 650 - (performance.now() - opened)));
-        };
-        frame.onload = reveal;
-        frame.onerror = reveal;
-        revealTimer = setTimeout(reveal, 6000);
-        frame.hidden = false;
-        frame.title = provider.name + " player";
-        frame.src = provider.url;
-        videoFrame.replaceWith(frame);
-        videoFrame = frame;
-        next.textContent = provider.name + " · Switch source";
-      }
-      next.onclick = () => { index = (index + 1) % sources.length; select(); };
+      tools.append(next);
+      const caption = status.querySelector(".loader-subtext");
+      const playback = automaticProvider({
+        navigate(standard, fail) {
+          const provider = sources[index];
+          status.classList.remove("is-hidden", "awaiting-input");
+          caption.textContent = "Loading " + provider.name;
+          const frame = videoFrame.cloneNode(false);
+          if (standard) frame.removeAttribute("sandbox");
+          else frame.setAttribute("sandbox", "allow-scripts allow-same-origin allow-presentation");
+          frame.onerror = fail;
+          frame.onload = () => {
+            if (frame === videoFrame && provider.commands) {
+              frame.contentWindow.postMessage({command:"getStatus"}, provider.origin);
+            }
+          };
+          frame.hidden = false;
+          frame.title = provider.name + " player";
+          frame.src = provider.url;
+          videoFrame.replaceWith(frame);
+          videoFrame = frame;
+          next.textContent = provider.name + " · Switch source";
+        },
+        ready() { status.classList.add("is-hidden"); },
+        showControls() {
+          caption.textContent = "Press play in the player";
+          status.classList.add("awaiting-input");
+        },
+        unavailable() {
+          status.classList.remove("is-hidden");
+          caption.textContent = "Source unavailable. Switch source to retry.";
+          status.classList.add("awaiting-input");
+        }
+      });
+      next.onclick = () => { index = (index + 1) % sources.length; playback.start(); };
       const onMessage = event => {
         const provider = sources[index];
         if (event.source !== videoFrame.contentWindow || event.origin !== provider.origin) return;
         const update = window.StargazerSources.decodeEvent(provider, event.data, context);
         if (!update) return;
+        playback.signal(update);
         if (update.state === "playing" || update.state === "progress") {
           if (!started) {
             markTitleStarted(context.tmdbID, context.mediaType, { title: context.title, posterPath: context.posterPath, year: movie.Year, rating: movie.Rating });
@@ -789,12 +757,12 @@ function createMovieCard(movie, autoplay = false) {
       playerWrapper.append(tools);
       window.addEventListener("message", onMessage);
       stopNativePlayback = () => {
-        clearTimeout(revealTimer);
+        playback.stop();
         videoFrame.onload = videoFrame.onerror = null;
         tools.remove();
         window.removeEventListener("message", onMessage);
       };
-      select();
+      playback.start();
     }
     if (!source) {
       openProvider();
@@ -845,7 +813,6 @@ function createMovieCard(movie, autoplay = false) {
     };
 
     video.addEventListener("loadedmetadata", () => {
-      clearTimeout(loadDeadline);
       const stored = readPlaybackProgress()[progressKey(context.tmdbID, context.mediaType)];
       const sameEpisode = Number(stored?.last_season_watched) === context.season
         && Number(stored?.last_episode_watched) === context.episode;
@@ -854,8 +821,8 @@ function createMovieCard(movie, autoplay = false) {
         : stored?.progress;
       const savedTime = Number(progress?.watched);
       if (savedTime > 0 && savedTime < video.duration * 0.98) video.currentTime = savedTime;
-      status.remove();
     }, options);
+    video.addEventListener("canplay", () => { clearTimeout(loadDeadline); status.classList.add("is-hidden"); }, options);
     video.addEventListener("playing", () => {
       if (started) return;
       started = true;

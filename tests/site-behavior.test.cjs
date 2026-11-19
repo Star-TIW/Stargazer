@@ -56,40 +56,58 @@ test("both hosts permit all configured frame origins and use the same policy", (
   }
 });
 
-test("compatibility mode reloads the current embed and resets for the next session", () => {
-  let input;
-  let reloads = 0;
-  const page = {
-    createElement(tag) {
-      if (tag === "label") return { append() {} };
-      input = {checked:false, addEventListener(type, fn) { this[type] = fn; }};
-      return input;
-    }
-  };
-  const context = vm.createContext({document: page});
+function providerSession() {
+  let timer;
+  const attempts = [], events = [];
+  const context = vm.createContext({
+    setTimeout(fn) { timer = fn; return 1; },
+    clearTimeout() { timer = undefined; }
+  });
   vm.runInContext(read("provider-frame.js"), context);
-  const control = context.providerModeControl(() => reloads++);
-  const attributes = new Map();
-  const frame = {
-    setAttribute: (name, value) => attributes.set(name, value),
-    removeAttribute: name => attributes.delete(name)
-  };
-  control.configure(frame);
-  assert.equal(attributes.get("sandbox"), "allow-scripts allow-same-origin allow-presentation");
-  input.checked = true;
-  input.change();
-  control.configure(frame);
-  assert.equal(reloads, 1);
-  assert.equal(attributes.has("sandbox"), false);
-  control.reset();
-  control.configure(frame);
-  assert.ok(attributes.has("sandbox"));
+  const player = context.automaticProvider({
+    navigate(standard, fail) { attempts.push({standard, fail}); },
+    ready() { events.push("ready"); },
+    unavailable() { events.push("failed"); },
+    showControls() { events.push("controls"); }
+  });
+  player.start();
+  return {player, attempts, events, tick() { const fn = timer; timer = undefined; fn?.(); }};
+}
+
+test("active playback keeps sandbox protection and cancels the fallback", () => {
+  const s = providerSession();
+  s.player.signal({state:"playing"});
+  s.tick();
+  assert.deepEqual(s.events, ["ready"]);
+  assert.deepEqual(s.attempts.map(a => a.standard), [false]);
 });
 
-test("movie and live pages load the mode control before their player script", () => {
-  for (const [path, script] of [["index.html", "movies.js"], ["live/index.html", "/live/live.js"]]) {
-    const html = read(path);
-    const helper = html.indexOf('src="/provider-frame.js"');
-    assert.ok(helper >= 0 && helper < html.indexOf('src="' + script + '"'));
-  }
+test("a single history message does not dismiss the loader", () => {
+  const s = providerSession();
+  s.player.signal({state:"progress", time:90});
+  assert.deepEqual(s.events, []);
+  s.player.signal({state:"progress", time:91});
+  assert.deepEqual(s.events, ["ready"]);
+});
+
+test("a silent sandbox retries once, then allows a gesture without claiming playback", () => {
+  const s = providerSession();
+  s.tick();
+  s.tick();
+  s.tick();
+  assert.deepEqual(s.attempts.map(a => a.standard), [false, true]);
+  assert.deepEqual(s.events, ["controls"]);
+  s.player.signal({state:"ready"});
+  assert.deepEqual(s.events, ["controls", "ready"]);
+});
+
+test("closing or switching invalidates late frame errors", () => {
+  const s = providerSession();
+  s.player.signal({state:"failed"});
+  s.attempts[0].fail();
+  assert.equal(s.attempts.length, 2);
+  s.player.stop();
+  s.attempts[1].fail();
+  s.tick();
+  assert.deepEqual(s.events, []);
 });

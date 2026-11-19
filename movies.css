@@ -1212,3 +1212,28 @@ main#movie-card {
 
 .provider-toolbar .next-provider { position: static; }
 .stargazer-player-loader.is-hidden * { animation-play-state: paused; }
+
+main#movie-card { width: min(94vw,1080px) !important; padding: clamp(16px,3vw,36px); }
+.detail-layout { display: grid; grid-template-columns: minmax(170px,32%) 1fr; gap: clamp(20px,4vw,56px); align-items: start; margin-top: 18px; }
+#movie-card #poster-container { position: relative; }
+#movie-card #poster-container .movie-detail-poster { display:block; width:100% !important; max-width:100% !important; height:auto !important; aspect-ratio:2/3; object-fit:cover !important; margin:0 !important; border-radius:14px; }
+.detail-info { min-width:0; }
+.detail-info h2 { font-size:clamp(27px,4vw,54px); line-height:1.08; margin:7px 0; text-wrap:balance; }
+.detail-meta,.detail-genres,.detail-credits { color:#c7c5b9; font-size:14px; }
+.detail-actions { margin:18px 0; }
+.detail-actions #episode-list { max-height:18rem; overflow-y:auto; }
+.detail-plot { max-width:66ch; line-height:1.65; }
+.detail-credits { display:grid; grid-template-columns:auto 1fr; gap:8px 14px; margin-top:16px; }
+.detail-credits dt { color:#efef88; }
+.stargazer-player-loader.awaiting-input { inset:auto 12px 48px auto; width:min(235px,80%); height:34px; border-radius:10px; pointer-events:none; }
+.awaiting-input .loader-scene { position:static; width:auto; height:100%; transform:none; animation:none; opacity:1; display:grid; place-items:center; }
+.awaiting-input .loader-scene > :not(.loader-subtext), .awaiting-input .loader-scene::after { display:none; }
+.awaiting-input .loader-subtext { position:static; transform:none; animation:none; opacity:1; text-align:center; }
+@media(max-width:600px) {
+  .detail-layout { grid-template-columns:minmax(78px,28%) 1fr; gap:12px 16px; }
+  .detail-info { display:contents; }
+  #poster-container { grid-row:1 / 4; }
+  .detail-meta,.detail-info h2,.detail-genres { grid-column:2; align-self:center; }
+  .detail-actions,.detail-plot,.detail-credits { grid-column:1 / -1; }
+  .detail-actions { margin:0; }
+}

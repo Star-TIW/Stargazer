@@ -109,6 +109,23 @@ function initParticles(effect = currentEffect) {
   currentEffect = VALID_EFFECTS.includes(effect) ? effect : "stars";
   document.documentElement.classList.toggle("motion-off", currentEffect === "off");
   const previous = window.pJSDom?.[0]?.pJS;
+  const layer = document.getElementById("particles-js");
+  const canvas = layer?.querySelector("canvas");
+  if (canvas && !reducedMotion.matches) {
+    const still = document.createElement("canvas");
+    still.width = canvas.width;
+    still.height = canvas.height;
+    still.getContext("2d")?.drawImage(canvas, 0, 0);
+    Object.assign(still.style, {position:"absolute", inset:"0", width:"100%", height:"100%", pointerEvents:"none"});
+    layer.parentNode.querySelector(".particle-transition")?.remove();
+    const overlay = layer.cloneNode(false);
+    overlay.removeAttribute("id");
+    overlay.className = "particle-transition";
+    Object.assign(overlay.style, {position:"fixed", inset:"0", zIndex:getComputedStyle(layer).zIndex, pointerEvents:"none"});
+    overlay.append(still);
+    layer.after(overlay);
+    overlay.animate([{opacity:1}, {opacity:0}], {duration:420, easing:"ease-out"}).onfinish = () => overlay.remove();
+  }
   if (previous) {
     previous.fn.vendors.destroypJS();
     window.pJSDom = [];
@@ -118,6 +135,7 @@ function initParticles(effect = currentEffect) {
   options.particles.move.speed *= 0.65;
   options.particles.number.value = Math.min(options.particles.number.value, 140);
   particlesJS("particles-js", options);
+  if (previous && !reducedMotion.matches) layer.querySelector("canvas")?.animate([{opacity:0},{opacity:1}], {duration:420, easing:"ease-in"});
 }
 
 // Settings page controls its own buttons. Main pages only need the particles + Settings modal.

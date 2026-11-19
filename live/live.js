@@ -137,16 +137,15 @@ document.addEventListener("DOMContentLoaded", () => {
   nextSource.hidden = true;
 
   const showEmbed = () => {
-    mode.configure(videoIframe);
+    // StreamFree specifies a standard iframe for its live embeds.
     videoIframe.src = activeEmbeds[activeEmbedIndex];
     nextSource.hidden = activeEmbeds.length < 2;
     nextSource.textContent = `Next source (${activeEmbedIndex + 1}/${activeEmbeds.length})`;
   };
 
-  const mode = providerModeControl(showEmbed);
   const toolbar = document.createElement("div");
   toolbar.className = "provider-toolbar";
-  toolbar.append(nextSource, mode.label);
+  toolbar.append(nextSource);
 
   nextSource.onclick = () => {
     activeEmbedIndex = (activeEmbedIndex + 1) % activeEmbeds.length;
@@ -183,7 +182,6 @@ document.addEventListener("DOMContentLoaded", () => {
       });
 
       videoIframe = document.createElement("iframe");
-      videoIframe.setAttribute("sandbox", "allow-scripts allow-same-origin allow-presentation");
       videoIframe.id = "video-iframe";
       videoIframe.setAttribute("frameborder", "0");
       videoIframe.setAttribute("allow", "autoplay; fullscreen; encrypted-media; picture-in-picture");
@@ -474,7 +472,6 @@ document.addEventListener("DOMContentLoaded", () => {
         const stream = gameStreams[ev.id];
         if (!stream || Date.now() < showTime.getTime()) return;
         clearTimeout(hideVideoTimer);
-        mode.reset();
         activeEmbeds = stream;
         activeEmbedIndex = 0;
         showEmbed();
