@@ -366,6 +366,7 @@ function savePlaybackProgress(data, context) {
   existing.year = existing.year || started[key]?.year || "N/A";
   existing.rating = existing.rating || started[key]?.rating || "N/A";
   existing.progress = progress;
+  if (data.lastSource) existing.lastSource = data.lastSource;
   existing.last_updated = Date.now();
 
   if (data.mediaType === "tv" && data.season != null && data.episode != null) {
@@ -378,6 +379,7 @@ function savePlaybackProgress(data, context) {
       season,
       episode,
       progress,
+      ...(data.lastSource ? {lastSource:data.lastSource} : {}),
       last_updated: Date.now()
     };
   }
@@ -720,6 +722,10 @@ function createMovieCard(movie, autoplay = false) {
         `tv/${context.tmdbID}/${context.season}/${context.episode}`;
       const sources = window.StargazerSources.buildSources(context, `https://vidup.to/${path}?autoPlay=true`);
       let index = initialProviderIndex(sources);
+      const initialSaved = savedEpisodeOrMovie();
+      const initialDecision = window.StargazerSources.decideResume(sources, index, initialSaved?.progress, initialSaved?.lastSource);
+      index = initialDecision.index;
+      let manualSourceOverride = false;
       let started = false;
       let lastSample, previousHistoryTime;
       let manualResumeAt = 0;
@@ -733,7 +739,10 @@ function createMovieCard(movie, autoplay = false) {
       resumeHint.setAttribute("aria-live", "polite");
       const tools = document.createElement("div");
       tools.className = "provider-toolbar";
-      tools.append(next, resumeHint);
+      const resumeAction = document.createElement("button");
+      resumeAction.className = "provider-resume-action";
+      resumeAction.hidden = true;
+      tools.append(next, resumeHint, resumeAction);
       const caption = status.querySelector(".loader-subtext");
       const playback = providerPlayback({
         navigate(fail) {
@@ -757,12 +766,27 @@ function createMovieCard(movie, autoplay = false) {
           previousHistoryTime = null;
           if (provider.protocol === "vidy") frame.allow = "encrypted-media; autoplay *; fullscreen *; picture-in-picture";
           else frame.allow = "autoplay; fullscreen; encrypted-media; picture-in-picture";
-          const progress = savedEpisodeOrMovie()?.progress;
+          const savedEntry = savedEpisodeOrMovie();
+          const progress = savedEntry?.progress;
+          const decision = window.StargazerSources.decideResume(sources, index, progress, savedEntry?.lastSource, manualSourceOverride);
+          if (decision.redirected) {
+            index = decision.index;
+            return playback.start();
+          }
           switchResumeAt = window.StargazerSources.resumePosition(progress);
           switchResumePending = switchResumeAt > 0;
           lastSeekRequestAt = 0;
           manualResumeAt = provider.resumeParam ? 0 : switchResumeAt;
-          resumeHint.textContent = switchResumeAt ? "Saved at " + formatWatchTime(switchResumeAt) : "";
+          const selfMismatch = provider.resumeMode === "self" && switchResumeAt > 30 &&
+            Number(progress?.watched) < Number(progress?.duration) * 0.95 && savedEntry?.lastSource !== provider.name;
+          resumeHint.textContent = selfMismatch ? "Resume from " + formatWatchTime(switchResumeAt) + "? This player starts at its own saved spot." :
+            switchResumeAt ? "Saved at " + formatWatchTime(switchResumeAt) : "";
+          resumeAction.hidden = !selfMismatch;
+          resumeAction.textContent = "Resume in supported source";
+          resumeAction.onclick = () => {
+            const target = window.StargazerSources.decideResume(sources, index, progress, savedEntry?.lastSource);
+            if (target.index !== index) { index = target.index; manualSourceOverride = false; playback.start(); }
+          };
           frame.src = window.StargazerSources.resumeUrl(provider, progress);
           videoFrame.replaceWith(frame);
           videoFrame = frame;
@@ -778,13 +802,18 @@ function createMovieCard(movie, autoplay = false) {
           status.classList.add("source-error");
         }
       });
-      next.onclick = () => { index = (index + 1) % sources.length; playback.start(); };
+      next.onclick = () => { index = (index + 1) % sources.length; manualSourceOverride = true; playback.start(); };
       const onMessage = event => {
         const provider = sources[index];
         if (event.source !== videoFrame.contentWindow || !window.StargazerSources.acceptsOrigin(provider, event.origin)) return;
         const update = window.StargazerSources.decodeEvent(provider, event.data, context);
         if (!update) return;
         const playing = playback.signal(update);
+        if (provider.commands && switchResumePending && event.data &&
+            (typeof event.data === "object" ? event.data.type : String(event.data).includes("PLAYER_EVENT")) && !lastSeekRequestAt) {
+          videoFrame.contentWindow.postMessage({command:"seek", time:switchResumeAt}, "*");
+          lastSeekRequestAt = Date.now();
+        }
         // VidFast supports a postMessage seek command. Repeat after the player
         // reports readiness because an early iframe-load seek may be ignored.
         if (provider.commands && switchResumePending && update.duration > 0 &&
@@ -824,7 +853,7 @@ function createMovieCard(movie, autoplay = false) {
           started = true;
         }
         savePlaybackProgress({tmdbId:context.tmdbID, mediaType:context.mediaType, season:context.season,
-          episode:context.episode, currentTime:update.time, duration:update.duration}, context);
+          episode:context.episode, currentTime:update.time, duration:update.duration, lastSource:provider.name}, context);
       };
       playerWrapper.append(tools);
       window.addEventListener("message", onMessage);
