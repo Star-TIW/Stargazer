@@ -74,6 +74,16 @@ test('resume uses the current episode position and each documented parameter', (
   }
 });
 
+test('a saved position is available for manual seeking on every player', () => {
+  const { resumePosition } = require('../player-sources.js');
+  assert.equal(resumePosition({watched:151.9,duration:900}),151);
+  assert.equal(resumePosition({watched:'151.9',duration:'900'}),151);
+  for (const progress of [null, {watched:151}, {watched:-1,duration:900},
+    {watched:0.9,duration:900}, {watched:882,duration:900}]) {
+    assert.equal(resumePosition(progress),0);
+  }
+});
+
 test('mirror origins are restricted to the active provider and invalid samples are discarded', () => {
   const {acceptsOrigin} = require('../player-sources.js');
   const sources = buildSources(context,primary);

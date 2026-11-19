@@ -1211,6 +1211,14 @@ main#movie-card {
 @media(max-width:600px) { #embedded-page-controls { flex-wrap:wrap; max-width:calc(100% - 72px); } }
 
 .provider-toolbar .next-provider { position: static; }
+.provider-resume-hint {
+  padding: 6px 9px;
+  border-radius: 8px;
+  background: #171717;
+  color: #fff;
+  font-size: 13px;
+}
+.provider-resume-hint:empty { display: none; }
 .stargazer-player-loader.is-hidden * { animation-play-state: paused; }
 
 main#movie-card { width: min(94vw,1080px) !important; padding: clamp(16px,3vw,36px); }

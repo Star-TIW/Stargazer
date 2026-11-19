@@ -58,11 +58,15 @@
     return {time: Math.min(Number(watched), Number(duration)), duration: Number(duration)};
   }
 
+  function resumePosition(progress) {
+    const saved = position(progress?.watched, progress?.duration);
+    return saved && saved.time < saved.duration * 0.98 ? Math.floor(saved.time) : 0;
+  }
+
   function resumeUrl(source, progress) {
     const url = new URL(source.url);
-    if (source.resumeParam && progress?.watched > 0 && progress.watched < progress.duration * 0.98) {
-      url.searchParams.set(source.resumeParam, Math.floor(progress.watched));
-    }
+    const seconds = resumePosition(progress);
+    if (source.resumeParam && seconds > 0) url.searchParams.set(source.resumeParam, seconds);
     return url.href;
   }
 
@@ -129,7 +133,7 @@
     return /^\/media\/(?:[\w-]+\/)*[\w-]+\.(?:mp4|webm)$/.test(path) ? path : null;
   }
 
-  const api = { getSource, providers, buildSources, decodeEvent, resumeUrl, acceptsOrigin };
+  const api = { getSource, providers, buildSources, decodeEvent, resumePosition, resumeUrl, acceptsOrigin };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.StargazerSources = api;
 })(typeof window !== 'undefined' ? window : globalThis);

@@ -722,11 +722,15 @@ function createMovieCard(movie, autoplay = false) {
       let index = initialProviderIndex(sources);
       let started = false;
       let lastSample, previousHistoryTime;
+      let manualResumeAt = 0;
       const next = document.createElement("button");
       next.className = "next-provider";
+      const resumeHint = document.createElement("span");
+      resumeHint.className = "provider-resume-hint";
+      resumeHint.setAttribute("aria-live", "polite");
       const tools = document.createElement("div");
       tools.className = "provider-toolbar";
-      tools.append(next);
+      tools.append(next, resumeHint);
       const caption = status.querySelector(".loader-subtext");
       const playback = providerPlayback({
         navigate(fail) {
@@ -747,7 +751,10 @@ function createMovieCard(movie, autoplay = false) {
           previousHistoryTime = null;
           if (provider.protocol === "vidy") frame.allow = "encrypted-media; autoplay *; fullscreen *; picture-in-picture";
           else frame.allow = "autoplay; fullscreen; encrypted-media; picture-in-picture";
-          frame.src = window.StargazerSources.resumeUrl(provider, savedEpisodeOrMovie()?.progress);
+          const progress = savedEpisodeOrMovie()?.progress;
+          manualResumeAt = provider.resumeParam ? 0 : window.StargazerSources.resumePosition(progress);
+          resumeHint.textContent = manualResumeAt ? "Saved at " + formatWatchTime(manualResumeAt) : "";
+          frame.src = window.StargazerSources.resumeUrl(provider, progress);
           videoFrame.replaceWith(frame);
           videoFrame = frame;
           next.textContent = provider.name + " · Switch source";
@@ -780,6 +787,10 @@ function createMovieCard(movie, autoplay = false) {
           if (!update.updatedAt && !playing && !historyChanged && saved?.progress) return;
         }
         const second = Math.floor(update.time);
+        if (!update.history && manualResumeAt && second >= manualResumeAt) {
+          manualResumeAt = 0;
+          resumeHint.textContent = "";
+        }
         if (lastSample?.second === second && lastSample.duration === update.duration) return;
         lastSample = {second, duration:update.duration};
         if (!started) {
