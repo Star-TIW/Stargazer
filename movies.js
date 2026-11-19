@@ -723,6 +723,8 @@ function createMovieCard(movie, autoplay = false) {
       let started = false;
       let lastSample, previousHistoryTime;
       let manualResumeAt = 0;
+      let switchResumeAt = 0;
+      let switchResumePending = false;
       const next = document.createElement("button");
       next.className = "next-provider";
       const resumeHint = document.createElement("span");
@@ -752,8 +754,10 @@ function createMovieCard(movie, autoplay = false) {
           if (provider.protocol === "vidy") frame.allow = "encrypted-media; autoplay *; fullscreen *; picture-in-picture";
           else frame.allow = "autoplay; fullscreen; encrypted-media; picture-in-picture";
           const progress = savedEpisodeOrMovie()?.progress;
-          manualResumeAt = provider.resumeParam ? 0 : window.StargazerSources.resumePosition(progress);
-          resumeHint.textContent = manualResumeAt ? "Saved at " + formatWatchTime(manualResumeAt) : "";
+          switchResumeAt = window.StargazerSources.resumePosition(progress);
+          switchResumePending = switchResumeAt > 0;
+          manualResumeAt = provider.resumeParam ? 0 : switchResumeAt;
+          resumeHint.textContent = switchResumeAt ? "Saved at " + formatWatchTime(switchResumeAt) : "";
           frame.src = window.StargazerSources.resumeUrl(provider, progress);
           videoFrame.replaceWith(frame);
           videoFrame = frame;
@@ -787,6 +791,13 @@ function createMovieCard(movie, autoplay = false) {
           if (!update.updatedAt && !playing && !historyChanged && saved?.progress) return;
         }
         const second = Math.floor(update.time);
+        // A new embed can report 0:00 before honoring its start parameter.
+        // Protect the saved checkpoint until playback reaches that position.
+        if (!update.history && switchResumePending) {
+          if (second + 5 < switchResumeAt) return;
+          switchResumePending = false;
+          resumeHint.textContent = "";
+        }
         if (!update.history && manualResumeAt && second >= manualResumeAt) {
           manualResumeAt = 0;
           resumeHint.textContent = "";
