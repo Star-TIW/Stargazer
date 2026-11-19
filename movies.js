@@ -725,6 +725,7 @@ function createMovieCard(movie, autoplay = false) {
       let manualResumeAt = 0;
       let switchResumeAt = 0;
       let switchResumePending = false;
+      let lastSeekRequestAt = 0;
       const next = document.createElement("button");
       next.className = "next-provider";
       const resumeHint = document.createElement("span");
@@ -744,6 +745,9 @@ function createMovieCard(movie, autoplay = false) {
           frame.onload = () => {
             if (frame === videoFrame && provider.commands) {
               frame.contentWindow.postMessage({command:"getStatus"}, provider.origin);
+              if (switchResumeAt > 0) {
+                frame.contentWindow.postMessage({command:"seek", time:switchResumeAt}, provider.origin);
+              }
             }
           };
           frame.hidden = false;
@@ -756,6 +760,7 @@ function createMovieCard(movie, autoplay = false) {
           const progress = savedEpisodeOrMovie()?.progress;
           switchResumeAt = window.StargazerSources.resumePosition(progress);
           switchResumePending = switchResumeAt > 0;
+          lastSeekRequestAt = 0;
           manualResumeAt = provider.resumeParam ? 0 : switchResumeAt;
           resumeHint.textContent = switchResumeAt ? "Saved at " + formatWatchTime(switchResumeAt) : "";
           frame.src = window.StargazerSources.resumeUrl(provider, progress);
@@ -780,6 +785,16 @@ function createMovieCard(movie, autoplay = false) {
         const update = window.StargazerSources.decodeEvent(provider, event.data, context);
         if (!update) return;
         const playing = playback.signal(update);
+        // VidFast supports a postMessage seek command. Repeat after the player
+        // reports readiness because an early iframe-load seek may be ignored.
+        if (provider.commands && switchResumePending && update.duration > 0 &&
+            update.time != null && update.time + 5 < switchResumeAt) {
+          const now = Date.now();
+          if (!lastSeekRequestAt || now - lastSeekRequestAt > 3000) {
+            videoFrame.contentWindow.postMessage({command:"seek", time:switchResumeAt}, provider.origin);
+            lastSeekRequestAt = now;
+          }
+        }
         if (update.duration == null) return;
         if (!playing && update.time === 0 && !lastSample) return;
         if (update.history) {
