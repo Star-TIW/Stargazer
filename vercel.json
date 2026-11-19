@@ -5,7 +5,7 @@
       "headers": [
         {
           "key": "Content-Security-Policy",
-          "value": "frame-src 'self' https://vidup.to https://vidlink.pro https://vidfast.vc https://vidrock.to https://www.vidy.st https://player.vidzee.wtf https://www.viduki.net https://vidvault.to https://streamfree.top https://strmfree.st; media-src 'self'; object-src 'none'; base-uri 'self'"
+          "value": "frame-src 'self' https://vidup.to https://vidlink.pro https://vidfast.vc https://vidfast.pro https://vidfast.in https://vidfast.io https://vidfast.me https://vidfast.net https://vidfast.pm https://vidfast.xyz https://vidfast.bz https://vidrock.to https://www.vidy.st https://vidy.st https://player.vidzee.wtf https://www.viduki.net https://vidvault.to https://streamfree.top https://strmfree.st; media-src 'self'; object-src 'none'; base-uri 'self'"
         },
         { "key": "X-Content-Type-Options", "value": "nosniff" }
       ]

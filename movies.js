@@ -425,7 +425,7 @@ function updateMovieWatchButton(button, movie) {
   if (movie.mediaType === "tv" && progress.season && progress.episode) {
     button.textContent = `Continue S${progress.season} E${progress.episode}: ${Math.round(progress.percent)}%`;
   } else {
-    button.textContent = `Continue Watching: ${Math.round(progress.percent)}%`;
+    button.textContent = `Continue from ${formatWatchTime(progress.watched)} · ${Math.round(progress.percent)}%`;
   }
 }
 
@@ -709,15 +709,19 @@ function createMovieCard(movie, autoplay = false) {
 
     const source = window.StargazerSources.getSource(context);
     function openProvider() {
-      const progress = getStoredProgress(context.tmdbID, context.mediaType);
-      const resume = progress && (context.mediaType === "movie" ||
-        (Number(progress.season) === context.season && Number(progress.episode) === context.episode));
-      const startAt = resume && progress.percent < 98 ? Math.floor(progress.watched) : 0;
+      function savedEpisodeOrMovie() {
+        const entry = readPlaybackProgress()[progressKey(context.tmdbID, context.mediaType)];
+        if (context.mediaType === "movie") return entry;
+        const episode = entry?.show_progress?.[`s${context.season}e${context.episode}`];
+        if (episode) return episode;
+        if (Number(entry?.last_season_watched) === context.season && Number(entry?.last_episode_watched) === context.episode) return entry;
+      }
       const path = context.mediaType === "movie" ? `movie/${context.tmdbID}` :
         `tv/${context.tmdbID}/${context.season}/${context.episode}`;
-      const sources = window.StargazerSources.buildSources(context, `https://vidup.to/${path}?autoPlay=true&startAt=${startAt}`);
+      const sources = window.StargazerSources.buildSources(context, `https://vidup.to/${path}?autoPlay=true`);
       let index = initialProviderIndex(sources);
       let started = false;
+      let lastSample, previousHistoryTime;
       const next = document.createElement("button");
       next.className = "next-provider";
       const tools = document.createElement("div");
@@ -739,7 +743,11 @@ function createMovieCard(movie, autoplay = false) {
           frame.hidden = false;
           frame.title = provider.name + " player";
           configureExternalFrame(frame);
-          frame.src = provider.url;
+          lastSample = null;
+          previousHistoryTime = null;
+          if (provider.protocol === "vidy") frame.allow = "encrypted-media; autoplay *; fullscreen *; picture-in-picture";
+          else frame.allow = "autoplay; fullscreen; encrypted-media; picture-in-picture";
+          frame.src = window.StargazerSources.resumeUrl(provider, savedEpisodeOrMovie()?.progress);
           videoFrame.replaceWith(frame);
           videoFrame = frame;
           next.textContent = provider.name + " · Switch source";
@@ -757,19 +765,29 @@ function createMovieCard(movie, autoplay = false) {
       next.onclick = () => { index = (index + 1) % sources.length; playback.start(); };
       const onMessage = event => {
         const provider = sources[index];
-        if (event.source !== videoFrame.contentWindow || event.origin !== provider.origin) return;
+        if (event.source !== videoFrame.contentWindow || !window.StargazerSources.acceptsOrigin(provider, event.origin)) return;
         const update = window.StargazerSources.decodeEvent(provider, event.data, context);
         if (!update) return;
-        if (playback.signal(update)) {
-          if (!started) {
-            markTitleStarted(context.tmdbID, context.mediaType, { title: context.title, posterPath: context.posterPath, year: movie.Year, rating: movie.Rating });
-            started = true;
-          }
-          const payload = typeof event.data === "string" ? JSON.parse(event.data) : event.data;
-          if (Number(payload.data?.duration) > 0 && Number.isFinite(Number(payload.data?.currentTime))) {
-            savePlaybackProgress({...payload.data, tmdbId: context.tmdbID, mediaType: context.mediaType, season: context.season, episode: context.episode}, context);
-          }
+        const playing = playback.signal(update);
+        if (update.duration == null) return;
+        if (!playing && update.time === 0 && !lastSample) return;
+        if (update.history) {
+          const saved = savedEpisodeOrMovie();
+          if (update.updatedAt && saved?.last_updated > update.updatedAt) return;
+          // An undated history snapshot on frame load may predate our last session.
+          const historyChanged = previousHistoryTime != null && previousHistoryTime !== update.time;
+          previousHistoryTime = update.time;
+          if (!update.updatedAt && !playing && !historyChanged && saved?.progress) return;
         }
+        const second = Math.floor(update.time);
+        if (lastSample?.second === second && lastSample.duration === update.duration) return;
+        lastSample = {second, duration:update.duration};
+        if (!started) {
+          markTitleStarted(context.tmdbID, context.mediaType, {title:context.title, posterPath:context.posterPath, year:movie.Year, rating:movie.Rating});
+          started = true;
+        }
+        savePlaybackProgress({tmdbId:context.tmdbID, mediaType:context.mediaType, season:context.season,
+          episode:context.episode, currentTime:update.time, duration:update.duration}, context);
       };
       playerWrapper.append(tools);
       window.addEventListener("message", onMessage);
@@ -929,11 +947,15 @@ function createMovieCard(movie, autoplay = false) {
       }
 
       episodeList.innerHTML = "";
+      const history = readPlaybackProgress()[progressKey(movie.tmdbID, movie.mediaType)]?.show_progress;
       episodes.forEach((episode) => {
         const button = document.createElement("button");
         button.type = "button";
-        const episodeProgress = getStoredProgress(movie.tmdbID, movie.mediaType);
+        const progress = history?.[`s${seasonNumber}e${episode.Episode}`]?.progress;
         button.textContent = `Episode ${episode.Episode}: ${episode.Title}`;
+        if (progress?.duration > 0 && progress.watched > 0) {
+          button.textContent += ` · ${formatWatchTime(progress.watched)} (${Math.min(100, Math.round(100 * progress.watched / progress.duration))}%)`;
+        }
         const isSavedEpisode =
           savedEpisodeInfo?.season === seasonNumber &&
           String(savedEpisodeInfo?.episode) === String(episode.Episode);

@@ -45,3 +45,42 @@ test('TV history uses the selected episode rather than another episode progress'
   payload.data['550'].show_progress.s2e3={season:2,episode:3,progress:{watched:30,duration:900}};
   assert.equal(decodeEvent({protocol:'history'},payload,tv).time,30);
 });
+
+test('all ten providers expose seconds and duration for the shared progress store', () => {
+  for (const source of buildSources(context, primary)) {
+    const history = {'550': {id:550,type:'movie',progress:{watched:120.5,duration:600}}};
+    const update = decodeEvent(source, {type:'MEDIA_DATA',data:JSON.stringify(history)}, context);
+    assert.equal(update.time, 120.5, source.name);
+    assert.equal(update.duration, 600, source.name);
+    for (const event of ['timeupdate','seeked','pause','ended']) {
+      const data = {event,currentTime:240,duration:600};
+      const raw = source.protocol === 'vidy' ? JSON.stringify(data) : {type:'PLAYER_EVENT',data};
+      const sample = decodeEvent(source, raw, context);
+      assert.equal(sample.time, event === 'ended' ? 600 : 240, source.name);
+      assert.equal(sample.duration, 600);
+    }
+  }
+});
+
+test('resume uses the current episode position and each documented parameter', () => {
+  const {resumeUrl} = require('../player-sources.js');
+  const tv = {...context,mediaType:'tv',season:2,episode:3};
+  for (const source of buildSources(tv, 'https://vidup.to/tv/550/2/3')) {
+    const url = new URL(resumeUrl(source,{watched:151.9,duration:900}));
+    const key = {VidUP:'startAt',VidFast:'startAt',VidLink:'startAt',Vidy:'progress'}[source.name];
+    if (key) assert.equal(url.searchParams.get(key),'151',source.name);
+    else assert.equal(url.href,source.url);
+    assert.equal(resumeUrl(source,{watched:899,duration:900}),source.url);
+  }
+});
+
+test('mirror origins are restricted to the active provider and invalid samples are discarded', () => {
+  const {acceptsOrigin} = require('../player-sources.js');
+  const sources = buildSources(context,primary);
+  assert.ok(acceptsOrigin(sources[2],'https://vidfast.pro'));
+  assert.ok(!acceptsOrigin(sources[0],'https://vidfast.pro'));
+  assert.ok(!acceptsOrigin(sources[2],'https://vidfast.pro.example.com'));
+  for (const bad of [null, '', -1, Infinity]) {
+    assert.equal(decodeEvent(sources[0],{type:'PLAYER_EVENT',data:{event:'timeupdate',currentTime:bad,duration:90}},context),null);
+  }
+});

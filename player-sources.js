@@ -5,11 +5,11 @@
 (function (root) {
   'use strict';
   const providers = [
-    { name: 'VidUP', base: 'https://vidup.to', protocol: 'player' },
-    { name: 'VidLink', base: 'https://vidlink.pro', protocol: 'player', query: 'autoplay=true' },
-    { name: 'VidFast', base: 'https://vidfast.vc', protocol: 'player', commands: true, query: 'autoPlay=true' },
+    { name: 'VidUP', resumeParam: 'startAt', base: 'https://vidup.to', protocol: 'player' },
+    { name: 'VidLink', resumeParam: 'startAt', base: 'https://vidlink.pro', protocol: 'player', query: 'autoplay=true' },
+    { name: 'VidFast', resumeParam: 'startAt', base: 'https://vidfast.vc', protocol: 'player', commands: true, query: 'autoPlay=true' },
     { name: 'VidRock', base: 'https://vidrock.to', protocol: 'player', query: 'autoplay=true' },
-    { name: 'Vidy', base: 'https://www.vidy.st', protocol: 'vidy', query: 'autoplay=true' },
+    { name: 'Vidy', resumeParam: 'progress', base: 'https://www.vidy.st', protocol: 'vidy', query: 'autoplay=true' },
     { name: 'VidZee', base: 'https://player.vidzee.wtf/embed', protocol: 'history' },
     { name: 'Viduki 1 · Multi Server', base: 'https://www.viduki.net/1', protocol: 'history', api: 1 },
     { name: 'Viduki 2 · Multi Language', base: 'https://www.viduki.net/2', protocol: 'history', api: 2 },
@@ -52,6 +52,25 @@
       ((data.season == null || Number(data.season) === Number(context.season)) &&
        (data.episode == null || Number(data.episode) === Number(context.episode)));
   }
+  function position(watched, duration) {
+    const numeric = value => (typeof value === 'number' || (typeof value === 'string' && value.trim() !== '')) && Number.isFinite(Number(value));
+    if (!numeric(watched) || !numeric(duration) || Number(watched) < 0 || Number(duration) <= 0) return null;
+    return {time: Math.min(Number(watched), Number(duration)), duration: Number(duration)};
+  }
+
+  function resumeUrl(source, progress) {
+    const url = new URL(source.url);
+    if (source.resumeParam && progress?.watched > 0 && progress.watched < progress.duration * 0.98) {
+      url.searchParams.set(source.resumeParam, Math.floor(progress.watched));
+    }
+    return url.href;
+  }
+
+  function acceptsOrigin(source, origin) {
+    if (origin === source.origin) return true;
+    if (source.name === 'Vidy') return origin === 'https://vidy.st';
+    return source.name === 'VidFast' && /^https:\/\/vidfast\.(pro|in|io|me|net|pm|xyz|bz)$/.test(origin);
+  }
   // Public postMessage APIs: envelope-based PLAYER_EVENT, Vidy's JSON events,
   // MEDIA_DATA watch history, and Viduki API 1's documented failure notification.
   function decodeEvent(source, raw, context) {
@@ -73,21 +92,22 @@
         if (!episode || !matches(episode, context)) return null;
         progress = episode.progress;
       }
-      return Number.isFinite(Number(progress?.watched)) && Number(progress?.duration) > 0
-        ? { state: 'progress', time: Number(progress.watched) } : null;
+      const sample = position(progress?.watched, progress?.duration);
+      return sample && {state: 'progress', ...sample, history: true, updatedAt: Number(
+        context.mediaType === 'tv' ? entry.show_progress[`s${context.season}e${context.episode}`].last_updated : entry.last_updated
+      ) || 0};
+
     }
     const data = parseObject(p.data) || p;
     if (!matches(data, context)) return null;
     const type = String(data.event || p.event || p.type || '').toLowerCase();
     if (['error', 'playererror', 'playbackerror', 'unavailable'].includes(type)) return { state: 'failed' };
     if (p.type !== 'PLAYER_EVENT' && source.protocol !== 'vidy') return null;
-    if (type === 'play') return { state: 'ready' };
-    if (type === 'playing' && data.playing !== false) return { state: 'playing' };
-    if (type === 'playerstatus' && data.playing === true) return { state: 'playing' };
-    if (type === 'timeupdate' && Number.isFinite(Number(data.currentTime)) && Number(data.duration) > 0) {
-      return data.playing === true ? { state: 'playing' } : { state: 'progress', time: Number(data.currentTime) };
-    }
-    if (['pause', 'playerstatus'].includes(type) && Number(data.duration) > 0) return { state: 'ready' };
+    const sample = position(data.currentTime, data.duration);
+    if (type === 'ended' && sample) return {state:'ready', ...sample, time:sample.duration};
+    if (type === 'playing' || (type === 'playerstatus' && data.playing === true)) return {state:'playing', ...sample};
+    if (type === 'timeupdate' && sample) return {state:data.playing === true ? 'playing' : 'progress', ...sample};
+    if (['play', 'pause', 'seeked', 'playerstatus'].includes(type)) return {state:'ready', ...sample};
     return null;
   }
   const sources = Object.freeze({});
@@ -109,7 +129,7 @@
     return /^\/media\/(?:[\w-]+\/)*[\w-]+\.(?:mp4|webm)$/.test(path) ? path : null;
   }
 
-  const api = { getSource, providers, buildSources, decodeEvent };
+  const api = { getSource, providers, buildSources, decodeEvent, resumeUrl, acceptsOrigin };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.StargazerSources = api;
 })(typeof window !== 'undefined' ? window : globalThis);
