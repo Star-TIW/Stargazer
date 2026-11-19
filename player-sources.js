@@ -66,7 +66,9 @@
   function resumeUrl(source, progress) {
     const url = new URL(source.url);
     const seconds = resumePosition(progress);
-    if (source.resumeParam && seconds > 0) url.searchParams.set(source.resumeParam, seconds);
+    // Explicitly start at zero when Stargazer has no resumable checkpoint.
+    // Do not let a stale startAt in the primary embed URL win.
+    if (source.resumeParam) url.searchParams.set(source.resumeParam, String(seconds));
     return url.href;
   }
 
