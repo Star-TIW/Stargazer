@@ -46,9 +46,18 @@ function providerPlayback({navigate, showControls, ready, unavailable}) {
   return {start, signal, stop};
 }
 
+function popupProtectionEnabled() {
+  return localStorage.getItem("blockExternalPlayerPopups") === "on";
+}
+
+function initialProviderIndex(sources) {
+  if (!popupProtectionEnabled()) return 0;
+  return Math.max(0, sources.findIndex(source => source.name === "VidZee"));
+}
+
 // Apply the viewer's choice before each third-party navigation.
 function configureExternalFrame(frame, download = false) {
-  if (localStorage.getItem("blockExternalPlayerPopups") !== "on") {
+  if (!popupProtectionEnabled()) {
     frame.removeAttribute("sandbox");
     return;
   }

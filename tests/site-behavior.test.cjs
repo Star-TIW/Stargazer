@@ -134,3 +134,20 @@ test("popup protection applies on every source, including downloads and live str
   assert.ok(read("movies.js").includes("configureExternalFrame(frame)"));
   assert.ok(read("live/live.js").includes("configureExternalFrame(videoIframe)"));
 });
+
+test("popup protection starts movie and episode embeds on VidZee, with all sources reachable", () => {
+  let setting = "on";
+  const page = vm.createContext({localStorage:{getItem:key => key === "blockExternalPlayerPopups" ? setting : null}});
+  vm.runInContext(read("provider-frame.js"), page);
+  const {buildSources} = require("../player-sources.js");
+  for (const mediaType of ["movie", "tv"]) {
+    const sources = buildSources({tmdbID:42, mediaType, season:2, episode:3}, "https://vidup.to/");
+    setting = "on";
+    const first = page.initialProviderIndex(sources);
+    assert.equal(sources[first].name, "VidZee");
+    const cycle = sources.map((_, step) => sources[(first + step) % sources.length].name);
+    assert.equal(new Set(cycle).size, sources.length);
+    setting = "off";
+    assert.equal(sources[page.initialProviderIndex(sources)].name, "VidUP");
+  }
+});
