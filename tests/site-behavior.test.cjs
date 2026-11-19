@@ -55,3 +55,41 @@ test("both hosts permit all configured frame origins and use the same policy", (
     assert.ok(allowed.includes(new URL(url).origin), url);
   }
 });
+
+test("compatibility mode reloads the current embed and resets for the next session", () => {
+  let input;
+  let reloads = 0;
+  const page = {
+    createElement(tag) {
+      if (tag === "label") return { append() {} };
+      input = {checked:false, addEventListener(type, fn) { this[type] = fn; }};
+      return input;
+    }
+  };
+  const context = vm.createContext({document: page});
+  vm.runInContext(read("provider-frame.js"), context);
+  const control = context.providerModeControl(() => reloads++);
+  const attributes = new Map();
+  const frame = {
+    setAttribute: (name, value) => attributes.set(name, value),
+    removeAttribute: name => attributes.delete(name)
+  };
+  control.configure(frame);
+  assert.equal(attributes.get("sandbox"), "allow-scripts allow-same-origin allow-presentation");
+  input.checked = true;
+  input.change();
+  control.configure(frame);
+  assert.equal(reloads, 1);
+  assert.equal(attributes.has("sandbox"), false);
+  control.reset();
+  control.configure(frame);
+  assert.ok(attributes.has("sandbox"));
+});
+
+test("movie and live pages load the mode control before their player script", () => {
+  for (const [path, script] of [["index.html", "movies.js"], ["live/index.html", "/live/live.js"]]) {
+    const html = read(path);
+    const helper = html.indexOf('src="/provider-frame.js"');
+    assert.ok(helper >= 0 && helper < html.indexOf('src="' + script + '"'));
+  }
+});

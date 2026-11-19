@@ -294,3 +294,5 @@
 
 .live-scroll-container::-webkit-scrollbar {width: 12px;}
 #close-video-x {min-height:44px;min-width:44px;background:#171717;border:0;border-radius:50%;}
+
+.provider-toolbar .watch-btn { margin: 0; }

@@ -135,13 +135,18 @@ document.addEventListener("DOMContentLoaded", () => {
   nextSource.type = "button";
   nextSource.className = "watch-btn";
   nextSource.hidden = true;
-  Object.assign(nextSource.style, { position: "absolute", top: "0", left: "12px", zIndex: 250 });
 
   const showEmbed = () => {
+    mode.configure(videoIframe);
     videoIframe.src = activeEmbeds[activeEmbedIndex];
     nextSource.hidden = activeEmbeds.length < 2;
     nextSource.textContent = `Next source (${activeEmbedIndex + 1}/${activeEmbeds.length})`;
   };
+
+  const mode = providerModeControl(showEmbed);
+  const toolbar = document.createElement("div");
+  toolbar.className = "provider-toolbar";
+  toolbar.append(nextSource, mode.label);
 
   nextSource.onclick = () => {
     activeEmbedIndex = (activeEmbedIndex + 1) % activeEmbeds.length;
@@ -194,7 +199,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     videoIframe.title = "Live game player";
-    videoContainer.querySelector("#video-wrapper").appendChild(nextSource);
+    videoContainer.querySelector("#video-wrapper").appendChild(toolbar);
 
     const hideOverlay = () => {
       clearTimeout(hideVideoTimer);
@@ -469,6 +474,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const stream = gameStreams[ev.id];
         if (!stream || Date.now() < showTime.getTime()) return;
         clearTimeout(hideVideoTimer);
+        mode.reset();
         activeEmbeds = stream;
         activeEmbedIndex = 0;
         showEmbed();

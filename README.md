@@ -13,6 +13,6 @@ const sources = Object.freeze({
 });
 ```
 
-Titles without a registered file use the embedded movie and episode providers. Switch source inside the player if a provider is unavailable. Movie downloads use a registered file when present or open VidVault's download options. Live sports use the existing StreamFree integration. External frames are sandboxed without popup or top navigation permissions. Third-party availability and content inside a frame depend on its provider.
+Titles without a registered file use the embedded movie and episode providers. Switch source inside the player if a provider is unavailable. Movie downloads use a registered file when present or open VidVault's download options. Live sports use the existing StreamFree integration. Player frames start with popup and top navigation restrictions. A viewer can enable Compatibility mode for providers that reject sandboxing. This reloads the current provider with standard iframe permissions, including popups. Closing the player resets the choice. Downloads retain their separate sandbox. Third-party availability and content inside a frame depend on its provider.
 
 Run the playback tests with `node --test tests/*.test.cjs`.

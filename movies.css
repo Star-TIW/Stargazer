@@ -1209,3 +1209,6 @@ main#movie-card {
 #embedded-page-controls #embedded-refresh { width: auto; font-size: 15px; border-radius: 12px; }
 .download-help { align-self: center; max-width: 24ch; background: #171717; color: white; padding: 6px; border-radius: 5px; }
 @media(max-width:600px) { #embedded-page-controls { flex-wrap:wrap; max-width:calc(100% - 72px); } }
+
+.provider-toolbar .next-provider { position: static; }
+.stargazer-player-loader.is-hidden * { animation-play-state: paused; }

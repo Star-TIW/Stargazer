@@ -714,9 +714,22 @@ function createMovieCard(movie, autoplay = false) {
     playerWrapper.appendChild(status);
 
 
+    status.innerHTML = `
+      <div class="loader-scene">
+        <div class="loader-streak streak-a"></div>
+        <div class="loader-streak streak-b"></div>
+        <div class="loader-orbit orbit-a"></div>
+        <div class="loader-orbit orbit-b"></div>
+        <div class="loader-logo-wrap">
+          <div class="loader-glow"></div>
+          <img class="loader-logo" src="${STARGAZER_LOGO_URL}" alt="" />
+        </div>
+        <div class="loader-subtext">Loading player</div>
+      </div>
+    `;
+
     const source = window.StargazerSources.getSource(context);
     function openProvider() {
-      status.remove();
       const progress = getStoredProgress(context.tmdbID, context.mediaType);
       const resume = progress && (context.mediaType === "movie" ||
         (Number(progress.season) === context.season && Number(progress.episode) === context.episode));
@@ -728,10 +741,27 @@ function createMovieCard(movie, autoplay = false) {
       let started = false;
       const next = document.createElement("button");
       next.className = "next-provider";
+      const tools = document.createElement("div");
+      tools.className = "provider-toolbar";
+      const mode = providerModeControl(select);
+      tools.append(next, mode.label);
+      let revealTimer;
       function select() {
+        clearTimeout(revealTimer);
+        status.classList.remove("is-hidden");
+        if (!status.isConnected) playerWrapper.append(status);
+        const opened = performance.now();
         const provider = sources[index];
         const frame = videoFrame.cloneNode(false);
-        frame.setAttribute("sandbox", "allow-scripts allow-same-origin allow-presentation");
+        mode.configure(frame);
+        const reveal = () => {
+          if (frame !== videoFrame) return;
+          clearTimeout(revealTimer);
+          revealTimer = setTimeout(() => status.classList.add("is-hidden"), Math.max(0, 650 - (performance.now() - opened)));
+        };
+        frame.onload = reveal;
+        frame.onerror = reveal;
+        revealTimer = setTimeout(reveal, 6000);
         frame.hidden = false;
         frame.title = provider.name + " player";
         frame.src = provider.url;
@@ -756,29 +786,20 @@ function createMovieCard(movie, autoplay = false) {
           }
         }
       };
-      playerWrapper.append(next);
+      playerWrapper.append(tools);
       window.addEventListener("message", onMessage);
-      stopNativePlayback = () => { next.remove(); window.removeEventListener("message", onMessage); };
+      stopNativePlayback = () => {
+        clearTimeout(revealTimer);
+        videoFrame.onload = videoFrame.onerror = null;
+        tools.remove();
+        window.removeEventListener("message", onMessage);
+      };
       select();
     }
     if (!source) {
       openProvider();
       return;
     }
-
-    status.innerHTML = `
-      <div class="loader-scene">
-        <div class="loader-streak streak-a"></div>
-        <div class="loader-streak streak-b"></div>
-        <div class="loader-orbit orbit-a"></div>
-        <div class="loader-orbit orbit-b"></div>
-        <div class="loader-logo-wrap">
-          <div class="loader-glow"></div>
-          <img class="loader-logo" src="${STARGAZER_LOGO_URL}" alt="" />
-        </div>
-        <div class="loader-subtext">Loading player</div>
-      </div>
-    `;
 
     const video = document.createElement("video");
     video.id = "native-video-player";

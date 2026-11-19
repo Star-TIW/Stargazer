@@ -1,6 +1,6 @@
-const CACHE_NAME = "stargazer-cache-v23";
+const CACHE_NAME = "stargazer-cache-v24";
 const STATIC_ASSETS = [
-  "/", "/index.html", "/home.css", "/movies.css", "/movies.js", "/player-sources.js",
+  "/", "/index.html", "/home.css", "/movies.css", "/movies.js", "/player-sources.js", "/provider-frame.js",
   "/particle-config.js", "/sync.js", "/particles.min.js", "/settings.html", "/manifest.json",
   "/stargazer.png", "/stargazer-192.png", "/stargazer-512.png",
   "/star.png", "/live/", "/live/index.html", "/live/live.css", "/live/live.js"

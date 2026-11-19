@@ -103,28 +103,21 @@ const PARTICLE_STORAGE_KEY = "selectedEffect";
 const VALID_EFFECTS = [...Object.keys(particleOptions), "off"];
 const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
 let currentEffect = localStorage.getItem(PARTICLE_STORAGE_KEY) || (reducedMotion.matches ? "off" : "stars");
-let slowdown;
+
 
 function initParticles(effect = currentEffect) {
   currentEffect = VALID_EFFECTS.includes(effect) ? effect : "stars";
   document.documentElement.classList.toggle("motion-off", currentEffect === "off");
-  clearInterval(slowdown);
   const previous = window.pJSDom?.[0]?.pJS;
   if (previous) {
     previous.fn.vendors.destroypJS();
     window.pJSDom = [];
   }
   if (currentEffect === "off" || !document.getElementById("particles-js")) return;
-  particlesJS("particles-js", particleOptions[currentEffect]);
-  const instance = window.pJSDom[0].pJS;
-  let steps = 0;
-  slowdown = setInterval(() => {
-    instance.particles.move.speed *= 0.7;
-    if (++steps === 12) {
-      clearInterval(slowdown);
-      cancelAnimationFrame(instance.fn.drawAnimFrame);
-    }
-  }, 300);
+  const options = structuredClone(particleOptions[currentEffect]);
+  options.particles.move.speed *= 0.65;
+  options.particles.number.value = Math.min(options.particles.number.value, 140);
+  particlesJS("particles-js", options);
 }
 
 // Settings page controls its own buttons. Main pages only need the particles + Settings modal.

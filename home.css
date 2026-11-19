@@ -546,3 +546,30 @@ html { scrollbar-gutter: stable; scrollbar-width: auto; }
   .banner-text, .hero-feature-loading span { animation: none; }
   body::before { display: none; }
 }
+
+.stargazer-home, .live-scroll-container main { padding-bottom: 3rem; }
+.provider-toolbar {
+  position: absolute; top: 8px; left: 8px; z-index: 1200;
+  max-width: calc(100% - 70px); display: flex; align-items: center;
+  flex-wrap: wrap; gap: 4px;
+}
+.provider-mode {
+  display: inline-flex; align-items: center; gap: 5px; cursor: pointer;
+  color: #eee; background: #171717; border-radius: 8px; padding: 8px;
+  font: 13px/1.3 system-ui, sans-serif;
+}
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .header::before {
+    content: ""; position: absolute; inset: 0; pointer-events: none;
+    background: linear-gradient(105deg, transparent 34%, rgba(239,239,136,.16) 50%, transparent 66%);
+    transform: translateX(-100%); opacity: 0;
+  }
+  .header:hover::before { animation: header-sweep .85s ease-out; }
+  .header .nav-button { transition: transform .18s ease, color .18s ease; }
+  .header .nav-button:hover { transform: translateY(-1px); }
+}
+@keyframes header-sweep {
+  0% { transform: translateX(-100%); opacity: 0; }
+  25%, 70% { opacity: 1; }
+  100% { transform: translateX(100%); opacity: 0; }
+}
