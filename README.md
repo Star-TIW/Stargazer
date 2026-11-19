@@ -13,8 +13,6 @@ const sources = Object.freeze({
 });
 ```
 
-The catalog starts empty. Titles without a matching file show an unavailable message. The live page shows schedules and scores while ad-free sports feeds are unavailable. Movie posters can be downloaded through the same-origin poster page.
+Titles without a registered file use the embedded movie and episode providers. Switch source inside the player if a provider is unavailable. Movie downloads use a registered file when present or open VidVault's download options. Live sports use the existing StreamFree integration. External frames are sandboxed without popup or top navigation permissions. Third-party availability and content inside a frame depend on its provider.
 
-The Cloudflare Pages and Vercel configurations block cross-origin frames and media. Serve files directly with the correct video MIME type and byte-range support so viewers can seek and resume. Review the media itself before adding it to the catalog.
-
-Run the playback source tests with `node --test tests/player-sources.test.cjs`.
+Run the playback tests with `node --test tests/*.test.cjs`.

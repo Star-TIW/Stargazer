@@ -5,7 +5,7 @@
       "headers": [
         {
           "key": "Content-Security-Policy",
-          "value": "frame-src 'self'; media-src 'self'; object-src 'none'; base-uri 'self'"
+          "value": "frame-src 'self' https://vidup.to https://vidlink.pro https://vidfast.vc https://vidrock.to https://www.vidy.st https://player.vidzee.wtf https://www.viduki.net https://vidvault.to https://streamfree.top https://strmfree.st; media-src 'self'; object-src 'none'; base-uri 'self'"
         },
         { "key": "X-Content-Type-Options", "value": "nosniff" }
       ]

@@ -4,20 +4,22 @@
 <head>
   <script src="/sync.js"></script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/png" sizes="192x192" href="/stargazer-192.png">
   <title>Stargazer Live - Sports</title>
-  <link rel="icon" href="/stargazer.png" />
+  
   <link rel="stylesheet" href="/home.css" />
   <link rel="stylesheet" href="live.css" />
   <link rel="manifest" href="/manifest.json">
 <meta name="theme-color" content="#efef88">
 
-<link rel="apple-touch-icon" href="/stargazer.png">
+<link rel="apple-touch-icon" href="/stargazer-192.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Stargazer">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="theme-color" content="#000000">
 
+</head>
 <body>
   <div id="shapes"></div>
   <div id="stars"></div>
@@ -26,13 +28,11 @@
 
   <header class="header">
     <div class="brand-group">
-      <img class="logo-small" src="/stargazer.png" alt="Star Logo" />
+      
       <h1 class="brand">Stargazer</h1>
     </div>
 
-    <div class="menu-toggle" onclick="toggleMenu(this)">
-      <span></span>
-    </div>
+    <button type="button" class="menu-toggle" onclick="toggleMenu(this)" aria-label="Navigation" aria-expanded="false"><span></span></button>
 
     <nav class="navbar" id="navbar">
       <a href="/" class="nav-button">Main</a>
@@ -62,7 +62,6 @@
     </div>
 
     <main class="live-container">
-      <p class="live-playback-status">Ad-free live streams are currently unavailable.</p>
 
       <!-- Today’s Games Section -->
       <div class="games-section">
@@ -85,6 +84,7 @@
       </div>
 
     </main>
+    <footer class="site-footer"><span>Stargazer is free to browse. An optional account syncs your watch history and list.</span><a href="/impressum.html">Site information / Impressum</a></footer>
   </div>
 
   <script src="/live/live.js"></script>

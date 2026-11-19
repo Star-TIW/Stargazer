@@ -18,6 +18,7 @@ async function fetchTmdb(endpoint, params = {}, options = {}) {
     }
   });
 
+  url.searchParams.set("language", localStorage.getItem("catalogLanguage") || "en-US");
   const controller = options.signal ? null : new AbortController();
   const signal = options.signal || controller.signal;
 
@@ -448,66 +449,43 @@ async function maybeHandleImageDownloadPage() {
 }
 
 // Function to create and display a detailed movie card
-function createMovieCard(movie) {
+function createMovieCard(movie, autoplay = false) {
   const existingCard = document.getElementById("movie-card");
   if (existingCard) existingCard.remove();
-  const existingBackdrop = document.getElementById("movie-modal-backdrop");
-  if (existingBackdrop) existingBackdrop.remove();
-  const backdrop = document.createElement("div");
-  backdrop.id = "movie-modal-backdrop";
-  backdrop.setAttribute("aria-hidden", "true");
-  document.body.appendChild(backdrop);
-
-  const card = document.createElement("div");
+  const home = document.querySelector(".stargazer-home");
+  const originControl = document.activeElement;
+  const scrollPosition = window.scrollY;
+  const card = document.createElement("main");
   card.id = "movie-card";
-  card.dataset.tmdbid = String(movie.tmdbID || "");
-  card.dataset.mediatype = String(movie.mediaType || (movie.Type === "movie" ? "movie" : "tv"));
-  Object.assign(card.style, {
-    position: "fixed",
-    top: "50%",
-    left: "50%",
-    transform: "translate(-50%, -50%)",
-    background: "rgba(0,0,0,0.96)",
-    color: "#efef88",
-    padding: "clamp(18px, 2.5vw, 34px)",
-    borderRadius: "16px",
-    width: "85vw",
-    height: "85vh",
-    maxWidth: "1400px",
-    maxHeight: "none",
-    overflowY: "auto",
-    overflowX: "hidden",
-    zIndex: "10001",
-    boxShadow: "0 10px 50px rgba(0, 0, 0, 0.75), 0 0 30px rgba(239, 239, 136, 0.18)"
-  });
-
+  card.dataset.tmdbid = movie.tmdbID;
+  card.dataset.mediatype = movie.mediaType;
   const isMovie = movie.Type === "movie";
   const fullPlot = movie.Plot || "N/A";
 
   card.innerHTML = `
     <div style="display:flex; justify-content:flex-end;">
-      <span id="close-card-x" style="cursor:pointer; font-size:24px; color:#efef88;">&times;</span>
+      <button type="button" id="close-card-x">‹ Back to browse</button>
     </div>
-    <h2 style="margin:6px 0 10px 0;">${movie.Title} (${movie.Year})</h2>
+    <h2 style="margin:6px 0 10px 0;">${escapeHtml(movie.Title)} (${escapeHtml(movie.Year)})</h2>
     <div style="position:relative;" id="poster-container">
-      <img src="${movie.Poster !== "N/A" ? movie.Poster : "https://via.placeholder.com/200x300?text=N/A"}" 
-           alt="${movie.Title}" class="movie-detail-poster" />
+      <img src="${escapeHtml(movie.Poster !== "N/A" ? movie.Poster : "https://via.placeholder.com/200x300?text=N/A")}" 
+           alt="${escapeHtml(movie.Title)}" class="movie-detail-poster" />
     </div>
-    <p><strong>Type:</strong> ${movie.Type.charAt(0).toUpperCase() + movie.Type.slice(1)}</p>
+    <p><strong>Type:</strong> ${escapeHtml(movie.Type.charAt(0).toUpperCase() + movie.Type.slice(1))}</p>
     <br>
-    <p><strong>Rating:</strong> ${movie.Rated}</p>
+    <p><strong>Rating:</strong> ${escapeHtml(movie.Rated)}</p>
     <br>
-    <p><strong>Genre:</strong> ${movie.Genre || "N/A"}</p>
+    <p><strong>Genre:</strong> ${escapeHtml(movie.Genre || "N/A")}</p>
     <br>
-    <p><strong>Runtime:</strong> ${movie.Runtime || "N/A"}</p>
+    <p><strong>Runtime:</strong> ${escapeHtml(movie.Runtime || "N/A")}</p>
     <br>
-    <p><strong>Director:</strong> ${movie.Director || "N/A"}</p>
+    <p><strong>Director:</strong> ${escapeHtml(movie.Director || "N/A")}</p>
     <br>
-    <p><strong>Actors:</strong> ${movie.Actors || "N/A"}</p>
+    <p><strong>Actors:</strong> ${escapeHtml(movie.Actors || "N/A")}</p>
     <br>
     <div id="plot-container" style="overflow:hidden; transition:max-height 0.4s ease;">
       <p id="plot-text" style="display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">
-        <strong>Plot:</strong> ${fullPlot}
+        <strong>Plot:</strong> ${escapeHtml(fullPlot)}
       </p>
     </div>
     <button id="toggle-plot" style="margin-top:6px; padding:6px 10px; border:none; border-radius:5px; cursor:pointer; font-weight:bold; background:#efef88; color:#000;">
@@ -534,8 +512,8 @@ function createMovieCard(movie) {
     lincolnBtn.style.margin = "0";
 
     lincolnBtn.onclick = () => {
-      card.scrollTo({
-        top: card.scrollHeight,
+      window.scrollTo({
+        top: document.documentElement.scrollHeight,
         behavior: "smooth"
       });
     };
@@ -605,10 +583,10 @@ function createMovieCard(movie) {
     <svg class="download-button-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
       <path d="M12 3v11m0 0 4-4m-4 4-4-4M5 18h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
     </svg>
-    <span>Download poster</span>`;
+    <span>Download</span>`;
     downloadBtn.onclick = (event) => {
       event.stopPropagation();
-      openPoster();
+      openDownload();
     };
     actionRow.append(listBtn, downloadBtn);
   } else {
@@ -616,9 +594,11 @@ function createMovieCard(movie) {
   }
 
   controls.insertBefore(actionRow, controls.firstChild);
-  card.appendChild(controls);
-  document.body.appendChild(card);
-  lockPageScroll();
+  card.querySelector("h2").after(controls);
+  home.hidden = true;
+  home.after(card);
+  window.scrollTo(0, 0);
+  card.querySelector("#close-card-x").focus({preventScroll:true});
 
   // --- See More / See Less ---
   const toggleBtn = card.querySelector("#toggle-plot");
@@ -652,17 +632,15 @@ function createMovieCard(movie) {
   const closeCardX = document.getElementById("close-card-x");
   if (closeCardX) {
     closeCardX.onclick = () => {
-      const c = document.getElementById("movie-card");
-      const b = document.getElementById("movie-modal-backdrop");
-      if (c) c.remove();
-      if (b) b.remove();
-      if (b) b.style.pointerEvents = "none";
-      unlockPageScroll();
+      card.remove();
+      home.hidden = false;
+      originControl?.focus({preventScroll:true});
+      window.scrollTo(0, scrollPosition);
     };
   }
 
   const videoContainer = document.getElementById("video-container");
-  const videoFrame = document.getElementById("video-iframe");
+  let videoFrame = document.getElementById("video-iframe");
   const embeddedControls = document.getElementById("embedded-page-controls");
   const playerWrapper = document.getElementById("video-wrapper");
   const closeVideo = document.getElementById("close-video-x");
@@ -689,7 +667,8 @@ function createMovieCard(movie) {
     videoContainer.classList.remove("is-open");
     videoContainer.style.display = "none";
     videoContainer.style.pointerEvents = "none";
-    if (!document.getElementById("movie-card")) unlockPageScroll();
+    unlockPageScroll();
+    card.querySelector("#watch-button, #episode-list button, #close-card-x")?.focus({preventScroll:true});
   };
 
   closeVideo.onclick = hideOverlay;
@@ -697,11 +676,23 @@ function createMovieCard(movie) {
     if (event.target === videoContainer) hideOverlay();
   };
 
-  function openPoster() {
+  function openDownload() {
     const tmdbID = String(movie.tmdbID);
     if (!/^\d+$/.test(tmdbID)) return;
     resetPlayer();
-    videoFrame.src = `/?id=${tmdbID}&cover=1`;
+    const file = window.StargazerSources.getSource(movie);
+    if (file) {
+      const link = document.createElement("a");
+      link.href = file;
+      link.download = file.split("/").pop();
+      document.body.append(link);
+      link.click();
+      link.remove();
+      return;
+    }
+    videoFrame.setAttribute("sandbox", "allow-scripts allow-same-origin allow-forms allow-downloads");
+    videoFrame.title = "Movie download options";
+    videoFrame.src = `https://vidvault.to/movie/${tmdbID}`;
     videoFrame.hidden = false;
     embeddedControls.hidden = false;
     showOverlay();
@@ -709,7 +700,7 @@ function createMovieCard(movie) {
 
   document.getElementById("embedded-back").onclick = hideOverlay;
   document.getElementById("embedded-refresh").onclick = () => {
-    if (!videoFrame.hidden) videoFrame.contentWindow.location.reload();
+    if (!videoFrame.hidden) videoFrame.src = videoFrame.src;
   };
 
   const playApprovedVideo = context => {
@@ -722,13 +713,56 @@ function createMovieCard(movie) {
     status.setAttribute("role", "status");
     playerWrapper.appendChild(status);
 
-    const showUnavailable = message => {
-      status.innerHTML = `<div class="player-unavailable"><strong>${message}</strong></div>`;
-    };
 
     const source = window.StargazerSources.getSource(context);
+    function openProvider() {
+      status.remove();
+      const progress = getStoredProgress(context.tmdbID, context.mediaType);
+      const resume = progress && (context.mediaType === "movie" ||
+        (Number(progress.season) === context.season && Number(progress.episode) === context.episode));
+      const startAt = resume && progress.percent < 98 ? Math.floor(progress.watched) : 0;
+      const path = context.mediaType === "movie" ? `movie/${context.tmdbID}` :
+        `tv/${context.tmdbID}/${context.season}/${context.episode}`;
+      const sources = window.StargazerSources.buildSources(context, `https://vidup.to/${path}?autoPlay=true&startAt=${startAt}`);
+      let index = 0;
+      let started = false;
+      const next = document.createElement("button");
+      next.className = "next-provider";
+      function select() {
+        const provider = sources[index];
+        const frame = videoFrame.cloneNode(false);
+        frame.setAttribute("sandbox", "allow-scripts allow-same-origin allow-presentation");
+        frame.hidden = false;
+        frame.title = provider.name + " player";
+        frame.src = provider.url;
+        videoFrame.replaceWith(frame);
+        videoFrame = frame;
+        next.textContent = provider.name + " · Switch source";
+      }
+      next.onclick = () => { index = (index + 1) % sources.length; select(); };
+      const onMessage = event => {
+        const provider = sources[index];
+        if (event.source !== videoFrame.contentWindow || event.origin !== provider.origin) return;
+        const update = window.StargazerSources.decodeEvent(provider, event.data, context);
+        if (!update) return;
+        if (update.state === "playing" || update.state === "progress") {
+          if (!started) {
+            markTitleStarted(context.tmdbID, context.mediaType, { title: context.title, posterPath: context.posterPath, year: movie.Year, rating: movie.Rating });
+            started = true;
+          }
+          const payload = typeof event.data === "string" ? JSON.parse(event.data) : event.data;
+          if (Number(payload.data?.duration) > 0 && Number.isFinite(Number(payload.data?.currentTime))) {
+            savePlaybackProgress({...payload.data, tmdbId: context.tmdbID, mediaType: context.mediaType, season: context.season, episode: context.episode}, context);
+          }
+        }
+      };
+      playerWrapper.append(next);
+      window.addEventListener("message", onMessage);
+      stopNativePlayback = () => { next.remove(); window.removeEventListener("message", onMessage); };
+      select();
+    }
     if (!source) {
-      showUnavailable("Ad-free playback is unavailable for this title.");
+      openProvider();
       return;
     }
 
@@ -759,7 +793,7 @@ function createMovieCard(movie) {
       stopNativePlayback?.();
       stopNativePlayback = null;
       if (!status.isConnected) playerWrapper.appendChild(status);
-      showUnavailable("The video could not be loaded. Try again later.");
+      openProvider();
     };
     const loadDeadline = setTimeout(fail, 15000);
     let started = false;
@@ -829,12 +863,6 @@ function createMovieCard(movie) {
     const suggestionsEl = document.getElementById("suggestions");
     if (searchEl) searchEl.value = "";
     if (suggestionsEl) suggestionsEl.innerHTML = "";
-    const c = document.getElementById("movie-card");
-    const b = document.getElementById("movie-modal-backdrop");
-    if (c) c.remove();
-    if (b) b.remove();
-    unlockPageScroll();
-
     const tmdbID = movie.tmdbID || "";
     if (!tmdbID) {
       alert("No TMDB ID available for this title.");
@@ -1006,6 +1034,10 @@ function createMovieCard(movie) {
         });
       }
     };
+  }
+  if (autoplay) {
+    const saved = getStoredProgress(movie.tmdbID, movie.mediaType);
+    startPlayback({season: isMovie ? null : saved?.season || 1, episode: isMovie ? null : saved?.episode || 1});
   }
 }
 
@@ -1288,11 +1320,29 @@ suggestionsBox.addEventListener("click", async (e) => {
   window.__stargazerDashboardRefresh=()=>{renderContinue();renderMyList()};
   setupHorizontalRowControls();
 
-  document.querySelector('[data-clear-list]')?.addEventListener('click',()=>{
-    if(getList().length&&confirm('Clear everything in My List?')){localStorage.removeItem(MY_LIST_KEY);renderMyList()}
-  });
-  document.querySelector('[data-clear-progress]')?.addEventListener('click',()=>{
-    if(confirm('Clear everything in Continue Watching?')){localStorage.removeItem(PLAYBACK_PROGRESS_KEY);localStorage.removeItem(STARGAZER_STARTED_KEY);renderContinue()}
+  function confirmClear(selector, clear) {
+    const trigger = document.querySelector(selector);
+    trigger?.addEventListener("click", () => {
+      trigger.hidden = true;
+      const prompt = document.createElement("span");
+      const yes = document.createElement("button");
+      const no = document.createElement("button");
+      yes.textContent = "Confirm clear";
+      no.textContent = "Cancel";
+      yes.className = no.className = "text-button";
+      const dismiss = () => { prompt.remove(); trigger.hidden = false; trigger.focus(); };
+      yes.onclick = () => { dismiss(); clear(); };
+      no.onclick = dismiss;
+      prompt.append(yes, no);
+      trigger.after(prompt);
+      no.focus();
+    });
+  }
+  confirmClear("[data-clear-list]", () => { localStorage.removeItem(MY_LIST_KEY); renderMyList(); });
+  confirmClear("[data-clear-progress]", () => {
+    localStorage.removeItem(PLAYBACK_PROGRESS_KEY);
+    localStorage.removeItem(STARGAZER_STARTED_KEY);
+    renderContinue();
   });
 
   async function homeRows(){
@@ -1337,7 +1387,7 @@ suggestionsBox.addEventListener("click", async (e) => {
   function renderHero(raw){
     const x=norm(raw),hero=document.getElementById('hero-feature');
     hero.innerHTML=`<img class="hero-feature-bg" src="${x.Backdrop||x.Poster}" alt=""><div class="hero-feature-content"><div class="hero-feature-meta">TRENDING · ${x.Year} · ★ ${x.Rating}</div><h3>${esc(x.Title)}</h3><p class="hero-feature-copy">${esc(x.Plot||'A Stargazer pick worth watching tonight.')}</p><div class="hero-actions"><button class="hero-watch">▶ Watch</button><button class="hero-list">${isInMyList(x.tmdbID,x.mediaType)?'✓ In My List':'+ My List'}</button></div></div>`;
-    hero.querySelector('.hero-watch').onclick=async()=>{const m=await fetchMovieDetails(x.tmdbID,x.mediaType);if(m)createMovieCard(m)};
+    hero.querySelector('.hero-watch').onclick=async()=>{const m=await fetchMovieDetails(x.tmdbID,x.mediaType);if(m)createMovieCard(m,true)};
     hero.querySelector('.hero-list').onclick=()=>{const saved=toggleMyList(x);hero.querySelector('.hero-list').textContent=saved?'✓ In My List':'+ My List'};
   }
 

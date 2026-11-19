@@ -1,7 +1,7 @@
 /* Sport Selector */
 .sport-selector-container {
   position: fixed;
-  top: 87.5px;
+  top: 56px;
   left: 0;
   width: 100%;
   background: rgba(0, 0, 0, 0.6);
@@ -71,10 +71,10 @@
 
 .live-scroll-container {
   position: absolute;
-  top: 147.5px;
+  top: 116px;
   left: 0;
   width: 100%;
-  height: calc(100% - 147.5px);
+  height: calc(100% - 116px);
   overflow-y: auto;
   overflow-x: hidden;
   scroll-behavior: smooth;
@@ -291,3 +291,6 @@
   margin: 0 0 20px;
   text-align: center;
 }
+
+.live-scroll-container::-webkit-scrollbar {width: 12px;}
+#close-video-x {min-height:44px;min-width:44px;background:#171717;border:0;border-radius:50%;}

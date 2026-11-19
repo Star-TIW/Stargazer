@@ -1189,3 +1189,23 @@ button#close-video-x {
 }
 
 .stargazer-player-loader .loader-subtext { color: #d7d5b3; font-size: clamp(11px, 1.1vw, 13px); letter-spacing: 1px; }
+
+main#movie-card {
+  position: relative !important; inset: auto !important; transform: none !important;
+  width: min(92vw,820px) !important; height: auto !important; overflow: visible !important;
+  margin: 72px auto 30px; padding: 16px; color: #eee; z-index: 2 !important;
+}
+#movie-card h2 { color: #efef88; }
+#close-card-x, .next-provider, #embedded-refresh {
+  padding: 8px 14px; min-height: 44px; width: auto; border-radius: 12px;
+  border: 1px solid #777; color: white; background: #171717; cursor: pointer;
+}
+.next-provider { position: absolute; left: 10px; top: 10px; z-index: 40; }
+#video-iframe[hidden], #embedded-page-controls[hidden], .stargazer-home[hidden] { display: none !important; }
+.media-row-nav { padding: 0; display: grid; place-items: center; }
+.text-button { padding: 8px; }
+.content-section:not([hidden]) .media-row { min-height: 200px; }
+#video-iframe:not([hidden]) { visibility: visible; }
+#embedded-page-controls #embedded-refresh { width: auto; font-size: 15px; border-radius: 12px; }
+.download-help { align-self: center; max-width: 24ch; background: #171717; color: white; padding: 6px; border-radius: 5px; }
+@media(max-width:600px) { #embedded-page-controls { flex-wrap:wrap; max-width:calc(100% - 72px); } }

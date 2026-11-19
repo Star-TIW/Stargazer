@@ -100,64 +100,37 @@ const particleOptions = {
 
 // Particle effect control
 const PARTICLE_STORAGE_KEY = "selectedEffect";
-const VALID_EFFECTS = Object.keys(particleOptions);
-let currentEffect = VALID_EFFECTS.includes(localStorage.getItem(PARTICLE_STORAGE_KEY))
-  ? localStorage.getItem(PARTICLE_STORAGE_KEY)
-  : "stars";
-let fadeContainer = document.getElementById("particles-js");
-let isLoading = false;
+const VALID_EFFECTS = [...Object.keys(particleOptions), "off"];
+const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
+let currentEffect = localStorage.getItem(PARTICLE_STORAGE_KEY) || (reducedMotion.matches ? "off" : "stars");
+let slowdown;
 
 function initParticles(effect = currentEffect) {
-  if (!VALID_EFFECTS.includes(effect)) effect = "stars";
-  currentEffect = effect;
-  localStorage.setItem(PARTICLE_STORAGE_KEY, effect);
-
-  if (!document.getElementById("particles-js") || typeof particlesJS !== "function") return;
-
-  if (window.pJSDom?.length) {
-    try { window.pJSDom[0].pJS.fn.vendors.destroypJS(); } catch (e) { console.warn("Particle cleanup failed", e); }
+  currentEffect = VALID_EFFECTS.includes(effect) ? effect : "stars";
+  document.documentElement.classList.toggle("motion-off", currentEffect === "off");
+  clearInterval(slowdown);
+  const previous = window.pJSDom?.[0]?.pJS;
+  if (previous) {
+    previous.fn.vendors.destroypJS();
     window.pJSDom = [];
   }
-
-  particlesJS("particles-js", particleOptions[effect]);
-}
-
-function switchEffect(effect) {
-  if (!VALID_EFFECTS.includes(effect) || effect === currentEffect || isLoading) return;
-  isLoading = true;
-  // Use two canvases briefly so changing an effect never produces a blank flash.
-  const oldLayer = document.getElementById("particles-js");
-  if (!oldLayer || typeof particlesJS !== "function") { initParticles(effect); isLoading = false; return; }
-  const nextLayer = oldLayer.cloneNode(false);
-  nextLayer.id = "particles-js-next";
-  Object.assign(nextLayer.style, {
-    position: getComputedStyle(oldLayer).position || "fixed", inset: "0", width: "100%", height: "100%",
-    opacity: "0", transition: "opacity 420ms ease", pointerEvents: "none", zIndex: getComputedStyle(oldLayer).zIndex
-  });
-  oldLayer.insertAdjacentElement("afterend", nextLayer);
-  try { particlesJS("particles-js-next", particleOptions[effect]); } catch (error) {
-    nextLayer.remove(); initParticles(effect); isLoading = false; return;
-  }
-  requestAnimationFrame(() => { oldLayer.style.opacity = "0"; nextLayer.style.opacity = "1"; });
-  window.setTimeout(() => {
-    try { window.pJSDom?.[0]?.pJS?.fn?.vendors?.destroypJS?.(); } catch (_) {}
-    oldLayer.remove();
-    nextLayer.id = "particles-js";
-    fadeContainer = nextLayer;
-    currentEffect = effect;
-    localStorage.setItem(PARTICLE_STORAGE_KEY, effect);
-    isLoading = false;
-  }, 450);
+  if (currentEffect === "off" || !document.getElementById("particles-js")) return;
+  particlesJS("particles-js", particleOptions[currentEffect]);
+  const instance = window.pJSDom[0].pJS;
+  let steps = 0;
+  slowdown = setInterval(() => {
+    instance.particles.move.speed *= 0.7;
+    if (++steps === 12) {
+      clearInterval(slowdown);
+      cancelAnimationFrame(instance.fn.drawAnimFrame);
+    }
+  }, 300);
 }
 
 // Settings page controls its own buttons. Main pages only need the particles + Settings modal.
 initParticles(currentEffect);
 
 if (document.getElementById("settings-btn")) {
-  document.querySelectorAll(".particle-button").forEach((btn) => {
-    btn.addEventListener("click", () => switchEffect(btn.dataset.effect));
-  });
-
   const settingsBtn = document.getElementById("settings-btn");
   let settingsOverlay = null;
 
@@ -221,16 +194,18 @@ if (document.getElementById("settings-btn")) {
 
   window.addEventListener("message", (event) => {
     if (event.origin !== window.location.origin) return;
+    if (event.source !== settingsOverlay?.querySelector("iframe")?.contentWindow) return;
+    if (event.data?.type === "catalogLanguage") { location.reload(); return; }
     if (event.data?.type !== "particleEffect") return;
     const effect = event.data.effect;
-    if (VALID_EFFECTS.includes(effect) && effect !== currentEffect) switchEffect(effect);
+    if (VALID_EFFECTS.includes(effect) && effect !== currentEffect) initParticles(effect);
   });
 }
 
 // Hamburger toggle function
 function toggleMenu(btn) {
   if (!btn) return;
-  btn.classList.toggle("active");
+  btn.setAttribute("aria-expanded", btn.classList.toggle("active"));
   const navbar = document.getElementById("navbar");
   if (navbar) navbar.classList.toggle("active");
 }
@@ -242,6 +217,7 @@ document.addEventListener("click", (event) => {
   if (navbar.classList.contains("active") && !navbar.contains(event.target) && !menuToggle.contains(event.target)) {
     navbar.classList.remove("active");
     menuToggle.classList.remove("active");
+    menuToggle.setAttribute("aria-expanded", "false");
   }
 });
 
