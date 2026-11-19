@@ -716,7 +716,7 @@ function createMovieCard(movie, autoplay = false) {
       const path = context.mediaType === "movie" ? `movie/${context.tmdbID}` :
         `tv/${context.tmdbID}/${context.season}/${context.episode}`;
       const sources = window.StargazerSources.buildSources(context, `https://vidup.to/${path}?autoPlay=true&startAt=${startAt}`);
-      let index = initialProviderIndex(sources);
+      let index = 0;
       let started = false;
       const next = document.createElement("button");
       next.className = "next-provider";

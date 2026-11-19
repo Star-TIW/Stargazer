@@ -135,19 +135,20 @@ test("popup protection applies on every source, including downloads and live str
   assert.ok(read("live/live.js").includes("configureExternalFrame(videoIframe)"));
 });
 
-test("popup protection starts movie and episode embeds on VidZee, with all sources reachable", () => {
-  let setting = "on";
-  const page = vm.createContext({localStorage:{getItem:key => key === "blockExternalPlayerPopups" ? setting : null}});
-  vm.runInContext(read("provider-frame.js"), page);
+test("both popup modes navigate the first movie or episode frame to VidZee", () => {
   const {buildSources} = require("../player-sources.js");
-  for (const mediaType of ["movie", "tv"]) {
-    const sources = buildSources({tmdbID:42, mediaType, season:2, episode:3}, "https://vidup.to/");
-    setting = "on";
-    const first = page.initialProviderIndex(sources);
-    assert.equal(sources[first].name, "VidZee");
-    const cycle = sources.map((_, step) => sources[(first + step) % sources.length].name);
-    assert.equal(new Set(cycle).size, sources.length);
-    setting = "off";
-    assert.equal(sources[page.initialProviderIndex(sources)].name, "VidUP");
+  for (const setting of ["on", "off", null]) {
+    const page = vm.createContext({localStorage:{getItem:() => setting}});
+    vm.runInContext(read("provider-frame.js"), page);
+    for (const mediaType of ["movie","tv"]) {
+      const sources = buildSources({tmdbID:42,mediaType,season:2,episode:3}, "https://vidup.to/");
+      const attrs = new Map();
+      const frame = {setAttribute:(k,v) => attrs.set(k,v),removeAttribute:k => attrs.delete(k)};
+      page.configureExternalFrame(frame);
+      assert.equal(attrs.has("sandbox"), setting === "on");
+      const path = mediaType === "movie" ? "movie/42" : "tv/42/2/3";
+      assert.equal(sources[0].url, "https://player.vidzee.wtf/embed/" + path);
+      assert.equal(sources[0].name, "VidZee");
+    }
   }
 });

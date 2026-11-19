@@ -6,7 +6,8 @@ const primary = 'https://vidup.to/movie/550?startAt=120';
 test('ten unique HTTPS sources preserve the primary resume URL', () => {
   const sources = buildSources(context, primary);
   assert.equal(sources.length, 10); assert.equal(new Set(sources.map(x => x.url)).size, 10);
-  assert.equal(sources[0].url, primary);
+  assert.equal(sources[0].url, "https://player.vidzee.wtf/embed/movie/550");
+  assert.equal(sources[1].url, primary);
   assert.ok(sources.every(s => new URL(s.url).protocol === 'https:'));
 });
 test('TV URLs include the chosen season and episode, invalid IDs rejected', () => {
@@ -17,8 +18,8 @@ test('TV URLs include the chosen season and episode, invalid IDs rejected', () =
 });
 test('custom providers are validated, deduplicated, capped, and cannot displace primary', () => {
   const sources = buildSources(context, primary, [primary, 'javascript:alert(1)', null, () => { throw Error(); }, 'https://custom.example/movie/550']);
-  assert.equal(sources.length, 10); assert.equal(sources[0].name, 'VidUP');
-  assert.equal(sources[1].origin, 'https://custom.example');
+  assert.equal(sources.length, 10); assert.equal(sources[0].name, 'VidZee');
+  assert.equal(sources[2].origin, 'https://custom.example');
 });
 test('documented VidLink and VidRock mtmdbId must match', () => {
   const source = { protocol: 'player' };
