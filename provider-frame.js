@@ -1,47 +1,50 @@
-// Each attempt owns its frame and timers. A stale frame cannot finish a newer attempt.
-function automaticProvider({navigate, showControls, ready, unavailable}) {
+// Watch only the active frame. Document load, a play request and paused metadata
+// can all precede actual playback.
+function automaticProvider({navigate, showControls, ready, unavailable, protectedOnly = false}) {
   let generation = 0;
-  let timer;
-  let compatible;
-  let lastTime;
-
+  let timer, standard, lastTime, confirmed;
   function stop() {
     clearTimeout(timer);
     generation++;
   }
-
-  function attempt(standard) {
+  function attempt(compatibility) {
     stop();
-    compatible = standard;
-    lastTime = null;
     const token = generation;
-    // Cross-origin frames can be silent even when waiting for a user gesture.
+    standard = compatibility;
+    confirmed = false;
+    lastTime = null;
+    const fail = () => {
+      if (generation !== token) return;
+      if (standard || protectedOnly) { stop(); unavailable(); }
+      else attempt(true);
+    };
     timer = setTimeout(() => {
       if (generation !== token) return;
-      if (standard) showControls();
-      else attempt(true);
-    }, standard ? 6500 : 7000);
-    navigate(standard, () => {
-      if (generation !== token) return;
-      if (standard) { stop(); unavailable(); }
-      else attempt(true);
-    });
+      showControls();
+      // Give tap-to-play players time to receive a real user gesture.
+      if (!standard && !protectedOnly) timer = setTimeout(fail, 9000);
+    }, 3000);
+    navigate(standard, fail);
   }
-
   function signal(update) {
     if (update.state === "failed") {
-      if (compatible) { stop(); unavailable(); }
+      if (standard || protectedOnly) { stop(); unavailable(); }
       else attempt(true);
-      return;
+      return false;
+    }
+    if (update.state === "ready") {
+      if (!confirmed) showControls();
+      return false;
     }
     if (update.state === "progress") {
       const advancing = lastTime !== null && update.time > lastTime;
       lastTime = update.time;
-      if (!advancing) return;
-    } else if (!["playing", "ready"].includes(update.state)) return;
+      if (!advancing) return false;
+    } else if (update.state !== "playing") return false;
     clearTimeout(timer);
-    ready();
+    if (!confirmed) ready();
+    confirmed = true;
+    return true;
   }
-
   return {start: () => attempt(false), signal, stop};
 }

@@ -213,24 +213,27 @@ if (document.getElementById("settings-btn")) {
   });
 }
 
-// Hamburger toggle function
-function toggleMenu(btn) {
-  if (!btn) return;
-  btn.setAttribute("aria-expanded", btn.classList.toggle("active"));
-  const navbar = document.getElementById("navbar");
-  if (navbar) navbar.classList.toggle("active");
+const menuToggle = document.querySelector(".menu-toggle");
+const navbar = document.getElementById("navbar");
+function setMenu(open) {
+  if (!menuToggle || !navbar) return;
+  menuToggle.classList.toggle("active", open);
+  navbar.classList.toggle("active", open);
+  menuToggle.setAttribute("aria-expanded", String(open));
+  menuToggle.setAttribute("aria-label", open ? "Close navigation" : "Open navigation");
 }
-
-document.addEventListener("click", (event) => {
-  const navbar = document.getElementById("navbar");
-  const menuToggle = document.querySelector(".menu-toggle");
-  if (!navbar || !menuToggle) return;
-  if (navbar.classList.contains("active") && !navbar.contains(event.target) && !menuToggle.contains(event.target)) {
-    navbar.classList.remove("active");
-    menuToggle.classList.remove("active");
-    menuToggle.setAttribute("aria-expanded", "false");
+menuToggle?.addEventListener("click", () => setMenu(!navbar.classList.contains("active")));
+navbar?.addEventListener("click", () => setMenu(false), true);
+document.addEventListener("click", event => {
+  if (!event.target.closest(".menu-toggle, .navbar")) setMenu(false);
+});
+document.addEventListener("keydown", event => {
+  if (event.key === "Escape" && navbar?.classList.contains("active")) {
+    setMenu(false);
+    menuToggle.focus();
   }
 });
+matchMedia("(min-width:769px)").addEventListener("change", () => setMenu(false));
 
 // Fade out to black
 document.querySelectorAll("a.nav-button").forEach((link) => {

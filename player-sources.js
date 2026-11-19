@@ -81,7 +81,8 @@
     const type = String(data.event || p.event || p.type || '').toLowerCase();
     if (['error', 'playererror', 'playbackerror', 'unavailable'].includes(type)) return { state: 'failed' };
     if (p.type !== 'PLAYER_EVENT' && source.protocol !== 'vidy') return null;
-    if (['play', 'playing'].includes(type) && data.playing !== false) return { state: 'playing' };
+    if (type === 'play') return { state: 'ready' };
+    if (type === 'playing' && data.playing !== false) return { state: 'playing' };
     if (type === 'playerstatus' && data.playing === true) return { state: 'playing' };
     if (type === 'timeupdate' && Number.isFinite(Number(data.currentTime)) && Number(data.duration) > 0) {
       return data.playing === true ? { state: 'playing' } : { state: 'progress', time: Number(data.currentTime) };

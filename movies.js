@@ -451,10 +451,10 @@ async function maybeHandleImageDownloadPage() {
 // Function to create and display a detailed movie card
 function createMovieCard(movie, autoplay = false) {
   const existingCard = document.getElementById("movie-card");
-  if (existingCard) existingCard.remove();
+  existingCard?.querySelector("#close-card-x")?.click();
   const home = document.querySelector(".stargazer-home");
   const originControl = document.activeElement;
-  const scrollPosition = window.scrollY;
+  const header = document.querySelector(".header");
   const card = document.createElement("main");
   card.id = "movie-card";
   card.dataset.tmdbid = movie.tmdbID;
@@ -582,21 +582,40 @@ function createMovieCard(movie, autoplay = false) {
   if (isMovie) controls.append(actionRow);
   else controls.prepend(actionRow);
   card.querySelector(".detail-actions").append(controls);
-  home.hidden = true;
-  home.after(card);
-  window.scrollTo(0, 0);
-  card.querySelector("#close-card-x").focus({preventScroll:true});
-
-  // --- Close Card ---
-  const closeCardX = document.getElementById("close-card-x");
-  if (closeCardX) {
-    closeCardX.onclick = () => {
-      card.remove();
-      home.hidden = false;
-      originControl?.focus({preventScroll:true});
-      window.scrollTo(0, scrollPosition);
-    };
+  const backdrop = document.createElement("div");
+  backdrop.id = "movie-modal-backdrop";
+  backdrop.className = "detail-backdrop";
+  card.setAttribute("role", "dialog");
+  card.setAttribute("aria-modal", "true");
+  card.setAttribute("aria-label", movie.Title);
+  home.inert = header.inert = true;
+  lockPageScroll();
+  document.body.append(backdrop);
+  backdrop.append(card);
+  const back = card.querySelector("#close-card-x");
+  back.focus({preventScroll:true});
+  const closeCard = () => {
+    document.removeEventListener("keydown", onKey);
+    backdrop.remove();
+    home.inert = header.inert = false;
+    unlockPageScroll();
+    originControl?.focus({preventScroll:true});
+  };
+  function onKey(event) {
+    if (videoContainer.classList.contains("is-open")) {
+      if (event.key === "Escape") hideOverlay();
+      return;
+    }
+    if (event.key === "Escape") closeCard();
+    if (event.key !== "Tab") return;
+    const controls = [...card.querySelectorAll("button, select, a[href]")].filter(el => !el.disabled && el.offsetWidth);
+    const first = controls[0], last = controls[controls.length - 1];
+    if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+    if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
   }
+  back.onclick = closeCard;
+  backdrop.onclick = event => { if (event.target === backdrop) closeCard(); };
+  document.addEventListener("keydown", onKey);
 
   const videoContainer = document.getElementById("video-container");
   let videoFrame = document.getElementById("video-iframe");
@@ -615,10 +634,11 @@ function createMovieCard(movie, autoplay = false) {
   };
 
   const showOverlay = () => {
+    backdrop.inert = true;
     videoContainer.classList.add("is-open");
     videoContainer.style.display = "flex";
     videoContainer.style.pointerEvents = "auto";
-    lockPageScroll();
+    closeVideo.focus({preventScroll:true});
   };
 
   const hideOverlay = () => {
@@ -626,7 +646,7 @@ function createMovieCard(movie, autoplay = false) {
     videoContainer.classList.remove("is-open");
     videoContainer.style.display = "none";
     videoContainer.style.pointerEvents = "none";
-    unlockPageScroll();
+    backdrop.inert = false;
     card.querySelector("#watch-button, #episode-list button, #close-card-x")?.focus({preventScroll:true});
   };
 
@@ -705,6 +725,7 @@ function createMovieCard(movie, autoplay = false) {
       tools.append(next);
       const caption = status.querySelector(".loader-subtext");
       const playback = automaticProvider({
+        protectedOnly: localStorage.getItem("protectedPlayersOnly") === "true",
         navigate(standard, fail) {
           const provider = sources[index];
           status.classList.remove("is-hidden", "awaiting-input");
@@ -742,8 +763,7 @@ function createMovieCard(movie, autoplay = false) {
         if (event.source !== videoFrame.contentWindow || event.origin !== provider.origin) return;
         const update = window.StargazerSources.decodeEvent(provider, event.data, context);
         if (!update) return;
-        playback.signal(update);
-        if (update.state === "playing" || update.state === "progress") {
+        if (playback.signal(update)) {
           if (!started) {
             markTitleStarted(context.tmdbID, context.mediaType, { title: context.title, posterPath: context.posterPath, year: movie.Year, rating: movie.Rating });
             started = true;

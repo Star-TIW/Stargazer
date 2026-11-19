@@ -22,11 +22,11 @@ test('custom providers are validated, deduplicated, capped, and cannot displace 
 });
 test('documented VidLink and VidRock mtmdbId must match', () => {
   const source = { protocol: 'player' };
-  assert.equal(decodeEvent(source, {type:'PLAYER_EVENT',data:{event:'play',mtmdbId:550}}, context).state, 'playing');
+  assert.equal(decodeEvent(source, {type:'PLAYER_EVENT',data:{event:'play',mtmdbId:550}}, context).state, 'ready');
   assert.equal(decodeEvent(source, {type:'PLAYER_EVENT',data:{event:'play',mtmdbId:551}}, context), null);
 });
 test('Vidy JSON strings and VidFast playerstatus are decoded', () => {
-  assert.equal(decodeEvent({protocol:'vidy'}, JSON.stringify({event:'play',tmdbId:550}),context).state,'playing');
+  assert.equal(decodeEvent({protocol:'vidy'}, JSON.stringify({event:'play',tmdbId:550}),context).state,'ready');
   assert.equal(decodeEvent({protocol:'player'}, {type:'PLAYER_EVENT',data:{event:'playerstatus',playing:true,tmdbId:550}},context).state,'playing');
   assert.equal(decodeEvent({protocol:'player'}, {type:'PLAYER_EVENT',data:{event:'playerstatus',playing:false,duration:900,tmdbId:550}},context).state,'ready');
 });

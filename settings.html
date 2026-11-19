@@ -110,6 +110,8 @@
       <button class="particle-button" data-effect="bubbles">Bubbles</button>
       <button class="particle-button" data-effect="snow">Snow</button>
     </div>
+    <label style="color:white"><input id="protected-only" type="checkbox"> Always block player popups and redirects</label>
+    <small style="color:#ccc">Sources that require compatibility mode may be unavailable.</small>
     <label style="color:white">Movie titles and descriptions <select id="language"><option value="en-US">English</option><option value="es-ES">Español</option><option value="fr-FR">Français</option></select></label>
     <div class="account-section">
       <h2>Account</h2>
@@ -123,6 +125,9 @@
   <script src="particles.min.js"></script>
   <script src="particle-config.js"></script>
   <script>
+    const protectedOnly = document.getElementById("protected-only");
+    protectedOnly.checked = localStorage.getItem("protectedPlayersOnly") === "true";
+    protectedOnly.onchange = () => localStorage.setItem("protectedPlayersOnly", String(protectedOnly.checked));
     const language = document.getElementById("language");
     language.value = localStorage.getItem("catalogLanguage") || "en-US";
     language.onchange = () => {

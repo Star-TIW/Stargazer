@@ -137,7 +137,9 @@ document.addEventListener("DOMContentLoaded", () => {
   nextSource.hidden = true;
 
   const showEmbed = () => {
-    // StreamFree specifies a standard iframe for its live embeds.
+    if (localStorage.getItem("protectedPlayersOnly") === "true") {
+      videoIframe.setAttribute("sandbox", "allow-scripts allow-same-origin allow-presentation");
+    } else videoIframe.removeAttribute("sandbox");
     videoIframe.src = activeEmbeds[activeEmbedIndex];
     nextSource.hidden = activeEmbeds.length < 2;
     nextSource.textContent = `Next source (${activeEmbedIndex + 1}/${activeEmbeds.length})`;

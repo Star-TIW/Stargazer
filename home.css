@@ -573,3 +573,18 @@ html { scrollbar-gutter: stable; scrollbar-width: auto; }
   25%, 70% { opacity: 1; }
   100% { transform: translateX(100%); opacity: 0; }
 }
+
+@media(max-width:768px) {
+  .header .menu-toggle { display:grid; place-items:center; width:44px; height:44px; padding:0; right:12px; }
+  .menu-toggle span,.menu-toggle span::before,.menu-toggle span::after {
+    left:0; top:0; width:28px; height:3px; margin:0; transform:none; transition:transform .22s ease,background .18s;
+  }
+  .menu-toggle span { left:8px; top:20px; }
+  .menu-toggle span::before { transform:translateY(-8px); }
+  .menu-toggle span::after { transform:translateY(8px); }
+  .menu-toggle.active span::before { transform:rotate(45deg); }
+  .menu-toggle.active span::after { transform:rotate(-45deg); }
+  .header .navbar { right:0; height:100dvh; padding-top:62px; transform:translateX(102%); transition:transform .24s ease,visibility 0s .24s; }
+  .header .navbar.active { transform:translateX(0); transition-delay:0s; }
+}
+@media(prefers-reduced-motion:reduce) { .header .navbar,.menu-toggle span::before,.menu-toggle span::after { transition:none; } }

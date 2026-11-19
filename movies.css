@@ -1237,3 +1237,19 @@ main#movie-card { width: min(94vw,1080px) !important; padding: clamp(16px,3vw,36
   .detail-actions,.detail-plot,.detail-credits { grid-column:1 / -1; }
   .detail-actions { margin:0; }
 }
+
+#movie-modal-backdrop.detail-backdrop {
+  display:flex; align-items:center; justify-content:center; padding:clamp(10px,3vw,36px);
+  background:rgba(0,0,0,.72) !important; backdrop-filter:blur(7px); -webkit-backdrop-filter:blur(7px);
+}
+.detail-backdrop main#movie-card {
+  margin:0; width:min(100%,1080px) !important; max-height:88vh !important; max-height:88dvh !important;
+  overflow:auto !important; overscroll-behavior:contain; border-radius:16px;
+  background:#141414; box-shadow:0 20px 75px #000b; scrollbar-width:auto;
+}
+@media(prefers-reduced-motion:no-preference) {
+  .detail-backdrop { animation:backdrop-in .2s ease-out; }
+  .detail-backdrop main#movie-card { animation:detail-in .22s ease-out; }
+}
+@keyframes backdrop-in { from {opacity:0} to {opacity:1} }
+@keyframes detail-in { from {translate:0 8px} to {translate:0 0} }
