@@ -296,3 +296,8 @@
 #close-video-x {min-height:44px;min-width:44px;background:#171717;border:0;border-radius:50%;}
 
 .provider-toolbar .watch-btn { margin: 0; }
+
+@media(max-width:768px), (max-height:500px) and (orientation:landscape) {
+  #video-wrapper { width:100% !important; height:100dvh !important; max-height:none !important; border-radius:0 !important; }
+}
+@media(max-width:600px) { .games-list { grid-template-columns:minmax(0,1fr); } }

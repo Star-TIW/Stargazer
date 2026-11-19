@@ -1,35 +1,32 @@
 // Watch only the active frame. Document load, a play request and paused metadata
 // can all precede actual playback.
-function automaticProvider({navigate, showControls, ready, unavailable, protectedOnly = false}) {
+function providerPlayback({navigate, showControls, ready, unavailable}) {
   let generation = 0;
-  let timer, standard, lastTime, confirmed;
+  let timer, lastTime, confirmed;
   function stop() {
     clearTimeout(timer);
     generation++;
   }
-  function attempt(compatibility) {
+  function start() {
     stop();
     const token = generation;
-    standard = compatibility;
     confirmed = false;
     lastTime = null;
     const fail = () => {
       if (generation !== token) return;
-      if (standard || protectedOnly) { stop(); unavailable(); }
-      else attempt(true);
+      stop();
+      unavailable();
     };
     timer = setTimeout(() => {
       if (generation !== token) return;
       showControls();
-      // Give tap-to-play players time to receive a real user gesture.
-      if (!standard && !protectedOnly) timer = setTimeout(fail, 9000);
     }, 3000);
-    navigate(standard, fail);
+    navigate(fail);
   }
   function signal(update) {
     if (update.state === "failed") {
-      if (standard || protectedOnly) { stop(); unavailable(); }
-      else attempt(true);
+      stop();
+      unavailable();
       return false;
     }
     if (update.state === "ready") {
@@ -46,5 +43,5 @@ function automaticProvider({navigate, showControls, ready, unavailable, protecte
     confirmed = true;
     return true;
   }
-  return {start: () => attempt(false), signal, stop};
+  return {start, signal, stop};
 }

@@ -541,7 +541,6 @@ html { scrollbar-gutter: stable; scrollbar-width: auto; }
   .navbar.active { right: 0; visibility: visible; }
 }
 
-.motion-off .banner-text, .motion-off .hero-feature-loading span { animation: none; }
 @media (prefers-reduced-motion: reduce) {
   .banner-text, .hero-feature-loading span { animation: none; }
   body::before { display: none; }

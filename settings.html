@@ -98,20 +98,24 @@
     .account-section p{color:#bdbdbd;font-size:14px;text-align:center;line-height:1.45}
     .account-section .particle-button{font-size:20px;border:1px solid rgba(239,239,136,.5)}
     .account-section .particle-button:hover{font-size:21px}
+    @media(max-width:600px), (max-height:520px) {
+      html, body { display:block; height:auto; min-height:100%; }
+      .settings-container { padding:44px 16px 20px; gap:14px; }
+      .particle-buttons { display:grid; grid-template-columns:1fr 1fr; gap:6px; }
+      .particle-button,.particle-button:hover,.particle-button.selected { font-size:18px; min-height:44px; }
+      .settings-container h1 { font-size:28px; margin:0; }
+    }
   </style>
 </head>
 <body>
   <div class="settings-container">
     <h1>Particle Effects</h1>
     <div class="particle-buttons">
-      <button class="particle-button" data-effect="off">Off</button>
       <button class="particle-button" data-effect="stars">Stars</button>
       <button class="particle-button" data-effect="shapes">Shapes</button>
       <button class="particle-button" data-effect="bubbles">Bubbles</button>
       <button class="particle-button" data-effect="snow">Snow</button>
     </div>
-    <label style="color:white"><input id="protected-only" type="checkbox"> Always block player popups and redirects</label>
-    <small style="color:#ccc">Sources that require compatibility mode may be unavailable.</small>
     <label style="color:white">Movie titles and descriptions <select id="language"><option value="en-US">English</option><option value="es-ES">Español</option><option value="fr-FR">Français</option></select></label>
     <div class="account-section">
       <h2>Account</h2>
@@ -125,9 +129,6 @@
   <script src="particles.min.js"></script>
   <script src="particle-config.js"></script>
   <script>
-    const protectedOnly = document.getElementById("protected-only");
-    protectedOnly.checked = localStorage.getItem("protectedPlayersOnly") === "true";
-    protectedOnly.onchange = () => localStorage.setItem("protectedPlayersOnly", String(protectedOnly.checked));
     const language = document.getElementById("language");
     language.value = localStorage.getItem("catalogLanguage") || "en-US";
     language.onchange = () => {

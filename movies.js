@@ -669,7 +669,6 @@ function createMovieCard(movie, autoplay = false) {
       link.remove();
       return;
     }
-    videoFrame.setAttribute("sandbox", "allow-scripts allow-same-origin allow-forms allow-downloads");
     videoFrame.title = "Movie download options";
     videoFrame.src = `https://vidvault.to/movie/${tmdbID}`;
     videoFrame.hidden = false;
@@ -724,15 +723,12 @@ function createMovieCard(movie, autoplay = false) {
       tools.className = "provider-toolbar";
       tools.append(next);
       const caption = status.querySelector(".loader-subtext");
-      const playback = automaticProvider({
-        protectedOnly: localStorage.getItem("protectedPlayersOnly") === "true",
-        navigate(standard, fail) {
+      const playback = providerPlayback({
+        navigate(fail) {
           const provider = sources[index];
           status.classList.remove("is-hidden", "awaiting-input");
           caption.textContent = "Loading " + provider.name;
           const frame = videoFrame.cloneNode(false);
-          if (standard) frame.removeAttribute("sandbox");
-          else frame.setAttribute("sandbox", "allow-scripts allow-same-origin allow-presentation");
           frame.onerror = fail;
           frame.onload = () => {
             if (frame === videoFrame && provider.commands) {

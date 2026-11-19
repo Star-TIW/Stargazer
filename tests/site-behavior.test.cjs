@@ -56,7 +56,7 @@ test("both hosts permit all configured frame origins and use the same policy", (
   }
 });
 
-function providerSession(protectedOnly = false) {
+function providerSession() {
   let timer;
   const attempts = [], events = [];
   const context = vm.createContext({
@@ -64,9 +64,8 @@ function providerSession(protectedOnly = false) {
     clearTimeout() { timer = undefined; }
   });
   vm.runInContext(read("provider-frame.js"), context);
-  const player = context.automaticProvider({
-    protectedOnly,
-    navigate(standard, fail) { attempts.push({standard, fail}); },
+  const player = context.providerPlayback({
+    navigate(fail) { attempts.push({fail}); },
     ready() { events.push("ready"); },
     unavailable() { events.push("failed"); },
     showControls() { events.push("controls"); }
@@ -75,12 +74,12 @@ function providerSession(protectedOnly = false) {
   return {player, attempts, events, tick() { const fn = timer; timer = undefined; fn?.(); }};
 }
 
-test("active playback keeps sandbox protection and cancels the fallback", () => {
+test("active playback dismisses the loader without a second navigation", () => {
   const s = providerSession();
   s.player.signal({state:"playing"});
   s.tick();
   assert.deepEqual(s.events, ["ready"]);
-  assert.deepEqual(s.attempts.map(a => a.standard), [false]);
+  assert.equal(s.attempts.length, 1);
 });
 
 test("a single history message does not dismiss the loader", () => {
@@ -91,41 +90,30 @@ test("a single history message does not dismiss the loader", () => {
   assert.deepEqual(s.events, ["ready"]);
 });
 
-test("a silent sandbox retries once, then allows a gesture without claiming playback", () => {
+test("a silent player exposes controls without reloading", () => {
   const s = providerSession();
   s.tick();
   s.tick();
-  s.tick();
-  assert.deepEqual(s.attempts.map(a => a.standard), [false, true]);
-  assert.deepEqual(s.events, ["controls", "controls"]);
-  s.player.signal({state:"playing"});
-  assert.equal(s.events.at(-1), "ready");
+  assert.equal(s.attempts.length, 1);
+  assert.deepEqual(s.events, ["controls"]);
 });
 
-test("closing or switching invalidates late frame errors", () => {
+test("closing invalidates late frame errors", () => {
   const s = providerSession();
-  s.player.signal({state:"failed"});
-  s.attempts[0].fail();
-  assert.equal(s.attempts.length, 2);
   s.player.stop();
-  s.attempts[1].fail();
+  s.attempts[0].fail();
   s.tick();
   assert.deepEqual(s.events, []);
 });
 
-test("a paused or ready sandbox still retries when playback never starts", () => {
+test("a provider failure offers source switching without an automatic retry", () => {
   const s = providerSession();
-  s.player.signal({state:"ready"});
+  s.player.signal({state:"failed"});
   s.tick();
-  s.tick();
-  assert.deepEqual(s.attempts.map(a => a.standard), [false, true]);
+  assert.equal(s.attempts.length, 1);
+  assert.deepEqual(s.events, ["failed"]);
 });
 
-test("strict protection keeps silent and failed providers sandboxed", () => {
-  const s = providerSession(true);
-  s.tick();
-  s.tick();
-  s.player.signal({state:"failed"});
-  assert.deepEqual(s.attempts.map(a => a.standard), [false]);
-  assert.equal(s.events.at(-1), "failed");
+test("movie, download and live embeds use standard frame permissions", () => {
+  for (const path of ["index.html","movies.js","live/live.js"]) assert.doesNotMatch(read(path), /sandbox/i);
 });

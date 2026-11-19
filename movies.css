@@ -1253,3 +1253,19 @@ main#movie-card { width: min(94vw,1080px) !important; padding: clamp(16px,3vw,36
 }
 @keyframes backdrop-in { from {opacity:0} to {opacity:1} }
 @keyframes detail-in { from {translate:0 8px} to {translate:0 0} }
+
+@media (max-width:768px), (max-height:500px) and (orientation:landscape) {
+  #video-container { padding:0 !important; }
+  #video-wrapper.stargazer-player-wrapper { width:100% !important; height:100dvh !important; min-height:0 !important; }
+  .provider-toolbar { left:max(8px,env(safe-area-inset-left)); top:max(8px,env(safe-area-inset-top)); }
+  #close-video-x { right:max(10px,env(safe-area-inset-right)) !important; top:max(8px,env(safe-area-inset-top)) !important; }
+  .detail-backdrop main#movie-card { max-height:calc(100dvh - 24px) !important; padding:clamp(12px,3vw,20px); }
+  .detail-info h2,.detail-credits dd { overflow-wrap:anywhere; min-width:0; }
+}
+@media(max-width:600px) {
+  .hero-section { grid-template-columns:minmax(0,1fr); }
+  .hero-content,.hero-feature { min-width:0; }
+  .hero-feature-content { inset:auto 16px 18px; }
+  .media-row-shell { max-width:100%; }
+  .detail-layout { grid-template-columns:clamp(80px,26vw,142px) minmax(0,1fr); }
+}

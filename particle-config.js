@@ -100,14 +100,14 @@ const particleOptions = {
 
 // Particle effect control
 const PARTICLE_STORAGE_KEY = "selectedEffect";
-const VALID_EFFECTS = [...Object.keys(particleOptions), "off"];
+const VALID_EFFECTS = Object.keys(particleOptions);
 const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
-let currentEffect = localStorage.getItem(PARTICLE_STORAGE_KEY) || (reducedMotion.matches ? "off" : "stars");
+let currentEffect = localStorage.getItem(PARTICLE_STORAGE_KEY) || "stars";
 
 
 function initParticles(effect = currentEffect) {
   currentEffect = VALID_EFFECTS.includes(effect) ? effect : "stars";
-  document.documentElement.classList.toggle("motion-off", currentEffect === "off");
+  if (effect !== currentEffect) localStorage.setItem(PARTICLE_STORAGE_KEY, currentEffect);
   const previous = window.pJSDom?.[0]?.pJS;
   const layer = document.getElementById("particles-js");
   const canvas = layer?.querySelector("canvas");
@@ -130,10 +130,14 @@ function initParticles(effect = currentEffect) {
     previous.fn.vendors.destroypJS();
     window.pJSDom = [];
   }
-  if (currentEffect === "off" || !document.getElementById("particles-js")) return;
+  if (!document.getElementById("particles-js")) return;
   const options = structuredClone(particleOptions[currentEffect]);
   options.particles.move.speed *= 0.65;
   options.particles.number.value = Math.min(options.particles.number.value, 140);
+  if (reducedMotion.matches) {
+    options.particles.move.enable = false;
+    if (options.particles.opacity.anim) options.particles.opacity.anim.enable = false;
+  }
   particlesJS("particles-js", options);
   if (previous && !reducedMotion.matches) layer.querySelector("canvas")?.animate([{opacity:0},{opacity:1}], {duration:420, easing:"ease-in"});
 }
