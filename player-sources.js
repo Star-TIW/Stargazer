@@ -5,31 +5,31 @@
 (function (root) {
   'use strict';
   const providers = [
-    { name: 'VidZee', base: 'https://player.vidzee.wtf/embed', protocol: 'history' },
     { name: 'VidUP', base: 'https://vidup.to', protocol: 'player' },
     { name: 'VidLink', base: 'https://vidlink.pro', protocol: 'player', query: 'autoplay=true' },
     { name: 'VidFast', base: 'https://vidfast.vc', protocol: 'player', commands: true, query: 'autoPlay=true' },
     { name: 'VidRock', base: 'https://vidrock.to', protocol: 'player', query: 'autoplay=true' },
     { name: 'Vidy', base: 'https://www.vidy.st', protocol: 'vidy', query: 'autoplay=true' },
+    { name: 'VidZee', base: 'https://player.vidzee.wtf/embed', protocol: 'history' },
     { name: 'Viduki 1 · Multi Server', base: 'https://www.viduki.net/1', protocol: 'history', api: 1 },
     { name: 'Viduki 2 · Multi Language', base: 'https://www.viduki.net/2', protocol: 'history', api: 2 },
     { name: 'Viduki 3 · Multi Embeds', base: 'https://www.viduki.net/3', protocol: 'history', api: 3 },
     { name: 'Viduki 4 · Premium Embeds', base: 'https://www.viduki.net/4', protocol: 'history', api: 4 }
   ];
-  function buildSources(context, vidupUrl, custom = []) {
+  function buildSources(context, primaryUrl, custom = []) {
     if (!/^\d+$/.test(String(context.tmdbID))) return [];
     const type = context.mediaType;
     if (!['movie', 'tv'].includes(type)) return [];
     if (type === 'tv' && ![context.season, context.episode].every(n => /^\d+$/.test(String(n)) && Number(n) > 0)) return [];
     const path = `${type}/${context.tmdbID}${type === 'tv' ? `/${context.season}/${context.episode}` : ''}`;
-    const candidates = providers.map(p => ({ ...p, url: p.name === 'VidUP' ? vidupUrl : `${p.base}/${path}${p.query ? `?${p.query}` : ''}` }));
-    // Preserve the VidUP resume URL in its fallback slot.
+    const candidates = providers.map((p, i) => ({ ...p, url: i === 0 ? primaryUrl : `${p.base}/${path}${p.query ? `?${p.query}` : ''}` }));
+    // Existing integrations can override backup slots; VidUP always stays first.
     const extras = custom.map((p, i) => {
-      try { return { name: `Custom ${i + 1}`, url: typeof p === 'function' ? p(context) : String(p).replace('{url}', encodeURIComponent(vidupUrl)) }; }
+      try { return { name: `Custom ${i + 1}`, url: typeof p === 'function' ? p(context) : String(p).replace('{url}', encodeURIComponent(primaryUrl)) }; }
       catch { return null; }
     });
     const seen = new Set();
-    return [...candidates.slice(0, 2), ...extras, ...candidates.slice(2)].filter(p => {
+    return [candidates[0], ...extras, ...candidates.slice(1)].filter(p => {
       try {
         if (!p) return false;
         const url = new URL(p.url);
