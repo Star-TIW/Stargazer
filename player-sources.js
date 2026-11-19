@@ -5,16 +5,16 @@
 (function (root) {
   'use strict';
   const providers = [
-    { name: 'VidUP', resumeParam: 'startAt', base: 'https://vidup.to', protocol: 'player' },
-    { name: 'VidLink', resumeParam: 'startAt', base: 'https://vidlink.pro', protocol: 'player', query: 'autoplay=true' },
-    { name: 'VidFast', resumeParam: 'startAt', base: 'https://vidfast.vc', protocol: 'player', commands: true, query: 'autoPlay=true' },
-    { name: 'VidRock', base: 'https://vidrock.to', protocol: 'player', query: 'autoplay=true' },
-    { name: 'Vidy', resumeParam: 'progress', base: 'https://www.vidy.st', protocol: 'vidy', query: 'autoplay=true' },
-    { name: 'VidZee', base: 'https://player.vidzee.wtf/embed', protocol: 'history' },
-    { name: 'Viduki 1 · Multi Server', base: 'https://www.viduki.net/1', protocol: 'history', api: 1 },
-    { name: 'Viduki 2 · Multi Language', base: 'https://www.viduki.net/2', protocol: 'history', api: 2 },
-    { name: 'Viduki 3 · Multi Embeds', base: 'https://www.viduki.net/3', protocol: 'history', api: 3 },
-    { name: 'Viduki 4 · Premium Embeds', base: 'https://www.viduki.net/4', protocol: 'history', api: 4 }
+    { name: 'VidUP', resumeMode: 'param', resumeParam: 'startAt', base: 'https://vidup.to', protocol: 'player' },
+    { name: 'VidLink', resumeMode: 'param', resumeParam: 'startAt', base: 'https://vidlink.pro', protocol: 'player', query: 'autoplay=true' },
+    { name: 'VidFast', resumeMode: 'param', resumeParam: 'startAt', base: 'https://vidfast.vc', protocol: 'player', commands: true, query: 'autoPlay=true' },
+    { name: 'VidRock', resumeMode: 'self', base: 'https://vidrock.to', protocol: 'player', query: 'autoplay=true' },
+    { name: 'Vidy', resumeMode: 'param', resumeParam: 'progress', base: 'https://www.vidy.st', protocol: 'vidy', query: 'autoplay=true' },
+    { name: 'VidZee', resumeMode: 'self', base: 'https://player.vidzee.wtf/embed', protocol: 'history' },
+    { name: 'Viduki 1 · Multi Server', resumeMode: 'self',base: 'https://www.viduki.net/1', protocol: 'history', api: 1 },
+    { name: 'Viduki 2 · Multi Language', resumeMode: 'self',base: 'https://www.viduki.net/2', protocol: 'history', api: 2 },
+    { name: 'Viduki 3 · Multi Embeds', resumeMode: 'self',base: 'https://www.viduki.net/3', protocol: 'history', api: 3 },
+    { name: 'Viduki 4 · Premium Embeds', resumeMode: 'self',base: 'https://www.viduki.net/4', protocol: 'history', api: 4 }
   ];
   function buildSources(context, primaryUrl, custom = []) {
     if (!/^\d+$/.test(String(context.tmdbID))) return [];
@@ -22,7 +22,14 @@
     if (!['movie', 'tv'].includes(type)) return [];
     if (type === 'tv' && ![context.season, context.episode].every(n => /^\d+$/.test(String(n)) && Number(n) > 0)) return [];
     const path = `${type}/${context.tmdbID}${type === 'tv' ? `/${context.season}/${context.episode}` : ''}`;
-    const candidates = providers.map((p, i) => ({ ...p, url: i === 0 ? primaryUrl : `${p.base}/${path}${p.query ? `?${p.query}` : ''}` }));
+    const candidates = providers.map((p, i) => {
+      const url = new URL(i === 0 ? primaryUrl : `${p.base}/${path}`);
+      if (p.query) new URLSearchParams(p.query).forEach((value, key) => url.searchParams.set(key, value));
+      if (type === 'tv' && ['VidRock', 'VidZee'].includes(p.name)) url.searchParams.set('autonext', 'true');
+      if (p.name === 'VidRock') url.searchParams.set('theme', 'eab308');
+      if (p.api) url.searchParams.set('color', 'eab308');
+      return { ...p, url: url.href };
+    });
     // Existing integrations can override backup slots; VidUP always stays first.
     const extras = custom.map((p, i) => {
       try { return { name: `Custom ${i + 1}`, url: typeof p === 'function' ? p(context) : String(p).replace('{url}', encodeURIComponent(primaryUrl)) }; }
@@ -63,6 +70,17 @@
     return saved && saved.time < saved.duration * 0.98 ? Math.floor(saved.time) : 0;
   }
 
+  function decideResume(sources, selectedIndex, progress, lastSource, manualOverride = false) {
+    const seconds = resumePosition(progress);
+    const selected = sources[selectedIndex];
+    if (!selected || seconds <= 30 || Number(progress?.watched) >= Number(progress?.duration) * 0.95 || manualOverride)
+      return {index:selectedIndex, seconds:0, redirected:false};
+    if (selected.resumeMode === 'param' || selected.name === lastSource)
+      return {index:selectedIndex, seconds, redirected:false};
+    const preferred = sources.findIndex(p => p.name === lastSource && p.resumeMode === 'param');
+    const fallback = preferred >= 0 ? preferred : sources.findIndex(p => p.resumeMode === 'param');
+    return {index:fallback >= 0 ? fallback : selectedIndex, seconds, redirected:fallback >= 0};
+  }
   function resumeUrl(source, progress) {
     const url = new URL(source.url);
     const seconds = resumePosition(progress);
@@ -135,7 +153,7 @@
     return /^\/media\/(?:[\w-]+\/)*[\w-]+\.(?:mp4|webm)$/.test(path) ? path : null;
   }
 
-  const api = { getSource, providers, buildSources, decodeEvent, resumePosition, resumeUrl, acceptsOrigin };
+  const api = { getSource, providers, buildSources, decodeEvent, resumePosition, resumeUrl, decideResume, acceptsOrigin };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.StargazerSources = api;
 })(typeof window !== 'undefined' ? window : globalThis);
