@@ -137,6 +137,7 @@ document.addEventListener("DOMContentLoaded", () => {
   nextSource.hidden = true;
 
   const showEmbed = () => {
+    configureExternalFrame(videoIframe);
     videoIframe.src = activeEmbeds[activeEmbedIndex];
     nextSource.hidden = activeEmbeds.length < 2;
     nextSource.textContent = `Next source (${activeEmbedIndex + 1}/${activeEmbeds.length})`;

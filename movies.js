@@ -670,6 +670,7 @@ function createMovieCard(movie, autoplay = false) {
       return;
     }
     videoFrame.title = "Movie download options";
+    configureExternalFrame(videoFrame, true);
     videoFrame.src = `https://vidvault.to/movie/${tmdbID}`;
     videoFrame.hidden = false;
     embeddedControls.hidden = false;
@@ -737,6 +738,7 @@ function createMovieCard(movie, autoplay = false) {
           };
           frame.hidden = false;
           frame.title = provider.name + " player";
+          configureExternalFrame(frame);
           frame.src = provider.url;
           videoFrame.replaceWith(frame);
           videoFrame = frame;

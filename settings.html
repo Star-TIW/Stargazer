@@ -116,6 +116,10 @@
       <button class="particle-button" data-effect="bubbles">Bubbles</button>
       <button class="particle-button" data-effect="snow">Snow</button>
     </div>
+    <div class="account-section">
+      <label style="color:white"><input id="popup-protection" type="checkbox"> Block player popups and redirects</label>
+      <p>Applies to movies, live streams and downloads. Some sources require this turned off. Ads inside a player can still appear.</p>
+    </div>
     <label style="color:white">Movie titles and descriptions <select id="language"><option value="en-US">English</option><option value="es-ES">Español</option><option value="fr-FR">Français</option></select></label>
     <div class="account-section">
       <h2>Account</h2>
@@ -129,6 +133,9 @@
   <script src="particles.min.js"></script>
   <script src="particle-config.js"></script>
   <script>
+    const protection = document.getElementById("popup-protection");
+    protection.checked = localStorage.getItem("blockExternalPlayerPopups") === "on";
+    protection.onchange = () => localStorage.setItem("blockExternalPlayerPopups", protection.checked ? "on" : "off");
     const language = document.getElementById("language");
     language.value = localStorage.getItem("catalogLanguage") || "en-US";
     language.onchange = () => {

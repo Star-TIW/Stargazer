@@ -114,6 +114,23 @@ test("a provider failure offers source switching without an automatic retry", ()
   assert.deepEqual(s.events, ["failed"]);
 });
 
-test("movie, download and live embeds use standard frame permissions", () => {
-  for (const path of ["index.html","movies.js","live/live.js"]) assert.doesNotMatch(read(path), /sandbox/i);
+test("popup protection applies on every source, including downloads and live streams", () => {
+  let choice = null;
+  const context = vm.createContext({localStorage:{getItem:() => choice}});
+  vm.runInContext(read("provider-frame.js"), context);
+  const attributes = new Map();
+  const frame = {setAttribute:(key,value) => attributes.set(key,value), removeAttribute:key => attributes.delete(key)};
+  choice = "on";
+  for (const download of [true, false]) {
+    context.configureExternalFrame(frame, download);
+    const tokens = attributes.get("sandbox").split(" ");
+    assert.equal(tokens.includes("allow-downloads"), download);
+    assert.equal(tokens.some(t => /^allow-(popups|top-navigation)/.test(t)), false);
+  }
+  choice = null;
+  context.configureExternalFrame(frame);
+  assert.equal(attributes.has("sandbox"), false);
+  assert.ok(read("movies.js").includes("configureExternalFrame(videoFrame, true)"));
+  assert.ok(read("movies.js").includes("configureExternalFrame(frame)"));
+  assert.ok(read("live/live.js").includes("configureExternalFrame(videoIframe)"));
 });

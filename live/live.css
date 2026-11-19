@@ -1,7 +1,7 @@
 /* Sport Selector */
 .sport-selector-container {
   position: fixed;
-  top: 56px;
+  top: 87.5px;
   left: 0;
   width: 100%;
   background: rgba(0, 0, 0, 0.6);
@@ -71,10 +71,10 @@
 
 .live-scroll-container {
   position: absolute;
-  top: 116px;
+  top: 147.5px;
   left: 0;
   width: 100%;
-  height: calc(100% - 116px);
+  height: calc(100% - 147.5px);
   overflow-y: auto;
   overflow-x: hidden;
   scroll-behavior: smooth;

@@ -45,3 +45,15 @@ function providerPlayback({navigate, showControls, ready, unavailable}) {
   }
   return {start, signal, stop};
 }
+
+// Apply the viewer's choice before each third-party navigation.
+function configureExternalFrame(frame, download = false) {
+  if (localStorage.getItem("blockExternalPlayerPopups") !== "on") {
+    frame.removeAttribute("sandbox");
+    return;
+  }
+  const permissions = download
+    ? "allow-scripts allow-same-origin allow-forms allow-downloads"
+    : "allow-scripts allow-same-origin allow-presentation";
+  frame.setAttribute("sandbox", permissions);
+}
