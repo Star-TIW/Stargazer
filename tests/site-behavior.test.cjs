@@ -192,7 +192,7 @@ test("resume pill preserves destination, dismiss and timeout", () => {
   const js = read("movies.js");
   assert.match(js, /resumeAction\.textContent = "Resume on " \+ shortSourceName\(sources\[target\.index\]\.name\)/);
   assert.match(js, /resumeAction\.onclick = \(\) => selectSource\(target\.index\)/);
-  assert.match(js, /resumeNoticeTimer = setTimeout\(\(\) => \{ resumePill\.hidden = true; \}, 8000\)/);
+  assert.match(js, /if \(provider\.name !== "VidZee" && provider\.name !== "VidRock"\)[\s\S]*?resumeNoticeTimer = setTimeout\(\(\) => \{ resumePill\.hidden = true; \}, 8000\)/);
 });
 
 test("cinematic player controls and loader animation", () => {
@@ -284,4 +284,27 @@ test("mobile player toolbar spans viewport and loader caption is optically cente
   assert.match(css, /provider-top-row \{[^}]*width:100%; max-width:none; min-width:0; box-sizing:border-box/);
   assert.match(css, /provider-close-pill \{[^}]*margin-left:auto; align-self:flex-start; color:#efef88/);
   assert.match(css, /loader-scene \.loader-subtext \{letter-spacing:\.14em\}/);
+});
+
+test("unprotected source ranking follows observed resume reliability", () => {
+  const {providers,buildSources,orderSourcesForPopupProtection} = require("../player-sources.js");
+  const expected = ["VidUP","VidFast","VidZee","VidRock","Vidy","Viduki 2 · Multi Language","Viduki 1 · Multi Server","Viduki 3 · Multi Embeds","VidLink","Viduki 4 · Premium Embeds"];
+  assert.deepEqual(providers.map(p => p.name), expected);
+  const sources = buildSources({tmdbID:550,mediaType:"movie"}, "https://vidup.to/movie/550");
+  assert.deepEqual(orderSourcesForPopupProtection(sources,false).map(p => p.name), expected);
+  assert.equal(orderSourcesForPopupProtection(sources,true)[0].name,"VidZee");
+});
+
+test("Vidy successful iframe load cancels fallback while VidLink can still time out", () => {
+  const js = read("movies.js");
+  assert.match(js, /\(provider\.protocol === "history" \|\| provider\.protocol === "vidy"\) && videoFrame\?\.dataset\?\.loaded === "true"/);
+  assert.match(js, /if \(provider\.protocol === "history" \|\| provider\.protocol === "vidy"\) clearTimeout\(sourceWatchdog\)/);
+  assert.match(js, /frame\.dataset\.loaded = "true"/);
+  assert.doesNotMatch(js, /provider\.name === "VidLink"\) clearTimeout\(sourceWatchdog\)/);
+});
+
+test("resume notice uses actual saved param source and stays visible on unreliable self-resume sources", () => {
+  const js = read("movies.js");
+  assert.match(js, /sources\.findIndex\(source => source\.name === savedEntry\?\.lastSource && source\.resumeMode === "param"\)/);
+  assert.match(js, /if \(provider\.name !== "VidZee" && provider\.name !== "VidRock"\)/);
 });
