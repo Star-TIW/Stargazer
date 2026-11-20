@@ -1085,6 +1085,10 @@ function createMovieCard(movie, autoplay = false) {
         clearTimeout(toolbarFadeTimer);
         resumeHint.textContent = "";
         videoFrame.onload = videoFrame.onerror = null;
+        if (closeControl) {
+          closeControl.classList.remove("provider-close-pill");
+          playerWrapper.append(closeControl);
+        }
         tools.remove();
         window.removeEventListener("message", onMessage);
       };
