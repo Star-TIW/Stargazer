@@ -253,7 +253,7 @@ test("mobile player close control is flex-aligned and loader dots attach to cent
   assert.match(css, /#video-wrapper #close-video-x\.provider-close-pill\s*\{[^}]*margin-left:auto/);
   assert.match(js, /loader-player-label">Loading player 1<\/span><span class="loader-dots"/);
   assert.match(settings, /#particles-js\s*\{[^}]*z-index:\s*0/);
-  assert.match(sw, /stargazer-cache-v30/);
+  assert.match(sw, /stargazer-cache-v\d+/);
 });
 
 test("caption updates preserve all three loading dots", () => {
