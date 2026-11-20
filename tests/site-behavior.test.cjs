@@ -217,3 +217,13 @@ test("player wrapper and iframe fill viewport while toolbar overlays without lay
   assert.doesNotMatch(css, /inset:50% 0 auto;transform:translateY\(-50%\)/);
   assert.match(css, /height:110px/);
 });
+
+test("no legacy boxed wrapper overrides can defeat full viewport player", () => {
+  const css = read("movies.css");
+  assert.doesNotMatch(css, /#video-wrapper\.stargazer-player-wrapper\s*\{[^}]*width:\s*min\(1200px/);
+  assert.doesNotMatch(css, /#video-wrapper\.stargazer-player-wrapper\s*\{[^}]*position:\s*relative\s*!important/);
+  assert.doesNotMatch(css, /\.stargazer-player-wrapper\s*\{[^}]*width:\s*min\(1200px/);
+  assert.match(css, /#video-wrapper\.stargazer-player-wrapper\s*\{\s*position:fixed; inset:0; width:100vw; height:100dvh/);
+  assert.match(css, /#video-container\.is-open\s*\{\s*padding:0; background:#000/);
+  assert.match(read("movies.js"), /lincolnBtn\.setAttribute\("aria-label", "Scroll to bottom of page"\)/);
+});
