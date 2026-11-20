@@ -238,7 +238,7 @@ test("resume notice joins switch control and loader dots have independent tracki
   assert.match(js, /new MutationObserver\(syncResumeStyle\)\.observe\(resumePill/);
   assert.match(js, /classList\.toggle\("has-resume", !resumePill\.hidden\)/);
   assert.match(css, /provider-resume-pill \{[\s\S]*?width:100%; max-width:100%/);
-  assert.match(css, /loader-player-label \{position:relative;display:inline-block;/);
+  assert.match(css, /loader-player-label \{display:inline-block;/);
   assert.match(css, /loader-dots \{position:absolute;left:100%;bottom:\.15em;[^}]*gap:2px;letter-spacing:0;margin-left:\.1em;transform:none/);
   assert.match(css, /loader-scene \.loader-subtext \{[^}]*align-items:baseline/);
 });
@@ -251,7 +251,37 @@ test("mobile player close control is flex-aligned and loader dots attach to cent
   assert.doesNotMatch(css, /#close-video-x\s*\{[^}]*position:\s*absolute\s*!important/);
   assert.doesNotMatch(css, /#close-video-x\s*\{[^}]*right:\s*\d+px\s*!important/);
   assert.match(css, /#video-wrapper #close-video-x\.provider-close-pill\s*\{[^}]*margin-left:auto/);
-  assert.match(js, /loader-player-label">Loading player 1<span class="loader-dots"/);
+  assert.match(js, /loader-player-label">Loading player 1<\/span><span class="loader-dots"/);
   assert.match(settings, /#particles-js\s*\{[^}]*z-index:\s*0/);
   assert.match(sw, /stargazer-cache-v30/);
+});
+
+test("caption updates preserve all three loading dots", () => {
+  const js = read("movies.js");
+  const markup = js.match(/<div class="loader-subtext">([^\n]+)<\/div>/)?.[1];
+  assert.ok(markup, "loader caption markup exists");
+  assert.match(markup, /<\/span><span class="loader-dots"/);
+  const dotCount = (markup.match(/<i><\/i>/g) || []).length;
+  assert.equal(dotCount, 3);
+  const caption = {textContent: "Loading player 1"};
+  const dots = {children: Array.from({length:dotCount}, () => ({}))};
+  const subtext = {children:[caption,dots]};
+  const update = js.match(/caption\.textContent = "Loading player " \+ \(index \+ 1\)/)?.[0];
+  assert.ok(update, "source loop caption update exists");
+  const index = 3;
+  eval(update);
+  assert.equal(subtext.children[0].textContent, "Loading player 4");
+  assert.equal(subtext.children[1].children.length, 3);
+  caption.textContent = "Player unavailable";
+  assert.equal(subtext.children[1].children.length, 3);
+  caption.textContent = "Source unavailable";
+  assert.equal(subtext.children[1].children.length, 3);
+});
+
+test("mobile player toolbar spans viewport and loader caption is optically centered", () => {
+  const css = read("movies.css");
+  assert.match(css, /provider-toolbar \{[^}]*width:100%; max-width:none; box-sizing:border-box; transform:none/);
+  assert.match(css, /provider-top-row \{[^}]*width:100%; max-width:none; min-width:0; box-sizing:border-box/);
+  assert.match(css, /provider-close-pill \{[^}]*margin-left:auto; align-self:flex-start; color:#efef88/);
+  assert.match(css, /loader-scene \.loader-subtext \{letter-spacing:\.14em\}/);
 });
