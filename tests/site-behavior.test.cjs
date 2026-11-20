@@ -288,7 +288,7 @@ test("mobile player toolbar spans viewport and loader caption is optically cente
 
 test("unprotected source ranking follows observed resume reliability", () => {
   const {providers,buildSources,orderSourcesForPopupProtection} = require("../player-sources.js");
-  const expected = ["VidUP","VidFast","VidZee","VidRock","Vidy","Viduki 2 · Multi Language","Viduki 1 · Multi Server","Viduki 3 · Multi Embeds","VidLink","Viduki 4 · Premium Embeds"];
+  const expected = ["VidUP","VidFast","Vidy","Viduki 1 · Multi Server","Viduki 2 · Multi Language","VidRock","VidZee","Viduki 3 · Multi Embeds","Viduki 4 · Premium Embeds","VidLink"];
   assert.deepEqual(providers.map(p => p.name), expected);
   const sources = buildSources({tmdbID:550,mediaType:"movie"}, "https://vidup.to/movie/550");
   assert.deepEqual(orderSourcesForPopupProtection(sources,false).map(p => p.name), expected);
@@ -303,9 +303,11 @@ test("Vidy successful iframe load cancels fallback while VidLink can still time 
   assert.doesNotMatch(js, /provider\.name === "VidLink"\) clearTimeout\(sourceWatchdog\)/);
 });
 
-test("resume notice uses actual saved param source and stays visible on unreliable self-resume sources", () => {
+test("resume notice names its actual destination, never the currently selected self-resume source", () => {
   const js = read("movies.js");
-  assert.match(js, /sources\.findIndex\(source => source\.name === savedEntry\?\.lastSource && source\.resumeMode === "param"\)/);
+  assert.match(js, /const resumeTargetIndex = preferredIndex >= 0 \? preferredIndex : fallbackIndex/);
+  assert.match(js, /resumeAction\.textContent = "Resume on " \+ shortSourceName\(sources\[resumeTargetIndex\]\.name\)/);
+  assert.match(js, /resumeAction\.onclick = \(\) => selectSource\(resumeTargetIndex\)/);
   assert.match(js, /if \(provider\.name !== "VidZee" && provider\.name !== "VidRock"\)/);
 });
 
@@ -321,4 +323,18 @@ test("settings particle layer is viewport-anchored and canvas fills it on mobile
   assert.match(layer[1], /z-index:\s*0\s*;/);
   assert.match(html, /#particles-js\s*>\s*canvas\s*\{[^}]*width:\s*100%\s*;[^}]*height:\s*100%\s*;/);
   assert.match(read("service-worker.js"), /stargazer-cache-v31/);
+});
+
+test("last saved provider is reopened and low-percent progress remains visible", () => {
+  const {buildSources,initialResumeSource} = require("../player-sources.js");
+  const sources = buildSources({tmdbID:550,mediaType:"movie"},"https://vidup.to/movie/550");
+  for (const provider of sources) {
+    assert.equal(initialResumeSource(sources,{watched:46,duration:8348},provider.name),
+      sources.findIndex(source => source.name === provider.name), provider.name);
+  }
+  assert.equal(initialResumeSource(sources,null,"VidRock"),0);
+  const js = read("movies.js");
+  assert.match(js, /progress\.watched <= 0 \|\| progress\.percent >= 95/);
+  assert.match(js, /Math\.max\(1, Math\.round\(progress\.percent\)\)/);
+  assert.match(js, /if \(watchBtn\) updateMovieWatchButton\(watchBtn, movie\)/);
 });
