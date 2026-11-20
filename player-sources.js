@@ -90,7 +90,8 @@
   function initialResumeSource(sources, progress, lastSource) {
     const seconds = resumePosition(progress);
     if (seconds > 0 && Number(progress?.watched) < Number(progress?.duration) * 0.95) {
-      const index = sources.findIndex(source => source.name === lastSource);
+      const excluded = ['VidLink', 'Viduki 3 · Multi Embeds', 'Viduki 4 · Premium Embeds'];
+      const index = sources.findIndex(source => source.name === lastSource && !excluded.includes(source.name));
       if (index >= 0) return index;
     }
     return sources.findIndex(source => source.name === 'VidUP') >= 0 ? sources.findIndex(source => source.name === 'VidUP') : 0;
