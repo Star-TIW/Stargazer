@@ -35,3 +35,31 @@ test("only plain, same-origin video file paths are accepted", () => {
     assert.equal(getSource(movie, { "movie:42": value }), null, JSON.stringify(value));
   }
 });
+
+test("Vidy www redirect timeupdate is accepted for Continue Watching, but lookalike hosts are rejected", () => {
+  const {buildSources, acceptsOrigin, decodeEvent, shouldAcceptCheckpoint} = require("../player-sources.js");
+  const context = {tmdbID:550, mediaType:"movie"};
+  const vidy = buildSources(context,"https://vidup.to/movie/550").find(source => source.name === "Vidy");
+  assert.equal(vidy.origin, "https://vidy.st");
+  for (const host of ["https://vidy.st", "https://www.vidy.st"]) {
+    assert.equal(acceptsOrigin(vidy,host),true);
+  }
+  for (const host of ["https://vidy.st.evil.com","https://www.vidy.st.evil.com","http://www.vidy.st","https://evilvidy.st"]) {
+    assert.equal(acceptsOrigin(vidy,host),false);
+  }
+  const saved = {watched:613,duration:8400};
+  const event = {type:"timeupdate",data:{tmdbId:550,currentTime:653,duration:8400,playing:true}};
+  const updates = [];
+  const receive = (origin, payload) => {
+    if (!acceptsOrigin(vidy,origin)) return;
+    const update = decodeEvent(vidy,payload,context);
+    if (update?.duration > 0 && shouldAcceptCheckpoint(saved,update,0)) {
+      updates.push({currentTime:update.time,duration:update.duration,lastSource:vidy.name});
+    }
+  };
+  receive("https://www.vidy.st",event);
+  receive("https://vidy.st.evil.com",event);
+  assert.deepEqual(updates,[{currentTime:653,duration:8400,lastSource:"Vidy"}]);
+  assert.match(require("node:fs").readFileSync(require("node:path").join(__dirname,"..","movies.js"),"utf8"),
+    /savePlaybackProgress\(\{tmdbId:context\.tmdbID,[\s\S]*?currentTime:update\.time, duration:update\.duration, lastSource:provider\.name\}/);
+});
