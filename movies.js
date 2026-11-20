@@ -814,7 +814,10 @@ function createMovieCard(movie, autoplay = false) {
       let resumeNoticeTimer;
       let toolbarFadeTimer;
       const shortSourceName = name => String(name).split(" · ")[0];
+      let manualSwitchProgress = null;
       const selectSource = target => {
+        // Snapshot the checkpoint before replacing the iframe during a manual switch.
+        manualSwitchProgress = savedEpisodeOrMovie()?.progress || null;
         index = target;
         manualSourceOverride = true;
         triedVidFast = false;
@@ -912,7 +915,9 @@ function createMovieCard(movie, autoplay = false) {
           if (provider.protocol === "vidy") frame.allow = "encrypted-media; autoplay *; fullscreen *; picture-in-picture";
           else frame.allow = "autoplay; fullscreen; encrypted-media; picture-in-picture";
           const savedEntry = savedEpisodeOrMovie();
-          const progress = savedEntry?.progress;
+          const progress = manualSourceOverride && manualSwitchProgress
+            ? manualSwitchProgress : savedEntry?.progress;
+          manualSwitchProgress = null;
           const decision = window.StargazerSources.decideResume(sources, index, progress, savedEntry?.lastSource, manualSourceOverride);
           if (decision.redirected) {
             index = decision.index;
@@ -1043,8 +1048,12 @@ function createMovieCard(movie, autoplay = false) {
           if (!update.updatedAt && !playing && !historyChanged && saved?.progress) { tracePlayer(event, true, update, "unchanged history"); return; }
         }
         const second = Math.floor(update.time);
-        const currentCheckpoint = savedEpisodeOrMovie()?.progress;
-        if (!window.StargazerSources.shouldAcceptCheckpoint(currentCheckpoint, update, lowSampleSince ? (Date.now() - lowSampleSince) / 1000 : 0)) {
+        const checkpointEntry = savedEpisodeOrMovie();
+        const currentCheckpoint = checkpointEntry?.progress;
+        const differentSource = Boolean(checkpointEntry?.lastSource && checkpointEntry.lastSource !== provider.name);
+        const checkpointElapsed = differentSource ? (Date.now() - sourceStartedAt) / 1000
+          : lowSampleSince ? (Date.now() - lowSampleSince) / 1000 : 0;
+        if (!window.StargazerSources.shouldAcceptCheckpoint(currentCheckpoint, update, checkpointElapsed, false, differentSource)) {
           if (!lowSampleSince) lowSampleSince = Date.now();
           tracePlayer(event, true, update, "checkpoint guard");
           return;
@@ -1542,7 +1551,7 @@ suggestionsBox.addEventListener("click", async (e) => {
     if(!items?.length){el.innerHTML='<div class="media-empty">Nothing here yet.</div>';return;}
     el.innerHTML=items.slice(0,limit).map(raw=>{
       const x=norm(raw),p=getStoredProgress(x.tmdbID,x.mediaType);
-      const badge=p ? `${Math.round(p.percent)}%` : x.mediaType==="tv" ? "TV" : "";
+      const badge=p && p.watched > 0 ? `${Math.max(1, Math.round(p.percent))}%` : x.mediaType==="tv" ? "TV" : "";
       return `<article class="media-card" tabindex="0" role="button" aria-label="Open ${esc(x.Title)}" data-tmdbid="${x.tmdbID}" data-mediatype="${x.mediaType}">
         <div class="media-poster-wrap">
           <img class="media-poster" src="${x.Poster}" alt="${esc(x.Title)}" loading="lazy">
