@@ -70,7 +70,14 @@ test('resume uses the current episode position and each documented parameter', (
     const key = {VidUP:'startAt',VidFast:'startAt',VidLink:'startAt',Vidy:'progress'}[source.name];
     if (key) assert.equal(url.searchParams.get(key),'151',source.name);
     else assert.equal(url.href,source.url);
-    assert.equal(resumeUrl(source,{watched:899,duration:900}),source.url);
+    const finished = new URL(resumeUrl(source,{watched:899,duration:900}));
+    if (key) {
+      const expected = new URL(source.url);
+      expected.searchParams.set(key, '0');
+      assert.equal(finished.href, expected.href, source.name);
+    } else {
+      assert.equal(finished.href, source.url, source.name);
+    }
   }
 });
 
