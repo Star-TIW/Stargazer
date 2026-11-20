@@ -1311,3 +1311,18 @@ main#movie-card { width: min(94vw,1080px) !important; padding: clamp(16px,3vw,36
   font-size:clamp(12px,2.8vw,14px); line-height:1.35;
   white-space:normal; overflow-wrap:anywhere;
 }
+
+/* Provider switching must remain interactive above the full-screen loader. */
+#video-wrapper.stargazer-player-wrapper .provider-toolbar {
+  position:absolute;
+  z-index:1200 !important;
+  pointer-events:auto;
+}
+#video-wrapper.stargazer-player-wrapper .provider-toolbar .next-provider {
+  position:relative;
+  z-index:1201;
+  pointer-events:auto;
+}
+@media (max-width:768px) {
+  #video-wrapper.stargazer-player-wrapper .provider-toolbar { z-index:1200 !important; }
+}
