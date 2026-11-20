@@ -806,7 +806,8 @@ function createMovieCard(movie, autoplay = false) {
       resumePill.className = "provider-resume-pill";
       resumePill.hidden = true;
       resumePill.append(resumeHint, resumeAction, dismissResume);
-      tools.append(topRow, resumePill);
+      sourceGroup.append(resumePill);
+      tools.append(topRow);
       let resumeNoticeTimer;
       let toolbarFadeTimer;
       const shortSourceName = name => String(name).split(" · ")[0];
