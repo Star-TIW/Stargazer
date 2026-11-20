@@ -97,6 +97,9 @@
     if (!(duration > 0) || !Number.isFinite(time) || time < 0) return false;
     return startOver || checkpoint <= 30 || time >= checkpoint - 60 || elapsed >= 60;
   }
+  function isHealthySourceEvent(update) {
+    return !!update && update.state !== "failed";
+  }
   function nextFallbackSource(sources, currentIndex, triedVidFast = false) {
     const fast = sources.findIndex(source => source.name === 'VidFast');
     if (!triedVidFast && fast >= 0 && currentIndex !== fast) return {index:fast, triedVidFast:true};
@@ -174,7 +177,7 @@
     return /^\/media\/(?:[\w-]+\/)*[\w-]+\.(?:mp4|webm)$/.test(path) ? path : null;
   }
 
-  const api = { getSource, providers, buildSources, decodeEvent, resumePosition, resumeUrl, decideResume, initialResumeSource, shouldAcceptCheckpoint, nextFallbackSource, acceptsOrigin };
+  const api = { getSource, providers, buildSources, decodeEvent, resumePosition, resumeUrl, decideResume, initialResumeSource, shouldAcceptCheckpoint, isHealthySourceEvent, nextFallbackSource, acceptsOrigin };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.StargazerSources = api;
 })(typeof window !== 'undefined' ? window : globalThis);
