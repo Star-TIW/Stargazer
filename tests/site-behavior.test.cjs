@@ -154,25 +154,25 @@ test("popup protection starts movie and episode embeds on VidZee, with all sourc
 
 test("provider toolbar stays above loader on desktop and mobile", () => {
   const css = read("movies.css");
-  const loader = css.match(/\\.stargazer-player-loader\\s*\\{[^}]*z-index:\\s*(\\d+)/);
-  const toolbar = css.match(/#video-wrapper\\.stargazer-player-wrapper \\.provider-toolbar\\s*\\{[^}]*z-index:\\s*(\\d+)/);
+  const loader = css.match(/\.stargazer-player-loader\s*\{[^}]*z-index:\s*(\d+)/);
+  const toolbar = css.match(/#video-wrapper\.stargazer-player-wrapper \.provider-toolbar\s*\{[^}]*z-index:\s*(\d+)/);
   assert.ok(loader && toolbar, "loader and toolbar must have explicit stacking levels");
   assert.ok(Number(toolbar[1]) > Number(loader[1]));
-  assert.match(css, /@media \\(max-width:768px\\)\\s*\\{\\s*#video-wrapper\\.stargazer-player-wrapper \\.provider-toolbar\\s*\\{\\s*z-index:\\s*1200/);
+  assert.match(css, /@media \(max-width:768px\)\s*\{\s*#video-wrapper\.stargazer-player-wrapper \.provider-toolbar\s*\{\s*z-index:\s*1200/);
 });
 
 test("protected source failure gives settings guidance without cycling providers", () => {
   const source = read("movies.js");
   const fallback = source.slice(source.indexOf("const fallback = () => {"), source.indexOf("const next = document.createElement", source.indexOf("const fallback = () => {"));
-  assert.match(fallback, /if \\(popupProtectionEnabled\\(\\)\\)/);
+  assert.match(fallback, /if \(popupProtectionEnabled\(\)\)/);
   assert.match(fallback, /Turn off Block player popups and redirects/);
   assert.ok(fallback.indexOf("return;") < fallback.indexOf("nextFallbackSource"), "protected branch must exit before switching");
-  assert.match(fallback, /nextFallbackSource\\(sources, index, triedVidFast\\)/);
+  assert.match(fallback, /nextFallbackSource\(sources, index, triedVidFast\)/);
 });
 
 test("settings particle configuration matches main-compatible preview wiring", () => {
   const html = read("settings.html");
-  assert.match(html, /z-index:\\s*-1/);
-  assert.match(html, /initParticles\\(button.dataset.effect\\)/);
-  assert.match(html, /postMessage\\(\\{type:\"particleEffect\", effect:currentEffect\\}/);
+  assert.match(html, /z-index:\s*-1/);
+  assert.match(html, /initParticles\(button.dataset.effect\)/);
+  assert.match(html, /postMessage\(\{type:\"particleEffect\", effect:currentEffect\}/);
 });
