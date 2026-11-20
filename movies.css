@@ -641,25 +641,6 @@
   visibility: hidden;
 }
 
-/* The original Stargazer close X, restored. Only its stacking level is changed. */
-#close-video-x {
-  position: absolute !important;
-  top: 10px !important;
-  right: 15px !important;
-  color: #efef88 !important;
-  font-size: 32px !important;
-  font-weight: bold !important;
-  cursor: pointer !important;
-  z-index: 2147483647 !important;
-  transition: color .3s ease !important;
-  filter: none !important;
-  -webkit-filter: none !important;
-  text-shadow: 0 1px 4px rgba(0,0,0,.8);
-  pointer-events: auto !important;
-  user-select: none;
-}
-#close-video-x:hover { color: #fff !important; }
-
 #movie-modal-backdrop { position: fixed !important; inset: 0 !important; z-index: 19000 !important; }
 #movie-card { position: fixed !important; z-index: 19001 !important; }
 
@@ -671,7 +652,6 @@
     min-height: 0 !important;
     border-radius: 0 !important;
   }
-  #close-video-x { top: 14px !important; right: 16px !important; font-size: 32px !important; }
 }
 
 
@@ -1270,7 +1250,7 @@ main#movie-card { width: min(94vw,1080px) !important; padding: clamp(16px,3vw,36
 #video-wrapper .provider-source-label {min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
 #video-wrapper .provider-switch-word {flex:none; color:#aaa; font-size:13px; font-weight:500}
 #video-wrapper #close-video-x.provider-close-pill {
-  flex:0 0 44px; width:44px; padding:0; align-self:flex-start; font:500 25px/1 Arial,sans-serif;
+  flex:0 0 44px; width:44px; padding:0; margin-left:auto; align-self:flex-start; font:500 25px/1 Arial,sans-serif;
 }
 #video-wrapper .provider-source-group .next-provider:hover,
 #video-wrapper #close-video-x.provider-close-pill:hover,
@@ -1331,10 +1311,10 @@ main#movie-card { width: min(94vw,1080px) !important; padding: clamp(16px,3vw,36
   letter-spacing:.2em; white-space:nowrap; text-transform:uppercase;
   animation:none;
 }
-#video-wrapper .loader-player-label {margin-right:-.2em;}
-#video-wrapper .loader-dots {display:inline-flex;align-items:baseline;align-self:baseline;gap:3px;letter-spacing:0;margin-left:.1em;transform:translateY(.35em)}
+#video-wrapper .loader-player-label {position:relative;display:inline-block;margin-right:0;}
+#video-wrapper .loader-dots {position:absolute;left:100%;bottom:.15em;display:inline-flex;align-items:center;gap:2px;letter-spacing:0;margin-left:.1em;transform:none}
 #video-wrapper .loader-dots i {
-  display:block;width:3px;height:3px;border-radius:50%;background:#efef88;
+  display:block;width:3px;height:3px;border-radius:50%;background:currentColor;opacity:1;
   animation:loaderDotPulse 1.2s ease-in-out infinite;
 }
 #video-wrapper .loader-dots i:nth-child(2) {animation-delay:.2s}
