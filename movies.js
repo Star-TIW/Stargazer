@@ -745,6 +745,14 @@ function createMovieCard(movie, autoplay = false) {
       let triedVidFast = false;
       let failoverCount = 0;
       const fallback = () => {
+        if (popupProtectionEnabled()) {
+          clearTimeout(sourceWatchdog);
+          clearInterval(stallMonitor);
+          status.classList.remove("is-hidden");
+          status.classList.add("source-error");
+          caption.textContent = "Player unavailable. Turn off Block player popups and redirects in Settings, then reopen the player.";
+          return;
+        }
         if (failoverCount >= sources.length + 1) return;
         const nextSource = window.StargazerSources.nextFallbackSource(sources, index, triedVidFast);
         triedVidFast = nextSource.triedVidFast;
