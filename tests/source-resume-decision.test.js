@@ -108,3 +108,22 @@ test('popup protection puts VidZee first and preserves remaining provider order'
  assert.deepEqual(sourcesApi.orderSourcesForPopupProtection(original,false).map(p=>p.name),original.map(p=>p.name));
  assert.equal(original[0].name,'VidUP');
 });
+
+test('manual switches pass checkpoint as the param for VidUP, VidFast and Vidy',()=>{
+ const built=sourcesApi.buildSources({tmdbID:603,mediaType:'movie'},'https://vidup.to/movie/603?autoPlay=true');
+ for(const name of ['VidUP','VidFast','Vidy']){
+   const provider=built.find(p=>p.name===name);
+   const url=new URL(sourcesApi.resumeUrl(provider,{watched:42,duration:8348}));
+   assert.equal(url.searchParams.get(provider.resumeParam),'42',name);
+ }
+});
+test('recent backwards checkpoint from a different source is refused even under 90 seconds',()=>{
+ const saved={watched:42,duration:8348};
+ assert.equal(sourcesApi.shouldAcceptCheckpoint(saved,{time:16,duration:8348},0,false,true),false);
+ assert.equal(sourcesApi.shouldAcceptCheckpoint(saved,{time:16,duration:8348},59.9,false,true),false);
+ assert.equal(sourcesApi.shouldAcceptCheckpoint(saved,{time:42,duration:8348},0,false,true),true);
+ assert.equal(sourcesApi.shouldAcceptCheckpoint(saved,{time:43,duration:8348},0,false,true),true);
+ assert.equal(sourcesApi.shouldAcceptCheckpoint(saved,{time:16,duration:8348},60,false,true),true);
+ assert.equal(sourcesApi.shouldAcceptCheckpoint(saved,{time:16,duration:8348},0,true,true),true);
+ assert.equal(sourcesApi.shouldAcceptCheckpoint(saved,{time:16,duration:8348},0,false,false),true);
+});
