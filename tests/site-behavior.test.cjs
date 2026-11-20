@@ -322,7 +322,7 @@ test("settings particle layer is viewport-anchored and canvas fills it on mobile
   assert.match(layer[1], /pointer-events:\s*none\s*;/);
   assert.match(layer[1], /z-index:\s*0\s*;/);
   assert.match(html, /#particles-js\s*>\s*canvas\s*\{[^}]*width:\s*100%\s*;[^}]*height:\s*100%\s*;/);
-  assert.match(read("service-worker.js"), /stargazer-cache-v33/);
+  assert.match(read("service-worker.js"), /stargazer-cache-v34/);
 });
 
 test("last saved provider is reopened and low-percent progress remains visible", () => {
@@ -354,4 +354,26 @@ test("Continue Watching badge uses the same nonzero percentage rounding as movie
   const js = read("movies.js");
   assert.match(js, /const badge=p && p\.watched > 0 \? \x60\$\{Math\.max\(1, Math\.round\(p\.percent\)\)\}%\x60/);
   assert.match(js, /Continue from \$\{formatWatchTime\(progress\.watched\)\} · \$\{Math\.max\(1, Math\.round\(progress\.percent\)\)\}%/);
+});
+
+test("unreleased TMDB titles show a local-date badge only before first release", () => {
+  const source = read("movies.js");
+  const start = source.indexOf("function parseTmdbLocalDate(");
+  const end = source.indexOf("function normalizeTmdbDetails(", start);
+  assert.ok(start >= 0 && end > start);
+  const sandbox = { Date, module: { exports: {} } };
+  vm.runInNewContext(source.slice(start, end) + "\nmodule.exports = { getTmdbReleaseInfo, parseTmdbLocalDate };", sandbox);
+  const { getTmdbReleaseInfo: info, parseTmdbLocalDate: parse } = sandbox.module.exports;
+  const today = new Date(2026, 10, 20);
+  assert.equal(info({release_date:"2026-12-18",status:"Planned"},"movie",today).releaseLabel,"Releases Dec 18, 2026");
+  assert.equal(info({release_date:"2026-11-19",status:"Released"},"movie",today).isUnreleased,false);
+  assert.equal(info({first_air_date:"2026-12-18",status:"Planned"},"tv",today).releaseLabel,"Premieres Dec 18, 2026");
+  assert.equal(info({first_air_date:"2020-01-01",status:"Returning Series"},"tv",today).isUnreleased,false);
+  assert.equal(info({status:"Post Production"},"movie",today).releaseLabel,"Coming soon");
+  assert.equal(info({status:"Pilot"},"tv",today).releaseLabel,"Coming soon");
+  assert.equal(info({status:"Released"},"movie",today).isUnreleased,false);
+  assert.equal(parse("2026-12-18").getDate(),18);
+  assert.equal(parse("2026-12-18").getMonth(),11);
+  assert.ok(source.includes('movie.isUnreleased ? `<p class="detail-release-badge"'));
+  assert.ok(source.includes("escapeHtml(movie.releaseLabel)"));
 });

@@ -70,11 +70,33 @@ function getCertificationFromContentRatings(contentRatings) {
   return usRating?.rating || "N/A";
 }
 
+function parseTmdbLocalDate(value) {
+  if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
+  const [year, month, day] = value.split("-").map(Number);
+  const parsed = new Date(year, month - 1, day);
+  return parsed.getFullYear() === year && parsed.getMonth() === month - 1 && parsed.getDate() === day ? parsed : null;
+}
+
+function getTmdbReleaseInfo(details, mediaType, today = new Date()) {
+  const isMovie = mediaType === "movie";
+  const releaseDate = isMovie ? details.release_date : details.first_air_date;
+  const date = parseTmdbLocalDate(releaseDate);
+  const localToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  const statuses = isMovie
+    ? ["Rumored", "Planned", "In Production", "Post Production"]
+    : ["Planned", "In Production", "Pilot"];
+  const isUnreleased = date ? date > localToday : !releaseDate && statuses.includes(details.status);
+  return { releaseDate: releaseDate || "", status: details.status || "", isUnreleased,
+    releaseLabel: isUnreleased ? (date
+      ? (isMovie ? "Releases " : "Premieres ") + date.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })
+      : "Coming soon") : "" };
+}
+
 function normalizeTmdbDetails(details, mediaType) {
   const isMovie = mediaType === "movie";
   const title = isMovie ? details.title : details.name;
-  const releaseDate = isMovie ? details.release_date : details.first_air_date;
-  const year = releaseDate ? releaseDate.split("-")[0] : "N/A";
+  const releaseInfo = getTmdbReleaseInfo(details, mediaType);
+  const year = releaseInfo.releaseDate ? releaseInfo.releaseDate.split("-")[0] : "N/A";
   const poster = details.poster_path
     ? `${TMDB_IMAGE_BASE}${details.poster_path}`
     : "https://via.placeholder.com/200x300?text=N/A";
@@ -101,6 +123,7 @@ function normalizeTmdbDetails(details, mediaType) {
     mediaType,
     Title: title || "N/A",
     Year: year,
+    ...releaseInfo,
     Poster: poster,
     Type: isMovie ? "movie" : "series",
     Rated: rated,
@@ -471,6 +494,7 @@ function createMovieCard(movie, autoplay = false) {
         <img src="${escapeHtml(movie.Poster)}" alt="" class="movie-detail-poster" width="400" height="600">
       </div>
       <div class="detail-info">
+        ${movie.isUnreleased ? `<p class="detail-release-badge" style="margin:0 0 8px;color:#efef88;font-size:0.85rem;font-weight:600;">${escapeHtml(movie.releaseLabel)}</p>` : ""}
         <p class="detail-meta">${[isMovie ? "Movie" : "Series", movie.Year, movie.Rated, movie.Runtime].filter(x => x && x !== "N/A").map(escapeHtml).join(" · ")}</p>
         <h2>${escapeHtml(movie.Title)}</h2>
         <p class="detail-genres">${escapeHtml(movie.Genre === "N/A" ? "" : movie.Genre)}</p>
