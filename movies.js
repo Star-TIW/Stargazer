@@ -645,6 +645,8 @@ function createMovieCard(movie, autoplay = false) {
 
   const hideOverlay = () => {
     resetPlayer();
+    if (watchBtn) updateMovieWatchButton(watchBtn, movie);
+    window.__stargazerDashboardRefresh?.();
     videoContainer.classList.remove("is-open");
     videoContainer.style.display = "none";
     videoContainer.style.pointerEvents = "none";
@@ -721,10 +723,8 @@ function createMovieCard(movie, autoplay = false) {
       const path = context.mediaType === "movie" ? `movie/${context.tmdbID}` :
         `tv/${context.tmdbID}/${context.season}/${context.episode}`;
       const sources = window.StargazerSources.buildSources(context, `https://vidup.to/${path}?autoPlay=true`);
-      let index = initialProviderIndex(sources);
       const initialSaved = savedEpisodeOrMovie();
-      const initialDecision = window.StargazerSources.decideResume(sources, index, initialSaved?.progress, initialSaved?.lastSource);
-      index = initialDecision.index;
+      let index = window.StargazerSources.initialResumeSource(sources, initialSaved?.progress, initialSaved?.lastSource);
       let manualSourceOverride = false;
       let started = false;
       let lastSample, previousHistoryTime;
@@ -732,6 +732,22 @@ function createMovieCard(movie, autoplay = false) {
       let switchResumeAt = 0;
       let switchResumePending = false;
       let lastSeekRequestAt = 0;
+      let sourceStartedAt = Date.now();
+      let lowSampleSince = 0;
+      let sourceWatchdog = null;
+      let lastAdvanceAt = Date.now();
+      let lastAdvancePosition = -1;
+      let triedVidFast = false;
+      let failoverCount = 0;
+      const fallback = () => {
+        if (failoverCount >= sources.length + 1) return;
+        const nextSource = window.StargazerSources.nextFallbackSource(sources, index, triedVidFast);
+        triedVidFast = nextSource.triedVidFast;
+        index = nextSource.index;
+        failoverCount++;
+        manualSourceOverride = true;
+        playback.start();
+      };
       const next = document.createElement("button");
       next.className = "next-provider";
       const resumeHint = document.createElement("span");
@@ -747,6 +763,10 @@ function createMovieCard(movie, autoplay = false) {
       const playback = providerPlayback({
         navigate(fail) {
           const provider = sources[index];
+          clearTimeout(sourceWatchdog);
+          sourceStartedAt = Date.now();
+          lowSampleSince = 0;
+          sourceWatchdog = setTimeout(fallback, 12000);
           status.classList.remove("is-hidden", "source-error");
           caption.textContent = "Loading " + provider.name;
           const frame = videoFrame.cloneNode(false);
@@ -784,7 +804,8 @@ function createMovieCard(movie, autoplay = false) {
           resumeAction.hidden = !selfMismatch;
           resumeAction.textContent = "Resume in supported source";
           resumeAction.onclick = () => {
-            const target = window.StargazerSources.decideResume(sources, index, progress, savedEntry?.lastSource);
+            const current = savedEpisodeOrMovie();
+            const target = window.StargazerSources.decideResume(sources, index, current?.progress, current?.lastSource);
             if (target.index !== index) { index = target.index; manualSourceOverride = false; playback.start(); }
           };
           frame.src = window.StargazerSources.resumeUrl(provider, progress);
@@ -802,13 +823,14 @@ function createMovieCard(movie, autoplay = false) {
           status.classList.add("source-error");
         }
       });
-      next.onclick = () => { index = (index + 1) % sources.length; manualSourceOverride = true; playback.start(); };
+      next.onclick = () => { index = (index + 1) % sources.length; manualSourceOverride = true; triedVidFast = false; failoverCount = 0; playback.start(); };
       const onMessage = event => {
         const provider = sources[index];
         if (event.source !== videoFrame.contentWindow || !window.StargazerSources.acceptsOrigin(provider, event.origin)) return;
         const update = window.StargazerSources.decodeEvent(provider, event.data, context);
         if (!update) return;
         const playing = playback.signal(update);
+        if (update.duration > 0 && !update.history) clearTimeout(sourceWatchdog);
         if (provider.commands && switchResumePending && event.data &&
             (typeof event.data === "object" ? event.data.type : String(event.data).includes("PLAYER_EVENT")) && !lastSeekRequestAt) {
           videoFrame.contentWindow.postMessage({command:"seek", time:switchResumeAt}, "*");
@@ -824,7 +846,7 @@ function createMovieCard(movie, autoplay = false) {
             lastSeekRequestAt = now;
           }
         }
-        if (update.duration == null) return;
+        if (!(update.duration > 0)) return;
         if (!playing && update.time === 0 && !lastSample) return;
         if (update.history) {
           const saved = savedEpisodeOrMovie();
@@ -835,10 +857,16 @@ function createMovieCard(movie, autoplay = false) {
           if (!update.updatedAt && !playing && !historyChanged && saved?.progress) return;
         }
         const second = Math.floor(update.time);
+        const currentCheckpoint = savedEpisodeOrMovie()?.progress;
+        if (!window.StargazerSources.shouldAcceptCheckpoint(currentCheckpoint, update, lowSampleSince ? (Date.now() - lowSampleSince) / 1000 : 0)) {
+          if (!lowSampleSince) lowSampleSince = Date.now();
+          return;
+        }
+        lowSampleSince = 0;
         // A new embed can report 0:00 before honoring its start parameter.
         // Protect the saved checkpoint until playback reaches that position.
         if (!update.history && switchResumePending) {
-          if (second + 5 < switchResumeAt) return;
+          if (second + 5 < switchResumeAt && Date.now() - sourceStartedAt < 60000) return;
           switchResumePending = false;
           resumeHint.textContent = "";
         }
@@ -859,6 +887,7 @@ function createMovieCard(movie, autoplay = false) {
       window.addEventListener("message", onMessage);
       stopNativePlayback = () => {
         playback.stop();
+        clearTimeout(sourceWatchdog);
         videoFrame.onload = videoFrame.onerror = null;
         tools.remove();
         window.removeEventListener("message", onMessage);
