@@ -874,7 +874,7 @@ function createMovieCard(movie, autoplay = false) {
           lowSampleSince = 0;
           sourceWatchdog = setTimeout(() => {
             // A loaded history iframe is usable even when its player never emits MEDIA_DATA.
-            if (provider.protocol === "history" && videoFrame?.dataset?.loaded === "true") return;
+            if ((provider.protocol === "history" || provider.protocol === "vidy") && videoFrame?.dataset?.loaded === "true") return;
             fallback();
           }, 12000);
           if (provider.name === "VidUP") stallMonitor = setInterval(() => {
@@ -895,7 +895,7 @@ function createMovieCard(movie, autoplay = false) {
           frame.onload = () => {
             if (frame !== videoFrame) return;
             frame.dataset.loaded = "true";
-            if (provider.protocol === "history") clearTimeout(sourceWatchdog);
+            if (provider.protocol === "history" || provider.protocol === "vidy") clearTimeout(sourceWatchdog);
             if (provider.commands) {
               frame.contentWindow.postMessage({command:"getStatus"}, provider.origin);
               if (switchResumeAt > 0) {
@@ -930,7 +930,10 @@ function createMovieCard(movie, autoplay = false) {
           if (selfMismatch) {
             resumePill.hidden = false;
             resumeHint.textContent = "You were at " + formatWatchTime(switchResumeAt);
-            const target = window.StargazerSources.decideResume(sources, index, progress, savedEntry?.lastSource);
+            const preferredIndex = sources.findIndex(source => source.name === savedEntry?.lastSource && source.resumeMode === "param");
+            const target = preferredIndex >= 0
+              ? {index:preferredIndex}
+              : window.StargazerSources.decideResume(sources, index, progress, savedEntry?.lastSource);
             resumeAction.hidden = false;
             resumeAction.textContent = "Resume on " + shortSourceName(sources[target.index].name);
             resumeAction.onclick = () => selectSource(target.index);
