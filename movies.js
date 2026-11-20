@@ -420,12 +420,12 @@ function formatWatchTime(seconds) {
 function updateMovieWatchButton(button, movie) {
   if (!button) return;
   const progress = getStoredProgress(movie.tmdbID, movie.mediaType);
-  if (!progress || progress.percent < 1) {
+  if (!progress || progress.watched <= 0 || progress.percent >= 95) {
     button.textContent = movie.mediaType === "movie" ? "Watch Movie" : "Choose Episode";
     return;
   }
   if (movie.mediaType === "tv" && progress.season && progress.episode) {
-    button.textContent = `Continue S${progress.season} E${progress.episode}: ${Math.round(progress.percent)}%`;
+    button.textContent = `Continue S${progress.season} E${progress.episode}: ${Math.max(1, Math.round(progress.percent))}%`;
   } else {
     button.textContent = `Continue from ${formatWatchTime(progress.watched)} · ${Math.round(progress.percent)}%`;
   }
@@ -930,13 +930,16 @@ function createMovieCard(movie, autoplay = false) {
           if (selfMismatch) {
             resumePill.hidden = false;
             resumeHint.textContent = "You were at " + formatWatchTime(switchResumeAt);
-            const preferredIndex = sources.findIndex(source => source.name === savedEntry?.lastSource && source.resumeMode === "param");
-            const target = preferredIndex >= 0
-              ? {index:preferredIndex}
-              : window.StargazerSources.decideResume(sources, index, progress, savedEntry?.lastSource);
-            resumeAction.hidden = false;
-            resumeAction.textContent = "Resume on " + shortSourceName(sources[target.index].name);
-            resumeAction.onclick = () => selectSource(target.index);
+            // This action switches to a parameter-resumable provider, never to
+            // the self-resuming provider already selected in the source pill.
+            const preferredIndex = sources.findIndex(source => source.name === savedEntry?.lastSource && source.resumeMode === "param" && source !== provider);
+            const fallbackIndex = sources.findIndex(source => source.resumeMode === "param" && source !== provider);
+            const resumeTargetIndex = preferredIndex >= 0 ? preferredIndex : fallbackIndex;
+            resumeAction.hidden = resumeTargetIndex < 0;
+            if (resumeTargetIndex >= 0) {
+              resumeAction.textContent = "Resume on " + shortSourceName(sources[resumeTargetIndex].name);
+              resumeAction.onclick = () => selectSource(resumeTargetIndex);
+            }
             if (provider.name !== "VidZee" && provider.name !== "VidRock")
               resumeNoticeTimer = setTimeout(() => { resumePill.hidden = true; }, 8000);
           }
