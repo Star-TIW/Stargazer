@@ -237,11 +237,11 @@
   inset: 0;
   width: 100%;
   height: 100dvh;
-  background: rgba(0, 0, 0, 0.9);
+  background: #000;
   display: none;
   justify-content: center;
   align-items: center;
-  padding: 24px;
+  padding: 0;
   z-index: 1000;
   animation: playerBackdropIn 0.35s ease both;
 }
@@ -250,16 +250,7 @@
   display: flex;
 }
 
-.stargazer-player-wrapper {
-  position: relative;
-  width: min(1200px, 92vw);
-  height: min(760px, 88vh);
-  min-height: 320px;
-  background: #000;
-  border-radius: 14px;
-  overflow: hidden;
-  box-shadow: 0 0 45px rgba(239, 239, 136, 0.2);
-}
+
 
 #video-iframe,
 #native-video-player {
@@ -589,31 +580,6 @@
   }
 }
 
-/* Final overrides for the original #video-wrapper styles */
-#video-wrapper.stargazer-player-wrapper {
-  width: min(1200px, 92vw);
-  height: min(760px, 88vh);
-  max-width: none;
-  max-height: none;
-  border-radius: 14px;
-}
-
-#video-wrapper.stargazer-player-wrapper iframe#video-iframe {
-  width: 100%;
-  height: 100%;
-  border-radius: 0;
-}
-
-@media (max-width: 768px) {
-  #video-wrapper.stargazer-player-wrapper {
-    width: 100vw;
-    height: 100dvh;
-    max-width: none;
-    max-height: none;
-    border-radius: 0;
-  }
-}
-
 #close-video-x { z-index: 1200; }
 
 
@@ -651,30 +617,13 @@
   display: none;
   align-items: center;
   justify-content: center;
-  padding: 24px;
-  background: rgba(0,0,0,.94) !important;
+  padding: 0;
+  background: #000;
   filter: none !important;
   backdrop-filter: none !important;
   -webkit-filter: none !important;
 }
 #video-container.is-open { display: flex !important; }
-#video-wrapper.stargazer-player-wrapper {
-  position: relative !important;
-  z-index: 20001 !important;
-  width: min(1200px, 92vw) !important;
-  height: min(760px, 88vh) !important;
-  min-height: 320px !important;
-  max-width: none !important;
-  max-height: none !important;
-  background: #000 !important;
-  border-radius: 14px !important;
-  overflow: hidden !important;
-  transform: none !important;
-  filter: none !important;
-  backdrop-filter: none !important;
-  -webkit-filter: none !important;
-  isolation: isolate;
-}
 #video-iframe {
   position: absolute !important;
   inset: 0 !important;
@@ -1256,8 +1205,7 @@ main#movie-card { width: min(94vw,1080px) !important; padding: clamp(16px,3vw,36
 @keyframes detail-in { from {translate:0 8px} to {translate:0 0} }
 
 @media (max-width:768px), (max-height:500px) and (orientation:landscape) {
-  #video-container { padding:0 !important; }
-  #video-wrapper.stargazer-player-wrapper { width:100% !important; height:100dvh !important; min-height:0 !important; }
+  #video-container { padding:0; }
 
   .detail-backdrop main#movie-card { max-height:calc(100dvh - 24px) !important; padding:clamp(12px,3vw,20px); }
   .detail-info h2,.detail-credits dd { overflow-wrap:anywhere; min-width:0; }
@@ -1278,7 +1226,7 @@ main#movie-card { width: min(94vw,1080px) !important; padding: clamp(16px,3vw,36
 #video-wrapper.stargazer-player-wrapper {
   position:fixed; inset:0; width:100vw; height:100dvh; min-height:0;
   max-width:none; max-height:none; overflow:hidden; border-radius:0;
-  background:#000; box-shadow:none;
+  z-index:20001; isolation:isolate; background:#000; box-shadow:none;
 }
 #video-wrapper.stargazer-player-wrapper iframe#video-iframe,
 #video-wrapper.stargazer-player-wrapper #native-video-player {
@@ -1287,7 +1235,7 @@ main#movie-card { width: min(94vw,1080px) !important; padding: clamp(16px,3vw,36
 }
 #video-wrapper.stargazer-player-wrapper .provider-toolbar {
   position:absolute; z-index:1200; top:0; left:0; right:0;
-  display:flex; flex-direction:column; gap:8px;
+  display:flex; flex-direction:column; gap:0;
   padding:max(12px,env(safe-area-inset-top)) max(12px,env(safe-area-inset-right))
     0 max(12px,env(safe-area-inset-left));
   pointer-events:none; opacity:1; transition:none;
@@ -1348,8 +1296,9 @@ main#movie-card { width: min(94vw,1080px) !important; padding: clamp(16px,3vw,36
   display:inline-flex; align-items:center; gap:4px; max-width:min(100%,480px);
   min-height:44px; padding:0 7px 0 13px; box-sizing:border-box;
   align-self:flex-start;
-  border:1px solid rgba(239,239,136,.35); border-radius:999px;
-  background:rgba(0,0,0,.72); backdrop-filter:blur(12px); pointer-events:auto;
+  border:1px solid rgba(239,239,136,.35); border-top:1px solid rgba(239,239,136,.18);
+  border-radius:0 0 18px 18px; margin-top:-1px;
+  background:rgba(20,20,20,.6); backdrop-filter:blur(12px); pointer-events:auto;
 }
 #video-wrapper .provider-resume-pill[hidden],
 #video-wrapper .provider-resume-action[hidden],
@@ -1376,14 +1325,14 @@ main#movie-card { width: min(94vw,1080px) !important; padding: clamp(16px,3vw,36
 #video-wrapper .loader-scene .loader-subtext {
   position:absolute; top:calc(100% + 24px); bottom:auto; left:50%; right:auto;
   transform:translateX(-50%); display:flex; justify-content:center; align-items:center;
-  gap:10px; width:max-content; max-width:90vw; margin:0;
-  color:rgba(239,239,136,.85); font:500 13px/1.4 Arial,sans-serif;
+  gap:4px; width:max-content; max-width:90vw; margin:0;
+  color:rgba(239,239,136,.9); font:500 13px/1.4 Arial,sans-serif;
   letter-spacing:.2em; white-space:nowrap; text-transform:uppercase;
-  animation:subtleBlink 2s ease-in-out infinite;
+  animation:none;
 }
 #video-wrapper .loader-dots {display:inline-flex;align-items:center;gap:4px;letter-spacing:normal}
 #video-wrapper .loader-dots i {
-  display:block;width:4px;height:4px;border-radius:50%;background:#efef88;
+  display:block;width:3px;height:3px;border-radius:50%;background:#efef88;
   animation:loaderDotPulse 1.2s ease-in-out infinite;
 }
 #video-wrapper .loader-dots i:nth-child(2) {animation-delay:.2s}
