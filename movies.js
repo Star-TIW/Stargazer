@@ -736,8 +736,7 @@ function createMovieCard(movie, autoplay = false) {
       let lowSampleSince = 0;
       let sourceWatchdog = null;
       let stallMonitor = null;
-      let vidupPlaying = false;
-      let vidupRecoveries = 0;
+      let vidupStall = {position:-1, lastAdvanceAt:Date.now(), seekAt:0, userPaused:false, recoveries:0};
       let lastAdvanceAt = Date.now();
       let lastAdvancePosition = -1;
       let triedVidFast = false;
@@ -768,8 +767,7 @@ function createMovieCard(movie, autoplay = false) {
           const provider = sources[index];
           clearTimeout(sourceWatchdog);
           clearInterval(stallMonitor);
-          vidupPlaying = false;
-          vidupRecoveries = 0;
+          vidupStall = {position:-1, lastAdvanceAt:Date.now(), seekAt:0, userPaused:false, recoveries:0};
           resumeHint.textContent = "";
           resumeAction.hidden = true;
           sourceStartedAt = Date.now();
@@ -780,15 +778,13 @@ function createMovieCard(movie, autoplay = false) {
             fallback();
           }, 12000);
           if (provider.name === "VidUP") stallMonitor = setInterval(() => {
-            if (!vidupPlaying || lastAdvancePosition < 0 || Date.now() - lastAdvanceAt < 4000 || vidupRecoveries >= 2) return;
-            vidupRecoveries++;
-            const target = Math.max(0, lastAdvancePosition + 0.1);
-            // VidUP does not advertise a seek-command API. Reload at its documented startAt.
+            const result = window.StargazerSources.vidupStallStep(vidupStall, null, Date.now());
+            vidupStall = result.state;
+            if (result.reloadAt == null) return;
             const url = new URL(videoFrame.src);
-            url.searchParams.set("startAt", String(target));
+            url.searchParams.set("startAt", String(result.reloadAt));
+            console.debug("[Stargazer VidUP] stalled after seek, reloading at", result.reloadAt);
             videoFrame.src = url.href;
-            lastAdvanceAt = Date.now();
-            vidupPlaying = false;
           }, 1000);
           status.classList.remove("is-hidden", "source-error");
           caption.textContent = "Loading " + provider.name;
@@ -867,13 +863,11 @@ function createMovieCard(movie, autoplay = false) {
         // Never time out a valid history event just because it lacks PLAYER_EVENT.
         clearTimeout(sourceWatchdog);
         if (provider.name === "VidUP") {
-          if (update.state === "playing") vidupPlaying = true;
-          if (update.state === "ready" && update.time != null) vidupPlaying = false;
-          if (Number.isFinite(update.time) && update.time >= 0 && update.time > lastAdvancePosition + 0.25) {
-            lastAdvancePosition = update.time;
-            lastAdvanceAt = Date.now();
-            vidupRecoveries = 0;
-          }
+          const raw = typeof event.data === "string" ? (() => { try { return JSON.parse(event.data); } catch { return {}; } })() : event.data || {};
+          const detail = raw.data && typeof raw.data === "object" ? raw.data : raw;
+          const eventName = String(detail.event || raw.event || raw.type || "").toLowerCase();
+          console.debug("[Stargazer VidUP] event", {event:eventName, state:update.state, time:update.time, duration:update.duration});
+          vidupStall = window.StargazerSources.vidupStallStep(vidupStall, {...update, event:eventName}, Date.now()).state;
         }
         if (provider.commands && switchResumePending && event.data &&
             (typeof event.data === "object" ? event.data.type : String(event.data).includes("PLAYER_EVENT")) && !lastSeekRequestAt) {
