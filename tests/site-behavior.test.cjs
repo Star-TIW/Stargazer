@@ -176,3 +176,28 @@ test("settings particle configuration matches main-compatible preview wiring", (
   assert.match(html, /initParticles\(button.dataset.effect\)/);
   assert.match(html, /postMessage\(\{type:\"particleEffect\", effect:currentEffect\}/);
 });
+
+test("source picker switches to selected index and refreshes numbered loader", () => {
+  const source = read("movies.js");
+  assert.match(source, /option\.onclick = \(\) => selectSource\(i\)/);
+  assert.match(source, /index = target;[\s\S]*?playback\.start\(\)/);
+  assert.match(source, /caption\.textContent = "Loading player " \+ \(index \+ 1\)/);
+  assert.match(source, /refreshPicker\(\)/);
+  assert.match(source, /sourcePicker\.setAttribute\("role", "dialog"\)/);
+});
+
+test("resume pill has a named supported target, dismiss control and timeout", () => {
+  const source = read("movies.js");
+  assert.match(source, /resumeAction\.textContent = "Resume on " \+ shortSourceName\(sources\[target\.index\]\.name\)/);
+  assert.match(source, /resumeAction\.onclick = \(\) => selectSource\(target\.index\)/);
+  assert.match(source, /resumeNoticeTimer = setTimeout\(\(\) => \{ resumePill\.hidden = true; \}, 8000\)/);
+  assert.match(source, /dismissResume\.onclick/);
+  assert.match(source, /if \(selfMismatch\)/);
+});
+
+test("player bar stays above loader with a matching close control", () => {
+  const css = read("movies.css");
+  assert.match(css, /provider-toolbar \{[\s\S]*?z-index:1200!important/);
+  assert.match(css, /#close-video-x\.provider-close-pill/);
+  assert.match(css, /provider-source-picker\[hidden\]/);
+});
