@@ -722,7 +722,10 @@ function createMovieCard(movie, autoplay = false) {
       }
       const path = context.mediaType === "movie" ? `movie/${context.tmdbID}` :
         `tv/${context.tmdbID}/${context.season}/${context.episode}`;
-      const sources = window.StargazerSources.orderSourcesForPopupProtection(\n        window.StargazerSources.buildSources(context, `https://vidup.to/${path}?autoPlay=true`),\n        popupProtectionEnabled()\n      );
+      const sources = window.StargazerSources.orderSourcesForPopupProtection(
+        window.StargazerSources.buildSources(context, `https://vidup.to/${path}?autoPlay=true`),
+        popupProtectionEnabled()
+      );
       const initialSaved = savedEpisodeOrMovie();
       let index = popupProtectionEnabled() ? 0 : window.StargazerSources.initialResumeSource(sources, initialSaved?.progress, initialSaved?.lastSource);
       let manualSourceOverride = popupProtectionEnabled();
