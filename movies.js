@@ -807,6 +807,9 @@ function createMovieCard(movie, autoplay = false) {
       resumePill.hidden = true;
       resumePill.append(resumeHint, resumeAction, dismissResume);
       sourceGroup.append(resumePill);
+      const syncResumeStyle = () => sourceGroup.classList.toggle("has-resume", !resumePill.hidden);
+      new MutationObserver(syncResumeStyle).observe(resumePill, {attributes:true, attributeFilter:["hidden"]});
+      syncResumeStyle();
       tools.append(topRow);
       let resumeNoticeTimer;
       let toolbarFadeTimer;
