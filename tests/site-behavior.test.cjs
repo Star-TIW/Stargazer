@@ -322,7 +322,7 @@ test("settings particle layer is viewport-anchored and canvas fills it on mobile
   assert.match(layer[1], /pointer-events:\s*none\s*;/);
   assert.match(layer[1], /z-index:\s*0\s*;/);
   assert.match(html, /#particles-js\s*>\s*canvas\s*\{[^}]*width:\s*100%\s*;[^}]*height:\s*100%\s*;/);
-  assert.match(read("service-worker.js"), /stargazer-cache-v32/);
+  assert.match(read("service-worker.js"), /stargazer-cache-v33/);
 });
 
 test("last saved provider is reopened and low-percent progress remains visible", () => {
@@ -338,4 +338,20 @@ test("last saved provider is reopened and low-percent progress remains visible",
   assert.match(js, /progress\.watched <= 0 \|\| progress\.percent >= 95/);
   assert.match(js, /Math\.max\(1, Math\.round\(progress\.percent\)\)/);
   assert.match(js, /if \(watchBtn\) updateMovieWatchButton\(watchBtn, movie\)/);
+});
+
+test("manual source switches carry the saved checkpoint and guard another source for 60s", () => {
+  const js = read("movies.js");
+  assert.match(js, /manualSwitchProgress = savedEpisodeOrMovie\(\)\?\.progress \|\| null/);
+  assert.match(js, /const progress = manualSourceOverride && manualSwitchProgress/);
+  assert.match(js, /frame\.src = window\.StargazerSources\.resumeUrl\(provider, progress\)/);
+  assert.match(js, /checkpointEntry\.lastSource !== provider\.name/);
+  assert.match(js, /\(Date\.now\(\) - sourceStartedAt\) \/ 1000/);
+  assert.match(js, /shouldAcceptCheckpoint\(currentCheckpoint, update, checkpointElapsed, false, differentSource\)/);
+});
+
+test("Continue Watching badge uses the same nonzero percentage rounding as movie cards", () => {
+  const js = read("movies.js");
+  assert.match(js, /const badge=p && p\.watched > 0 \? \x60\$\{Math\.max\(1, Math\.round\(p\.percent\)\)\}%\x60/);
+  assert.match(js, /Continue from \$\{formatWatchTime\(progress\.watched\)\} · \$\{Math\.max\(1, Math\.round\(progress\.percent\)\)\}%/);
 });
