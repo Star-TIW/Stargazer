@@ -233,8 +233,11 @@ test("resume notice joins switch control and loader dots have independent tracki
   const css = read("movies.css");
   assert.match(js, /sourceGroup\.append\(resumePill\)/);
   assert.match(js, /tools\.append\(topRow\)/);
-  assert.match(css, /provider-source-group:has\(\.provider-resume-pill:not\(\[hidden\]\)\) \.next-provider \{border-radius:22px 22px 0 0;/);
+  assert.match(css, /provider-source-group\.has-resume \.next-provider \{border-radius:22px 22px 0 0;/);
+  assert.match(js, /new MutationObserver\(syncResumeStyle\)\.observe\(resumePill/);
+  assert.match(js, /classList\.toggle\("has-resume", !resumePill\.hidden\)/);
   assert.match(css, /provider-resume-pill \{[\s\S]*?width:100%; max-width:100%/);
   assert.match(css, /loader-player-label \{margin-right:-\.2em;/);
-  assert.match(css, /loader-dots \{[^}]*letter-spacing:0;margin-left:\.1em/);
+  assert.match(css, /loader-dots \{[^}]*align-self:baseline;[^}]*letter-spacing:0;margin-left:\.1em;transform:translateY\(\.35em\)/);
+  assert.match(css, /loader-scene \.loader-subtext \{[^}]*align-items:baseline/);
 });
