@@ -887,7 +887,7 @@ function createMovieCard(movie, autoplay = false) {
       settingsAction.hidden = true;
       settingsAction.onclick = () => {
         document.getElementById("close-video-x")?.click();
-        document.querySelector('[data-settings], a[href*="settings"], #settings-button')?.click();
+        document.getElementById("settings-btn")?.click();
       };
       status.append(settingsAction);
       const keepToolbarVisible = () => {
