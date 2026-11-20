@@ -735,6 +735,9 @@ function createMovieCard(movie, autoplay = false) {
       let sourceStartedAt = Date.now();
       let lowSampleSince = 0;
       let sourceWatchdog = null;
+      let stallMonitor = null;
+      let vidupPlaying = false;
+      let vidupRecoveries = 0;
       let lastAdvanceAt = Date.now();
       let lastAdvancePosition = -1;
       let triedVidFast = false;
@@ -764,15 +767,38 @@ function createMovieCard(movie, autoplay = false) {
         navigate(fail) {
           const provider = sources[index];
           clearTimeout(sourceWatchdog);
+          clearInterval(stallMonitor);
+          vidupPlaying = false;
+          vidupRecoveries = 0;
+          resumeHint.textContent = "";
+          resumeAction.hidden = true;
           sourceStartedAt = Date.now();
           lowSampleSince = 0;
-          sourceWatchdog = setTimeout(fallback, 12000);
+          sourceWatchdog = setTimeout(() => {
+            // A loaded history iframe is usable even when its player never emits MEDIA_DATA.
+            if (provider.protocol === "history" && videoFrame?.dataset?.loaded === "true") return;
+            fallback();
+          }, 12000);
+          if (provider.name === "VidUP") stallMonitor = setInterval(() => {
+            if (!vidupPlaying || lastAdvancePosition < 0 || Date.now() - lastAdvanceAt < 4000 || vidupRecoveries >= 2) return;
+            vidupRecoveries++;
+            const target = Math.max(0, lastAdvancePosition + 0.1);
+            // VidUP does not advertise a seek-command API. Reload at its documented startAt.
+            const url = new URL(videoFrame.src);
+            url.searchParams.set("startAt", String(target));
+            videoFrame.src = url.href;
+            lastAdvanceAt = Date.now();
+            vidupPlaying = false;
+          }, 1000);
           status.classList.remove("is-hidden", "source-error");
           caption.textContent = "Loading " + provider.name;
           const frame = videoFrame.cloneNode(false);
           frame.onerror = fail;
           frame.onload = () => {
-            if (frame === videoFrame && provider.commands) {
+            if (frame !== videoFrame) return;
+            frame.dataset.loaded = "true";
+            if (provider.protocol === "history") clearTimeout(sourceWatchdog);
+            if (provider.commands) {
               frame.contentWindow.postMessage({command:"getStatus"}, provider.origin);
               if (switchResumeAt > 0) {
                 frame.contentWindow.postMessage({command:"seek", time:switchResumeAt}, provider.origin);
@@ -784,6 +810,7 @@ function createMovieCard(movie, autoplay = false) {
           configureExternalFrame(frame);
           lastSample = null;
           previousHistoryTime = null;
+          frame.dataset.loaded = "false";
           if (provider.protocol === "vidy") frame.allow = "encrypted-media; autoplay *; fullscreen *; picture-in-picture";
           else frame.allow = "autoplay; fullscreen; encrypted-media; picture-in-picture";
           const savedEntry = savedEpisodeOrMovie();
@@ -836,7 +863,18 @@ function createMovieCard(movie, autoplay = false) {
           return;
         }
         const playing = playback.signal(update);
-        if (update.duration > 0 && !update.history) clearTimeout(sourceWatchdog);
+        // MEDIA_DATA is the health signal for history-protocol providers.
+        // Never time out a valid history event just because it lacks PLAYER_EVENT.
+        clearTimeout(sourceWatchdog);
+        if (provider.name === "VidUP") {
+          if (update.state === "playing") vidupPlaying = true;
+          if (update.state === "ready" && update.time != null) vidupPlaying = false;
+          if (Number.isFinite(update.time) && update.time >= 0 && update.time > lastAdvancePosition + 0.25) {
+            lastAdvancePosition = update.time;
+            lastAdvanceAt = Date.now();
+            vidupRecoveries = 0;
+          }
+        }
         if (provider.commands && switchResumePending && event.data &&
             (typeof event.data === "object" ? event.data.type : String(event.data).includes("PLAYER_EVENT")) && !lastSeekRequestAt) {
           videoFrame.contentWindow.postMessage({command:"seek", time:switchResumeAt}, "*");
@@ -882,16 +920,6 @@ function createMovieCard(movie, autoplay = false) {
         }
         if (lastSample?.second === second && lastSample.duration === update.duration) return;
         lastSample = {second, duration:update.duration};
-        if (provider.name === "VidUP" && update.state === "playing") {
-          if (second !== lastAdvancePosition) {
-            lastAdvancePosition = second;
-            lastAdvanceAt = Date.now();
-          } else if (Date.now() - lastAdvanceAt >= 3000) {
-            // Best-effort recovery. VidUP may ignore commands on some embeds.
-            videoFrame.contentWindow.postMessage({command:"seek", time:update.time + 0.1}, provider.origin);
-            lastAdvanceAt = Date.now();
-          }
-        }
         if (!started) {
           markTitleStarted(context.tmdbID, context.mediaType, {title:context.title, posterPath:context.posterPath, year:movie.Year, rating:movie.Rating});
           started = true;
@@ -904,6 +932,8 @@ function createMovieCard(movie, autoplay = false) {
       stopNativePlayback = () => {
         playback.stop();
         clearTimeout(sourceWatchdog);
+        clearInterval(stallMonitor);
+        resumeHint.textContent = "";
         videoFrame.onload = videoFrame.onerror = null;
         tools.remove();
         window.removeEventListener("message", onMessage);
