@@ -796,14 +796,17 @@ function createMovieCard(movie, autoplay = false) {
       tools.className = "provider-toolbar";
       const topRow = document.createElement("div");
       topRow.className = "provider-top-row";
+      const barTitle = document.createElement("span");
+      barTitle.className = "provider-bar-title";
+      barTitle.textContent = [context.title || movie.Title, movie.Year && movie.Year !== "N/A" ? "(" + movie.Year + ")" : ""].filter(Boolean).join(" ");
       const sourceGroup = document.createElement("div");
       sourceGroup.className = "provider-source-group";
       sourceGroup.append(sourceChip, next);
       const closeControl = document.getElementById("close-video-x");
       if (closeControl) {
         closeControl.classList.add("provider-close-pill");
-        topRow.append(sourceGroup, closeControl);
-      } else topRow.append(sourceGroup);
+        topRow.append(sourceGroup, barTitle, closeControl);
+      } else topRow.append(sourceGroup, barTitle);
       const resumeAction = document.createElement("button");
       resumeAction.className = "provider-resume-action";
       resumeAction.type = "button";
@@ -845,7 +848,11 @@ function createMovieCard(movie, autoplay = false) {
         const count = document.createElement("span");
         count.className = "provider-chip-count";
         count.textContent = (index + 1) + "/" + sources.length;
-        sourceChip.append(swap, name, count);
+        const separator = document.createElement("span");
+        separator.className = "provider-chip-separator";
+        separator.textContent = " · ";
+        separator.setAttribute("aria-hidden", "true");
+        sourceChip.append(swap, name, separator, count);
         sourceChip.setAttribute("aria-label", "Choose source. Current: " + provider.name + ", " + (index + 1) + " of " + sources.length);
         pickerList.replaceChildren();
         sources.forEach((entry, i) => {
