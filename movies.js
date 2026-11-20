@@ -722,9 +722,9 @@ function createMovieCard(movie, autoplay = false) {
       }
       const path = context.mediaType === "movie" ? `movie/${context.tmdbID}` :
         `tv/${context.tmdbID}/${context.season}/${context.episode}`;
-      const sources = window.StargazerSources.buildSources(context, `https://vidup.to/${path}?autoPlay=true`);
+      const sources = window.StargazerSources.orderSourcesForPopupProtection(\n        window.StargazerSources.buildSources(context, `https://vidup.to/${path}?autoPlay=true`),\n        popupProtectionEnabled()\n      );
       const initialSaved = savedEpisodeOrMovie();
-      let index = window.StargazerSources.initialResumeSource(sources, initialSaved?.progress, initialSaved?.lastSource);
+      let index = popupProtectionEnabled() ? 0 : window.StargazerSources.initialResumeSource(sources, initialSaved?.progress, initialSaved?.lastSource);
       let manualSourceOverride = false;
       let started = false;
       let lastSample, previousHistoryTime;
@@ -787,7 +787,7 @@ function createMovieCard(movie, autoplay = false) {
             videoFrame.src = url.href;
           }, 1000);
           status.classList.remove("is-hidden", "source-error");
-          caption.textContent = "Loading " + provider.name;
+          caption.textContent = "Loading player " + (index + 1);
           const frame = videoFrame.cloneNode(false);
           frame.onerror = fail;
           frame.onload = () => {
