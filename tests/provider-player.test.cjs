@@ -94,9 +94,10 @@ test('a saved position is available for manual seeking on every player', () => {
 test('mirror origins are restricted to the active provider and invalid samples are discarded', () => {
   const {acceptsOrigin} = require('../player-sources.js');
   const sources = buildSources(context,primary);
-  assert.ok(acceptsOrigin(sources[2],'https://vidfast.pro'));
+  const vidFast = sources.find(source => source.name === 'VidFast');
+  assert.ok(acceptsOrigin(vidFast,'https://vidfast.pro'));
   assert.ok(!acceptsOrigin(sources[0],'https://vidfast.pro'));
-  assert.ok(!acceptsOrigin(sources[2],'https://vidfast.pro.example.com'));
+  assert.ok(!acceptsOrigin(vidFast,'https://vidfast.pro.example.com'));
   for (const bad of [null, '', -1, Infinity]) {
     assert.equal(decodeEvent(sources[0],{type:'PLAYER_EVENT',data:{event:'timeupdate',currentTime:bad,duration:90}},context),null);
   }
