@@ -21,7 +21,6 @@ test('every tracked shipped JavaScript file parses, including movies.js', () => 
 test('changed player files contain no accidentally escaped source newlines', () => {
   for (const file of ['movies.js', 'player-sources.js', 'movies.css']) {
     const source = readFileSync(path.join(root, file), 'utf8');
-    assert.equal(source.includes(String.raw`\\n        window.StargazerSources`), false, 'Escaped newline in ' + file);
-    assert.equal(source.includes(String.raw`\\n        popupProtectionEnabled()`), false, 'Escaped newline in ' + file);
+    assert.doesNotMatch(source, /\\\\n\\s{4,}\\S/, 'Escaped newline in ' + file);
   }
 });
