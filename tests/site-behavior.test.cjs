@@ -173,7 +173,8 @@ test("protected source failure gives settings guidance without cycling providers
 
 test("settings particle configuration matches main-compatible preview wiring", () => {
   const html = read("settings.html");
-  assert.match(html, /z-index:\s*-1/);
+  assert.match(html, /#particles-js\s*\{[^}]*z-index:\s*0;[^}]*pointer-events:\s*none;/);
+  assert.match(html, /\.settings-container\s*\{[^}]*position:\s*relative;[^}]*z-index:\s*1/);
   assert.match(html, /initParticles\(button.dataset.effect\)/);
   assert.match(html, /postMessage\(\{type:\"particleEffect\", effect:currentEffect\}/);
 });
