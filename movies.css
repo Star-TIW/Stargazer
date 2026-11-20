@@ -1436,3 +1436,36 @@ main#movie-card { width: min(94vw,1080px) !important; padding: clamp(16px,3vw,36
   #video-wrapper .provider-bar-title {font-size:11px}
   #video-wrapper .provider-source-chip {gap:4px}
 }
+
+/* Single next-source control: matching 44px row and clear loader label. */
+#video-wrapper .provider-source-group {flex:0 1 auto;min-width:0;align-self:center}
+#video-wrapper .provider-top-row {display:flex;align-items:center;flex-wrap:nowrap;gap:10px;min-height:44px}
+#video-wrapper .provider-source-group .next-provider {
+  position:static!important;display:inline-flex;align-items:center;justify-content:center;
+  gap:8px;flex:none;min-width:0;max-width:min(56vw,290px);
+  width:auto;height:44px;min-height:44px;padding:0 14px;
+  border-radius:999px;border:1px solid rgba(239,239,136,.55);
+  background:rgba(0,0,0,.72);color:#efef88;
+  font:500 13px/1.2 Arial,sans-serif;white-space:nowrap;overflow:hidden;
+  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  pointer-events:auto;cursor:pointer;transition:background 180ms ease,opacity 180ms ease;
+}
+#video-wrapper .provider-source-label {min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#video-wrapper .provider-swap-icon {font-size:18px;flex:none;line-height:1}
+#video-wrapper .provider-bar-title {flex:1 1 0;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#video-wrapper #close-video-x.provider-close-pill {flex:0 0 44px;align-self:center}
+#video-wrapper .loader-scene .loader-subtext {
+  bottom:-17%;padding:0 8px;line-height:1.4;white-space:nowrap;
+}
+#video-wrapper .loader-source-name {display:none!important}
+@media(max-width:600px) {
+  #video-wrapper .provider-source-group .next-provider {
+    max-width:min(53vw,240px);height:44px;min-height:44px;
+    padding:0 10px;font-size:12px;white-space:nowrap;overflow:hidden;
+  }
+  #video-wrapper .provider-top-row {gap:6px}
+  #video-wrapper .loader-scene .loader-subtext {bottom:-20%;font-size:clamp(11px,3vw,14px)}
+}
+@media(max-height:520px) {
+  #video-wrapper .loader-scene .loader-subtext {bottom:-22%}
+}
