@@ -197,7 +197,8 @@ test("resume pill preserves destination, dismiss and timeout", () => {
 test("cinematic player controls and loader animation", () => {
   const css = read("movies.css");
   const js = read("movies.js");
-  assert.match(js, /topRow\.append\(sourceGroup, barTitle, closeControl\)/);
+  assert.match(js, /topRow\.append\(sourceGroup, closeControl\)/);
+  assert.doesNotMatch(js, /provider-bar-title/);
   assert.match(css, /provider-toolbar\.is-dimmed::before/);
   assert.match(css, /provider-toolbar\.is-dimmed \.next-provider/);
   assert.match(css, /loader-scene \.loader-subtext \{[\s\S]*?top:calc\(100% \+ 24px\)/);
@@ -205,4 +206,14 @@ test("cinematic player controls and loader animation", () => {
   assert.match(css, /transition:opacity 250ms ease,visibility 250ms ease/);
   assert.match(css, /media-card \.media-title/);
   assert.match(js, /Number\(x\.Rating\) > 0/);
+});
+
+test("player wrapper and iframe fill viewport while toolbar overlays without layout space", () => {
+  const css = read("movies.css");
+  const wrapper = css.match(/#video-wrapper\.stargazer-player-wrapper \{([^}]+)\}/g)?.at(-1) || "";
+  assert.match(css, /#video-wrapper\.stargazer-player-wrapper \{\s*position:fixed; inset:0; width:100vw; height:100dvh/);
+  assert.match(css, /#video-wrapper\.stargazer-player-wrapper iframe#video-iframe,[\s\S]*?position:absolute; inset:0; display:block; width:100%; height:100%/);
+  assert.match(css, /#video-wrapper\.stargazer-player-wrapper \.provider-toolbar \{\s*position:absolute; z-index:1200; top:0; left:0; right:0/);
+  assert.doesNotMatch(css, /inset:50% 0 auto;transform:translateY\(-50%\)/);
+  assert.match(css, /height:110px/);
 });
