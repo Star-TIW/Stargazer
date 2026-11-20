@@ -49,3 +49,18 @@ test('fallback tries VidFast before continuing through the ordered list',()=>{
  const next=sourcesApi.nextFallbackSource(sources,first.index,first.triedVidFast);
  assert.equal(next.index,first.index+1);
 });
+
+test('history MEDIA_DATA is a healthy event and must cancel fallback',()=>{
+ const context={tmdbID:550,mediaType:'movie'};
+ const source=sourcesApi.buildSources(context,'https://vidup.to/movie/550').find(p=>p.name==='Viduki 1 · Multi Server');
+ const event=sourcesApi.decodeEvent(source,{type:'MEDIA_DATA',data:{id:550,type:'movie',progress:{watched:620,duration:3600},last_updated:100}},context);
+ assert.equal(event.history,true);
+ assert.equal(sourcesApi.isHealthySourceEvent(event),true);
+ assert.equal(sourcesApi.isHealthySourceEvent({state:'failed'}),false);
+});
+test('Viduki 2 history progress also counts as healthy',()=>{
+ const context={tmdbID:27205,mediaType:'movie'};
+ const source=sourcesApi.buildSources(context,'https://vidup.to/movie/27205').find(p=>p.name==='Viduki 2 · Multi Language');
+ const event=sourcesApi.decodeEvent(source,{type:'MEDIA_DATA',data:{id:27205,type:'movie',progress:{watched:630,duration:8000}}},context);
+ assert.equal(sourcesApi.isHealthySourceEvent(event),true);
+});
