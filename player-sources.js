@@ -96,12 +96,15 @@
     }
     return sources.findIndex(source => source.name === 'VidUP') >= 0 ? sources.findIndex(source => source.name === 'VidUP') : 0;
   }
-  function shouldAcceptCheckpoint(progress, incoming, elapsed, startOver = false) {
+  function shouldAcceptCheckpoint(progress, incoming, elapsed, startOver = false, differentSource = false) {
     const checkpoint = Number(progress?.watched) || 0;
     const duration = Number(incoming?.duration);
     const time = Number(incoming?.time);
     if (!(duration > 0) || !Number.isFinite(time) || time < 0) return false;
-    return startOver || checkpoint <= 30 || time >= checkpoint - 60 || elapsed >= 60;
+    if (startOver) return true;
+    // Switching providers must not roll back a recent checkpoint, even below 90s.
+    if (differentSource && elapsed < 60 && time < checkpoint) return false;
+    return checkpoint <= 30 || time >= checkpoint - 60 || elapsed >= 60;
   }
   function vidupStallStep(state, update, now) {
     const next = { ...state };
