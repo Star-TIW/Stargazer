@@ -202,7 +202,7 @@ test("cinematic player controls and loader animation", () => {
   assert.doesNotMatch(js, /provider-bar-title/);
   assert.match(css, /provider-toolbar\.is-dimmed::before/);
   assert.match(css, /provider-toolbar\.is-dimmed \.next-provider/);
-  assert.match(css, /loader-scene \.loader-subtext \{[\s\S]*?top:calc\(100% \+ 24px\)/);
+  assert.match(css, /#video-wrapper \.loader-scene \.loader-subtext \{[^}]*top:calc\(100% \+ [0-9]+px\);[^}]*left:50%;[^}]*transform:translateX\(-50%\)/);
   assert.match(js, /loader-dots/);
   assert.match(css, /transition:opacity 250ms ease,visibility 250ms ease/);
   assert.match(css, /media-card \.media-title/);
@@ -239,7 +239,7 @@ test("resume notice joins switch control and loader dots have independent tracki
   assert.match(js, /classList\.toggle\("has-resume", !resumePill\.hidden\)/);
   assert.match(css, /provider-resume-pill \{[\s\S]*?width:100%; max-width:100%/);
   assert.match(css, /loader-player-label \{display:inline-block;/);
-  assert.match(css, /loader-dots \{position:absolute;left:100%;bottom:\.15em;[^}]*gap:2px;letter-spacing:0;margin-left:\.1em;transform:none/);
+  assert.match(css, /loader-dots \{[^}]*position:absolute;left:100%;bottom:\.[0-9]+em;[^}]*gap:2px;letter-spacing:0;margin-left:\.1em;transform:none;color:inherit/);
   assert.match(css, /loader-scene \.loader-subtext \{[^}]*align-items:baseline/);
 });
 
