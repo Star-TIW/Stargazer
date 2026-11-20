@@ -101,24 +101,45 @@
     const next = { ...state };
     if (update) {
       const time = Number(update.time);
-      const hasTime = Number.isFinite(time) && time >= 0 && update.time != null;
+      const hasTime = update.time != null && Number.isFinite(time) && time >= 0;
       const eventName = String(update.event || '').toLowerCase();
       if (hasTime) {
-        const jump = next.position >= 0 && Math.abs(time - next.position) > 3;
-        if (jump) { next.seekAt = now; next.lastAdvanceAt = now; next.recoveries = 0; }
-        else if (time > next.position + 0.25) next.lastAdvanceAt = now;
-        next.position = time;
+        const inSeekWindow = next.seekAt > 0 && now - next.seekAt <= 3000;
+        const staleBeforeForwardSeek = inSeekWindow && next.seekDirection === 'forward' &&
+          time < next.seekTarget - 3;
+        if (!staleBeforeForwardSeek) {
+          const delta = next.position >= 0 ? time - next.position : 0;
+          if (Math.abs(delta) > 3) {
+            next.seekAt = now;
+            next.seekTarget = time;
+            next.seekDirection = delta > 0 ? 'forward' : 'backward';
+            next.lastAdvanceAt = now;
+            next.recoveries = 0;
+          } else if (time > next.position + 0.25) {
+            next.lastAdvanceAt = now;
+          }
+          next.position = time;
+        }
       }
       if (eventName === 'pause' || eventName === 'paused') {
         if (now - (next.seekAt || -Infinity) > 2000) next.userPaused = true;
       } else if (eventName === 'playing' || update.state === 'playing') next.userPaused = false;
-      // 'ready' after seeking is not evidence that the user paused.
     }
     const seekRecent = next.seekAt > 0 && now >= next.seekAt;
     const stalled = seekRecent && !next.userPaused && next.position >= 0 &&
       now - next.lastAdvanceAt >= 4000 && (next.recoveries || 0) < 2;
-    if (stalled) { next.recoveries = (next.recoveries || 0) + 1; next.lastAdvanceAt = now; }
-    return { state: next, reloadAt: stalled ? next.position : null };
+    let reloadAt = null;
+    if (stalled) {
+      reloadAt = next.seekDirection === 'forward'
+        ? Math.max(next.position, next.seekTarget || 0) : next.position;
+      const checkpoint = Number(next.checkpoint) || 0;
+      if (checkpoint > 5 && reloadAt < checkpoint - 5 && next.seekDirection !== 'backward') {
+        reloadAt = checkpoint;
+      }
+      next.recoveries = (next.recoveries || 0) + 1;
+      next.lastAdvanceAt = now;
+    }
+    return { state: next, reloadAt };
   }
   function isHealthySourceEvent(update) {
     return !!update && update.state !== "failed";
