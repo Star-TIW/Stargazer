@@ -796,6 +796,8 @@ function createMovieCard(movie, autoplay = false) {
           switchResumeAt = window.StargazerSources.resumePosition(progress);
           switchResumePending = switchResumeAt > 0;
           lastSeekRequestAt = 0;
+          lastAdvanceAt = Date.now();
+          lastAdvancePosition = -1;
           manualResumeAt = provider.resumeParam ? 0 : switchResumeAt;
           const selfMismatch = provider.resumeMode === "self" && switchResumeAt > 30 &&
             Number(progress?.watched) < Number(progress?.duration) * 0.95 && savedEntry?.lastSource !== provider.name;
@@ -829,6 +831,10 @@ function createMovieCard(movie, autoplay = false) {
         if (event.source !== videoFrame.contentWindow || !window.StargazerSources.acceptsOrigin(provider, event.origin)) return;
         const update = window.StargazerSources.decodeEvent(provider, event.data, context);
         if (!update) return;
+        if (update.state === "failed") {
+          fallback();
+          return;
+        }
         const playing = playback.signal(update);
         if (update.duration > 0 && !update.history) clearTimeout(sourceWatchdog);
         if (provider.commands && switchResumePending && event.data &&
@@ -876,6 +882,16 @@ function createMovieCard(movie, autoplay = false) {
         }
         if (lastSample?.second === second && lastSample.duration === update.duration) return;
         lastSample = {second, duration:update.duration};
+        if (provider.name === "VidUP" && update.state === "playing") {
+          if (second !== lastAdvancePosition) {
+            lastAdvancePosition = second;
+            lastAdvanceAt = Date.now();
+          } else if (Date.now() - lastAdvanceAt >= 3000) {
+            // Best-effort recovery. VidUP may ignore commands on some embeds.
+            videoFrame.contentWindow.postMessage({command:"seek", time:update.time + 0.1}, provider.origin);
+            lastAdvanceAt = Date.now();
+          }
+        }
         if (!started) {
           markTitleStarted(context.tmdbID, context.mediaType, {title:context.title, posterPath:context.posterPath, year:movie.Year, rating:movie.Rating});
           started = true;
