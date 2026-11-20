@@ -177,45 +177,32 @@ test("settings particle configuration matches main-compatible preview wiring", (
   assert.match(html, /postMessage\(\{type:\"particleEffect\", effect:currentEffect\}/);
 });
 
-test("source picker switches to selected index and refreshes numbered loader", () => {
+test("single next-source button cycles and updates numbered loader", () => {
   const source = read("movies.js");
-  assert.match(source, /option\.onclick = \(\) => selectSource\(i\)/);
+  assert.match(source, /next\.onclick = \(\) => selectSource\(\(index \+ 1\) % sources\.length\)/);
   assert.match(source, /index = target;[\s\S]*?playback\.start\(\)/);
+  assert.match(source, /sourceLabel\.textContent = provider\.name \+ " · Switch source"/);
   assert.match(source, /caption\.textContent = "Loading player " \+ \(index \+ 1\)/);
-  assert.match(source, /refreshPicker\(\)/);
-  assert.match(source, /sourcePicker\.setAttribute\("role", "dialog"\)/);
+  assert.doesNotMatch(source, /provider-source-picker|sourcePicker|refreshPicker|sourceChip/);
+  assert.doesNotMatch(source, /loader-source-name|sourceCaption/);
 });
 
-test("resume pill has a named supported target, dismiss control and timeout", () => {
+test("resume pill keeps named destination, dismissal and timeout", () => {
   const source = read("movies.js");
   assert.match(source, /resumeAction\.textContent = "Resume on " \+ shortSourceName\(sources\[target\.index\]\.name\)/);
   assert.match(source, /resumeAction\.onclick = \(\) => selectSource\(target\.index\)/);
   assert.match(source, /resumeNoticeTimer = setTimeout\(\(\) => \{ resumePill\.hidden = true; \}, 8000\)/);
   assert.match(source, /dismissResume\.onclick/);
-  assert.match(source, /if \(selfMismatch\)/);
 });
 
-test("player bar stays above loader with a matching close control", () => {
+test("single source button, title and close align above loader", () => {
   const css = read("movies.css");
-  assert.match(css, /provider-toolbar \{[\s\S]*?z-index:1200!important/);
-  assert.match(css, /#close-video-x\.provider-close-pill/);
-  assert.match(css, /provider-source-picker\[hidden\]/);
-});
-
-test("player title shares toolbar dimming and source chip has a real separator", () => {
-  const js = read("movies.js");
-  const css = read("movies.css");
-  assert.match(js, /barTitle\.className = "provider-bar-title"/);
-  assert.match(js, /topRow\.append\(sourceGroup, barTitle, closeControl\)/);
-  assert.match(js, /separator\.textContent = " · "/);
+  const source = read("movies.js");
+  assert.match(source, /topRow\.append\(sourceGroup, barTitle, closeControl\)/);
   assert.match(css, /provider-toolbar\.is-dimmed \{ opacity:\.35/);
-  assert.match(css, /provider-bar-title/);
   assert.match(css, /provider-toolbar::before/);
-});
-
-test("loader provider name is positioned below numbered loader text", () => {
-  const css = read("movies.css");
-  assert.match(css, /loader-scene \.loader-subtext \{bottom:5%/);
-  assert.match(css, /loader-scene \.loader-source-name \{[\s\S]*?bottom:-8%/);
-  assert.match(css, /focus:not\(:focus-visible\)/);
+  assert.match(css, /provider-source-group \.next-provider \{/);
+  assert.match(css, /height:44px;min-height:44px/);
+  assert.match(css, /loader-scene \.loader-subtext \{\s*bottom:-17%/);
+  assert.match(css, /loader-source-name \{display:none!important\}/);
 });
