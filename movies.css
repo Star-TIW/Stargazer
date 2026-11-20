@@ -1300,7 +1300,7 @@ main#movie-card { width: min(94vw,1080px) !important; padding: clamp(16px,3vw,36
   border-radius:0 0 18px 18px; margin-top:-1px;
   background:rgba(20,20,20,.6); backdrop-filter:blur(12px); pointer-events:auto;
 }
-#video-wrapper .provider-source-group:has(.provider-resume-pill:not([hidden])) .next-provider {border-radius:22px 22px 0 0;}
+#video-wrapper .provider-source-group.has-resume .next-provider {border-radius:22px 22px 0 0;}
 #video-wrapper .provider-resume-pill[hidden],
 #video-wrapper .provider-resume-action[hidden],
 #video-wrapper .provider-settings-action[hidden] {display:none}
@@ -1325,14 +1325,14 @@ main#movie-card { width: min(94vw,1080px) !important; padding: clamp(16px,3vw,36
 #video-wrapper .loader-scene {width:min(300px,55vw,42dvh);max-height:70dvh}
 #video-wrapper .loader-scene .loader-subtext {
   position:absolute; top:calc(100% + 24px); bottom:auto; left:50%; right:auto;
-  transform:translateX(-50%); display:flex; justify-content:center; align-items:center;
+  transform:translateX(-50%); display:flex; justify-content:center; align-items:baseline;
   gap:0; width:max-content; max-width:90vw; margin:0;
   color:rgba(239,239,136,.9); font:500 13px/1.4 Arial,sans-serif;
   letter-spacing:.2em; white-space:nowrap; text-transform:uppercase;
   animation:none;
 }
 #video-wrapper .loader-player-label {margin-right:-.2em;}
-#video-wrapper .loader-dots {display:inline-flex;align-items:center;gap:3px;letter-spacing:0;margin-left:.1em}
+#video-wrapper .loader-dots {display:inline-flex;align-items:baseline;align-self:baseline;gap:3px;letter-spacing:0;margin-left:.1em;transform:translateY(.35em)}
 #video-wrapper .loader-dots i {
   display:block;width:3px;height:3px;border-radius:50%;background:#efef88;
   animation:loaderDotPulse 1.2s ease-in-out infinite;
