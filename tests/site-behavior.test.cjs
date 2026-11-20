@@ -308,3 +308,17 @@ test("resume notice uses actual saved param source and stays visible on unreliab
   assert.match(js, /sources\.findIndex\(source => source\.name === savedEntry\?\.lastSource && source\.resumeMode === "param"\)/);
   assert.match(js, /if \(provider\.name !== "VidZee" && provider\.name !== "VidRock"\)/);
 });
+
+test("settings particle layer is viewport-anchored and canvas fills it on mobile", () => {
+  const html = read("settings.html");
+  const layer = html.match(/#particles-js\\s*\\{([^}]*)\\}/);
+  assert.ok(layer, "settings particle layer CSS exists");
+  assert.match(layer[1], /position:\\s*fixed\\s*;/);
+  assert.match(layer[1], /inset:\\s*0\\s*;/);
+  assert.match(layer[1], /width:\\s*100%\\s*;/);
+  assert.match(layer[1], /height:\\s*100%\\s*;/);
+  assert.match(layer[1], /pointer-events:\\s*none\\s*;/);
+  assert.match(layer[1], /z-index:\\s*0\\s*;/);
+  assert.match(html, /#particles-js\\s*>\\s*canvas\\s*\\{[^}]*width:\\s*100%\\s*;[^}]*height:\\s*100%\\s*;/);
+  assert.match(read("service-worker.js"), /stargazer-cache-v31/);
+});
