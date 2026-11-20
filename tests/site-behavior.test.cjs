@@ -190,8 +190,8 @@ test("single source button cycles and updates numbered loader", () => {
 
 test("resume pill preserves destination, dismiss and timeout", () => {
   const js = read("movies.js");
-  assert.match(js, /resumeAction\.textContent = "Resume on " \+ shortSourceName\(sources\[target\.index\]\.name\)/);
-  assert.match(js, /resumeAction\.onclick = \(\) => selectSource\(target\.index\)/);
+  assert.match(js, /resumeAction\.textContent = "Resume on " \+ shortSourceName\(sources\[resumeTargetIndex\]\.name\)/);
+  assert.match(js, /resumeAction\.onclick = \(\) => selectSource\(resumeTargetIndex\)/);
   assert.match(js, /if \(provider\.name !== "VidZee" && provider\.name !== "VidRock"\)[\s\S]*?resumeNoticeTimer = setTimeout\(\(\) => \{ resumePill\.hidden = true; \}, 8000\)/);
 });
 
@@ -322,15 +322,16 @@ test("settings particle layer is viewport-anchored and canvas fills it on mobile
   assert.match(layer[1], /pointer-events:\s*none\s*;/);
   assert.match(layer[1], /z-index:\s*0\s*;/);
   assert.match(html, /#particles-js\s*>\s*canvas\s*\{[^}]*width:\s*100%\s*;[^}]*height:\s*100%\s*;/);
-  assert.match(read("service-worker.js"), /stargazer-cache-v31/);
+  assert.match(read("service-worker.js"), /stargazer-cache-v32/);
 });
 
 test("last saved provider is reopened and low-percent progress remains visible", () => {
   const {buildSources,initialResumeSource} = require("../player-sources.js");
   const sources = buildSources({tmdbID:550,mediaType:"movie"},"https://vidup.to/movie/550");
+  const excluded = new Set(["VidLink","Viduki 3 · Multi Embeds","Viduki 4 · Premium Embeds"]);
   for (const provider of sources) {
     assert.equal(initialResumeSource(sources,{watched:46,duration:8348},provider.name),
-      sources.findIndex(source => source.name === provider.name), provider.name);
+      excluded.has(provider.name) ? 0 : sources.findIndex(source => source.name === provider.name), provider.name);
   }
   assert.equal(initialResumeSource(sources,null,"VidRock"),0);
   const js = read("movies.js");
