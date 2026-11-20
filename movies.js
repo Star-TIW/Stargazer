@@ -766,29 +766,14 @@ function createMovieCard(movie, autoplay = false) {
       const next = document.createElement("button");
       next.className = "next-provider";
       next.type = "button";
-      next.setAttribute("aria-label", "Next source");
-      next.textContent = "›";
-      const sourceChip = document.createElement("button");
-      sourceChip.className = "provider-source-chip";
-      sourceChip.type = "button";
-      sourceChip.setAttribute("aria-haspopup", "dialog");
-      sourceChip.setAttribute("aria-expanded", "false");
-      const sourcePicker = document.createElement("div");
-      sourcePicker.className = "provider-source-picker";
-      sourcePicker.hidden = true;
-      sourcePicker.setAttribute("role", "dialog");
-      sourcePicker.setAttribute("aria-label", "Choose video source");
-      const pickerTitle = document.createElement("div");
-      pickerTitle.className = "provider-picker-title";
-      pickerTitle.textContent = "Choose source";
-      const pickerClose = document.createElement("button");
-      pickerClose.type = "button";
-      pickerClose.className = "provider-picker-close";
-      pickerClose.textContent = "×";
-      pickerClose.setAttribute("aria-label", "Close source picker");
-      const pickerList = document.createElement("div");
-      pickerList.className = "provider-picker-list";
-      sourcePicker.append(pickerTitle, pickerClose, pickerList);
+      next.setAttribute("aria-label", "Switch to next source");
+      const swapIcon = document.createElement("span");
+      swapIcon.className = "provider-swap-icon";
+      swapIcon.textContent = "⇄";
+      swapIcon.setAttribute("aria-hidden", "true");
+      const sourceLabel = document.createElement("span");
+      sourceLabel.className = "provider-source-label";
+      next.append(swapIcon, sourceLabel);
       const resumeHint = document.createElement("span");
       resumeHint.className = "provider-resume-hint";
       resumeHint.setAttribute("aria-live", "polite");
@@ -801,7 +786,7 @@ function createMovieCard(movie, autoplay = false) {
       barTitle.textContent = [context.title || movie.Title, movie.Year && movie.Year !== "N/A" ? "(" + movie.Year + ")" : ""].filter(Boolean).join(" ");
       const sourceGroup = document.createElement("div");
       sourceGroup.className = "provider-source-group";
-      sourceGroup.append(sourceChip, next);
+      sourceGroup.append(next);
       const closeControl = document.getElementById("close-video-x");
       if (closeControl) {
         closeControl.classList.add("provider-close-pill");
@@ -820,73 +805,22 @@ function createMovieCard(movie, autoplay = false) {
       resumePill.className = "provider-resume-pill";
       resumePill.hidden = true;
       resumePill.append(resumeHint, resumeAction, dismissResume);
-      tools.append(topRow, resumePill, sourcePicker);
+      tools.append(topRow, resumePill);
       let resumeNoticeTimer;
       let toolbarFadeTimer;
       const shortSourceName = name => String(name).split(" · ")[0];
-      const closePicker = () => {
-        sourcePicker.hidden = true;
-        sourceChip.setAttribute("aria-expanded", "false");
-      };
       const selectSource = target => {
         index = target;
         manualSourceOverride = true;
         triedVidFast = false;
         failoverCount = 0;
-        closePicker();
         playback.start();
       };
-      const refreshPicker = () => {
-        const provider = sources[index];
-        sourceChip.replaceChildren();
-        const swap = document.createElement("span");
-        swap.textContent = "⇄";
-        swap.setAttribute("aria-hidden", "true");
-        const name = document.createElement("span");
-        name.className = "provider-chip-name";
-        name.textContent = shortSourceName(provider.name);
-        const count = document.createElement("span");
-        count.className = "provider-chip-count";
-        count.textContent = (index + 1) + "/" + sources.length;
-        const separator = document.createElement("span");
-        separator.className = "provider-chip-separator";
-        separator.textContent = " · ";
-        separator.setAttribute("aria-hidden", "true");
-        sourceChip.append(swap, name, separator, count);
-        sourceChip.setAttribute("aria-label", "Choose source. Current: " + provider.name + ", " + (index + 1) + " of " + sources.length);
-        pickerList.replaceChildren();
-        sources.forEach((entry, i) => {
-          const option = document.createElement("button");
-          option.type = "button";
-          option.className = "provider-picker-option";
-          option.setAttribute("aria-current", String(i === index));
-          const label = document.createElement("span");
-          label.className = "provider-picker-option-name";
-          label.textContent = (i + 1) + ". " + entry.name;
-          const mode = document.createElement("small");
-          mode.textContent = entry.resumeMode === "self" ? "Own saved spot" : "Resumes";
-          const mark = document.createElement("span");
-          mark.textContent = i === index ? "✓" : "";
-          mark.setAttribute("aria-hidden", "true");
-          option.append(label, mode, mark);
-          option.onclick = () => selectSource(i);
-          pickerList.append(option);
-        });
-      };
-      sourceChip.onclick = () => {
-        sourcePicker.hidden = !sourcePicker.hidden;
-        sourceChip.setAttribute("aria-expanded", String(!sourcePicker.hidden));
-        if (!sourcePicker.hidden) refreshPicker();
-      };
-      pickerClose.onclick = closePicker;
       dismissResume.onclick = () => {
         clearTimeout(resumeNoticeTimer);
         resumePill.hidden = true;
       };
       const caption = status.querySelector(".loader-subtext");
-      const sourceCaption = document.createElement("div");
-      sourceCaption.className = "loader-source-name";
-      caption.insertAdjacentElement("afterend", sourceCaption);
       const settingsAction = document.createElement("button");
       settingsAction.type = "button";
       settingsAction.className = "provider-settings-action";
@@ -904,7 +838,7 @@ function createMovieCard(movie, autoplay = false) {
       const scheduleToolbarFade = () => {
         keepToolbarVisible();
         toolbarFadeTimer = setTimeout(() => {
-          if (status.classList.contains("is-hidden") && sourcePicker.hidden) tools.classList.add("is-dimmed");
+          if (status.classList.contains("is-hidden")) tools.classList.add("is-dimmed");
         }, 4000);
       };
       tools.addEventListener("pointerenter", keepToolbarVisible);
@@ -945,8 +879,7 @@ function createMovieCard(movie, autoplay = false) {
           }, 1000);
           status.classList.remove("is-hidden", "source-error");
           caption.textContent = "Loading player " + (index + 1);
-          sourceCaption.textContent = provider.name;
-          refreshPicker();
+          sourceLabel.textContent = provider.name + " · Switch source";
           const frame = videoFrame.cloneNode(false);
           frame.onerror = fail;
           frame.onload = () => {
