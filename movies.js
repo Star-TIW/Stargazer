@@ -707,7 +707,7 @@ function createMovieCard(movie, autoplay = false) {
           <div class="loader-glow"></div>
           <img class="loader-logo" src="${STARGAZER_LOGO_URL}" alt="" />
         </div>
-        <div class="loader-subtext">Loading player</div>
+        <div class="loader-subtext">Loading player 1</div>
       </div>
     `;
 
@@ -725,7 +725,7 @@ function createMovieCard(movie, autoplay = false) {
       const sources = window.StargazerSources.orderSourcesForPopupProtection(\n        window.StargazerSources.buildSources(context, `https://vidup.to/${path}?autoPlay=true`),\n        popupProtectionEnabled()\n      );
       const initialSaved = savedEpisodeOrMovie();
       let index = popupProtectionEnabled() ? 0 : window.StargazerSources.initialResumeSource(sources, initialSaved?.progress, initialSaved?.lastSource);
-      let manualSourceOverride = false;
+      let manualSourceOverride = popupProtectionEnabled();
       let started = false;
       let lastSample, previousHistoryTime;
       let manualResumeAt = 0;
