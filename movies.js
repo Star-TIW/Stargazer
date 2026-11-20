@@ -858,7 +858,7 @@ function createMovieCard(movie, autoplay = false) {
         if (event.source !== videoFrame.contentWindow || !window.StargazerSources.acceptsOrigin(provider, event.origin)) return;
         const update = window.StargazerSources.decodeEvent(provider, event.data, context);
         if (!update) return;
-        if (update.state === "failed") {
+        if (!window.StargazerSources.isHealthySourceEvent(update)) {
           fallback();
           return;
         }
