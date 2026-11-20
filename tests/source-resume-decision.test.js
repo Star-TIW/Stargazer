@@ -7,7 +7,7 @@ const sources = [
   {name:'VidFast', resumeMode:'param'},
   {name:'VidRock', resumeMode:'self'},
   {name:'VidZee', resumeMode:'self'},
-  ...[1,2,3,4].map(i=>({name:'Viduki '+i, resumeMode:'self'}))
+  ...[1,2,3,4].map(i=>({name:'Viduki '+i+[' · Multi Server',' · Multi Language',' · Multi Embeds',' · Premium Embeds'][i-1], resumeMode:'self'}))
 ];
 const progress = {watched:1394,duration:3600};
 test('param source stays selected',()=>assert.equal(sourcesApi.decideResume(sources,1,progress,'VidUP').index,1));
@@ -26,11 +26,11 @@ test('supported TV options and no guessed self resume params',()=>{
 
 test('initial resume restores only reliable last source',()=>{
  const saved={watched:610,duration:3600};
- for(const name of ['VidUP','VidFast','Viduki 1','Viduki 2']){
+ for(const name of ['VidUP','VidFast','Viduki 1 · Multi Server','Viduki 2 · Multi Language']){
    const idx=sources.findIndex(p=>p.name===name);
    assert.equal(sourcesApi.initialResumeSource(sources,saved,name),idx);
  }
- for(const name of ['VidRock','VidZee','Vidy','VidLink','Viduki 3','Viduki 4'])
+ for(const name of ['VidRock','VidZee','Vidy','VidLink','Viduki 3 · Multi Embeds','Viduki 4 · Premium Embeds'])
    assert.equal(sourcesApi.initialResumeSource(sources,saved,name),0);
  assert.equal(sourcesApi.initialResumeSource(sources,{watched:0,duration:3600},'VidFast'),0);
 });
