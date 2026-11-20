@@ -750,7 +750,9 @@ function createMovieCard(movie, autoplay = false) {
           clearInterval(stallMonitor);
           status.classList.remove("is-hidden");
           status.classList.add("source-error");
-          caption.textContent = "Player unavailable. Turn off Block player popups and redirects in Settings, then reopen the player.";
+          caption.textContent = "Player unavailable. Turn off Block player popups and redirects.";
+          settingsAction.hidden = false;
+          keepToolbarVisible();
           return;
         }
         if (failoverCount >= sources.length + 1) return;
@@ -763,24 +765,161 @@ function createMovieCard(movie, autoplay = false) {
       };
       const next = document.createElement("button");
       next.className = "next-provider";
+      next.type = "button";
+      next.setAttribute("aria-label", "Next source");
+      next.textContent = "›";
+      const sourceChip = document.createElement("button");
+      sourceChip.className = "provider-source-chip";
+      sourceChip.type = "button";
+      sourceChip.setAttribute("aria-haspopup", "dialog");
+      sourceChip.setAttribute("aria-expanded", "false");
+      const sourcePicker = document.createElement("div");
+      sourcePicker.className = "provider-source-picker";
+      sourcePicker.hidden = true;
+      sourcePicker.setAttribute("role", "dialog");
+      sourcePicker.setAttribute("aria-label", "Choose video source");
+      const pickerTitle = document.createElement("div");
+      pickerTitle.className = "provider-picker-title";
+      pickerTitle.textContent = "Choose source";
+      const pickerClose = document.createElement("button");
+      pickerClose.type = "button";
+      pickerClose.className = "provider-picker-close";
+      pickerClose.textContent = "×";
+      pickerClose.setAttribute("aria-label", "Close source picker");
+      const pickerList = document.createElement("div");
+      pickerList.className = "provider-picker-list";
+      sourcePicker.append(pickerTitle, pickerClose, pickerList);
       const resumeHint = document.createElement("span");
       resumeHint.className = "provider-resume-hint";
       resumeHint.setAttribute("aria-live", "polite");
       const tools = document.createElement("div");
       tools.className = "provider-toolbar";
+      const topRow = document.createElement("div");
+      topRow.className = "provider-top-row";
+      const sourceGroup = document.createElement("div");
+      sourceGroup.className = "provider-source-group";
+      sourceGroup.append(sourceChip, next);
+      const closeControl = document.getElementById("close-video-x");
+      if (closeControl) {
+        closeControl.classList.add("provider-close-pill");
+        topRow.append(sourceGroup, closeControl);
+      } else topRow.append(sourceGroup);
       const resumeAction = document.createElement("button");
       resumeAction.className = "provider-resume-action";
+      resumeAction.type = "button";
       resumeAction.hidden = true;
-      tools.append(next, resumeHint, resumeAction);
+      const dismissResume = document.createElement("button");
+      dismissResume.className = "provider-resume-dismiss";
+      dismissResume.type = "button";
+      dismissResume.textContent = "×";
+      dismissResume.setAttribute("aria-label", "Dismiss resume notice");
+      const resumePill = document.createElement("div");
+      resumePill.className = "provider-resume-pill";
+      resumePill.hidden = true;
+      resumePill.append(resumeHint, resumeAction, dismissResume);
+      tools.append(topRow, resumePill, sourcePicker);
+      let resumeNoticeTimer;
+      let toolbarFadeTimer;
+      const shortSourceName = name => String(name).split(" · ")[0];
+      const closePicker = () => {
+        sourcePicker.hidden = true;
+        sourceChip.setAttribute("aria-expanded", "false");
+      };
+      const selectSource = target => {
+        index = target;
+        manualSourceOverride = true;
+        triedVidFast = false;
+        failoverCount = 0;
+        closePicker();
+        playback.start();
+      };
+      const refreshPicker = () => {
+        const provider = sources[index];
+        sourceChip.replaceChildren();
+        const swap = document.createElement("span");
+        swap.textContent = "⇄";
+        swap.setAttribute("aria-hidden", "true");
+        const name = document.createElement("span");
+        name.className = "provider-chip-name";
+        name.textContent = shortSourceName(provider.name);
+        const count = document.createElement("span");
+        count.className = "provider-chip-count";
+        count.textContent = (index + 1) + "/" + sources.length;
+        sourceChip.append(swap, name, count);
+        sourceChip.setAttribute("aria-label", "Choose source. Current: " + provider.name + ", " + (index + 1) + " of " + sources.length);
+        pickerList.replaceChildren();
+        sources.forEach((entry, i) => {
+          const option = document.createElement("button");
+          option.type = "button";
+          option.className = "provider-picker-option";
+          option.setAttribute("aria-current", String(i === index));
+          const label = document.createElement("span");
+          label.className = "provider-picker-option-name";
+          label.textContent = (i + 1) + ". " + entry.name;
+          const mode = document.createElement("small");
+          mode.textContent = entry.resumeMode === "self" ? "Own saved spot" : "Resumes";
+          const mark = document.createElement("span");
+          mark.textContent = i === index ? "✓" : "";
+          mark.setAttribute("aria-hidden", "true");
+          option.append(label, mode, mark);
+          option.onclick = () => selectSource(i);
+          pickerList.append(option);
+        });
+      };
+      sourceChip.onclick = () => {
+        sourcePicker.hidden = !sourcePicker.hidden;
+        sourceChip.setAttribute("aria-expanded", String(!sourcePicker.hidden));
+        if (!sourcePicker.hidden) refreshPicker();
+      };
+      pickerClose.onclick = closePicker;
+      dismissResume.onclick = () => {
+        clearTimeout(resumeNoticeTimer);
+        resumePill.hidden = true;
+      };
       const caption = status.querySelector(".loader-subtext");
+      const sourceCaption = document.createElement("div");
+      sourceCaption.className = "loader-source-name";
+      caption.insertAdjacentElement("afterend", sourceCaption);
+      const settingsAction = document.createElement("button");
+      settingsAction.type = "button";
+      settingsAction.className = "provider-settings-action";
+      settingsAction.textContent = "Open Settings";
+      settingsAction.hidden = true;
+      settingsAction.onclick = () => {
+        document.getElementById("close-video-x")?.click();
+        document.querySelector('[data-settings], a[href*="settings"], #settings-button')?.click();
+      };
+      status.append(settingsAction);
+      const keepToolbarVisible = () => {
+        clearTimeout(toolbarFadeTimer);
+        tools.classList.remove("is-dimmed");
+      };
+      const scheduleToolbarFade = () => {
+        keepToolbarVisible();
+        toolbarFadeTimer = setTimeout(() => {
+          if (status.classList.contains("is-hidden") && sourcePicker.hidden) tools.classList.add("is-dimmed");
+        }, 4000);
+      };
+      tools.addEventListener("pointerenter", keepToolbarVisible);
+      tools.addEventListener("focusin", keepToolbarVisible);
+      tools.addEventListener("pointerleave", () => {
+        if (status.classList.contains("is-hidden")) scheduleToolbarFade();
+      });
+      tools.addEventListener("focusout", () => {
+        if (status.classList.contains("is-hidden")) scheduleToolbarFade();
+      });
       const playback = providerPlayback({
         navigate(fail) {
           const provider = sources[index];
           clearTimeout(sourceWatchdog);
           clearInterval(stallMonitor);
           vidupStall = {position:-1, lastAdvanceAt:Date.now(), seekAt:0, seekTarget:0, seekDirection:null, checkpoint:0, userPaused:false, recoveries:0};
+          clearTimeout(resumeNoticeTimer);
+          resumePill.hidden = true;
           resumeHint.textContent = "";
           resumeAction.hidden = true;
+          settingsAction.hidden = true;
+          keepToolbarVisible();
           sourceStartedAt = Date.now();
           lowSampleSince = 0;
           sourceWatchdog = setTimeout(() => {
@@ -799,6 +938,8 @@ function createMovieCard(movie, autoplay = false) {
           }, 1000);
           status.classList.remove("is-hidden", "source-error");
           caption.textContent = "Loading player " + (index + 1);
+          sourceCaption.textContent = provider.name;
+          refreshPicker();
           const frame = videoFrame.cloneNode(false);
           frame.onerror = fail;
           frame.onload = () => {
@@ -836,21 +977,21 @@ function createMovieCard(movie, autoplay = false) {
           manualResumeAt = provider.resumeParam ? 0 : switchResumeAt;
           const selfMismatch = provider.resumeMode === "self" && switchResumeAt > 30 &&
             Number(progress?.watched) < Number(progress?.duration) * 0.95 && savedEntry?.lastSource !== provider.name;
-          resumeHint.textContent = selfMismatch ? "Resume from " + formatWatchTime(switchResumeAt) + "? This player starts at its own saved spot." :
-            switchResumeAt ? "Saved at " + formatWatchTime(switchResumeAt) : "";
-          resumeAction.hidden = !selfMismatch;
-          resumeAction.textContent = "Resume in supported source";
-          resumeAction.onclick = () => {
-            const current = savedEpisodeOrMovie();
-            const target = window.StargazerSources.decideResume(sources, index, current?.progress, current?.lastSource);
-            if (target.index !== index) { index = target.index; manualSourceOverride = false; playback.start(); }
-          };
+          if (selfMismatch) {
+            resumePill.hidden = false;
+            resumeHint.textContent = "You were at " + formatWatchTime(switchResumeAt);
+            const target = window.StargazerSources.decideResume(sources, index, progress, savedEntry?.lastSource);
+            resumeAction.hidden = false;
+            resumeAction.textContent = "Resume on " + shortSourceName(sources[target.index].name);
+            resumeAction.onclick = () => selectSource(target.index);
+            resumeNoticeTimer = setTimeout(() => { resumePill.hidden = true; }, 8000);
+          }
           frame.src = window.StargazerSources.resumeUrl(provider, progress);
           videoFrame.replaceWith(frame);
           videoFrame = frame;
-          next.textContent = provider.name + " · Switch source";
+
         },
-        ready() { status.classList.add("is-hidden"); },
+        ready() { status.classList.add("is-hidden"); scheduleToolbarFade(); },
         showControls() {
           status.classList.add("is-hidden");
         },
@@ -858,9 +999,10 @@ function createMovieCard(movie, autoplay = false) {
           status.classList.remove("is-hidden");
           caption.textContent = "Source unavailable. Switch source to retry.";
           status.classList.add("source-error");
+          keepToolbarVisible();
         }
       });
-      next.onclick = () => { index = (index + 1) % sources.length; manualSourceOverride = true; triedVidFast = false; failoverCount = 0; playback.start(); };
+      next.onclick = () => selectSource((index + 1) % sources.length);
       const onMessage = event => {
         const provider = sources[index];
         if (event.source !== videoFrame.contentWindow || !window.StargazerSources.acceptsOrigin(provider, event.origin)) return;
@@ -939,6 +1081,8 @@ function createMovieCard(movie, autoplay = false) {
         playback.stop();
         clearTimeout(sourceWatchdog);
         clearInterval(stallMonitor);
+        clearTimeout(resumeNoticeTimer);
+        clearTimeout(toolbarFadeTimer);
         resumeHint.textContent = "";
         videoFrame.onload = videoFrame.onerror = null;
         tools.remove();
