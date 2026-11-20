@@ -957,12 +957,30 @@ function createMovieCard(movie, autoplay = false) {
         }
       });
       next.onclick = () => selectSource((index + 1) % sources.length);
+      const debugPlayer = new URLSearchParams(window.location.search).get("debugPlayer") === "1";
+      const debugLine = debugPlayer ? document.createElement("div") : null;
+      if (debugLine) {
+        debugLine.setAttribute("role", "status");
+        debugLine.setAttribute("aria-live", "off");
+        debugLine.style.cssText = "position:absolute;bottom:12px;left:12px;right:12px;z-index:1500;padding:7px 10px;background:rgba(0,0,0,.85);color:#eaea8c;font:11px/1.4 monospace;overflow-wrap:anywhere;pointer-events:none";
+        debugLine.textContent = "Player debug enabled; waiting for message";
+        playerWrapper.append(debugLine);
+      }
+      const tracePlayer = (event, matched, update, result) => {
+        if (!debugLine) return;
+        debugLine.textContent = "origin=" + (event?.origin || "none") +
+          " source=" + (matched ? "match" : "mismatch") +
+          " decode=" + (update ? update.state + "/" + (update.time ?? "-") : "null") +
+          " saved=" + (result === "saved" ? "yes" : "no") + " reason=" + result;
+      };
       const onMessage = event => {
         const provider = sources[index];
-        if (event.source !== videoFrame.contentWindow || !window.StargazerSources.acceptsOrigin(provider, event.origin)) return;
+        const matched = event.source === videoFrame.contentWindow && window.StargazerSources.acceptsOrigin(provider, event.origin);
+        if (!matched) { tracePlayer(event, false, null, event.source !== videoFrame.contentWindow ? "window mismatch" : "origin mismatch"); return; }
         const update = window.StargazerSources.decodeEvent(provider, event.data, context);
-        if (!update) return;
+        if (!update) { tracePlayer(event, true, null, "decode rejected"); return; }
         if (!window.StargazerSources.isHealthySourceEvent(update)) {
+          tracePlayer(event, true, update, "failed event");
           fallback();
           return;
         }
@@ -992,27 +1010,31 @@ function createMovieCard(movie, autoplay = false) {
             lastSeekRequestAt = now;
           }
         }
-        if (!(update.duration > 0)) return;
-        if (!playing && update.time === 0 && !lastSample) return;
+        if (!(update.duration > 0)) { tracePlayer(event, true, update, "missing duration"); return; }
+        if (!playing && update.time === 0 && !lastSample) { tracePlayer(event, true, update, "initial zero"); return; }
         if (update.history) {
+          // Vidy posts undated localStorage snapshots each second. Never let them
+          // overwrite newer PLAYER_EVENT checkpoints from the active session.
+          if (provider.name === "Vidy" && !update.updatedAt) { tracePlayer(event, true, update, "undated Vidy history ignored"); return; }
           const saved = savedEpisodeOrMovie();
-          if (update.updatedAt && saved?.last_updated > update.updatedAt) return;
+          if (update.updatedAt && saved?.last_updated > update.updatedAt) { tracePlayer(event, true, update, "stale history"); return; }
           // An undated history snapshot on frame load may predate our last session.
           const historyChanged = previousHistoryTime != null && previousHistoryTime !== update.time;
           previousHistoryTime = update.time;
-          if (!update.updatedAt && !playing && !historyChanged && saved?.progress) return;
+          if (!update.updatedAt && !playing && !historyChanged && saved?.progress) { tracePlayer(event, true, update, "unchanged history"); return; }
         }
         const second = Math.floor(update.time);
         const currentCheckpoint = savedEpisodeOrMovie()?.progress;
         if (!window.StargazerSources.shouldAcceptCheckpoint(currentCheckpoint, update, lowSampleSince ? (Date.now() - lowSampleSince) / 1000 : 0)) {
           if (!lowSampleSince) lowSampleSince = Date.now();
+          tracePlayer(event, true, update, "checkpoint guard");
           return;
         }
         lowSampleSince = 0;
         // A new embed can report 0:00 before honoring its start parameter.
         // Protect the saved checkpoint until playback reaches that position.
         if (!update.history && switchResumePending) {
-          if (second + 5 < switchResumeAt && Date.now() - sourceStartedAt < 60000) return;
+          if (second + 5 < switchResumeAt && Date.now() - sourceStartedAt < 60000) { tracePlayer(event, true, update, "resume pending"); return; }
           switchResumePending = false;
           resumeHint.textContent = "";
         }
@@ -1020,7 +1042,7 @@ function createMovieCard(movie, autoplay = false) {
           manualResumeAt = 0;
           resumeHint.textContent = "";
         }
-        if (lastSample?.second === second && lastSample.duration === update.duration) return;
+        if (lastSample?.second === second && lastSample.duration === update.duration) { tracePlayer(event, true, update, "duplicate sample"); return; }
         lastSample = {second, duration:update.duration};
         if (!started) {
           markTitleStarted(context.tmdbID, context.mediaType, {title:context.title, posterPath:context.posterPath, year:movie.Year, rating:movie.Rating});
@@ -1028,6 +1050,7 @@ function createMovieCard(movie, autoplay = false) {
         }
         savePlaybackProgress({tmdbId:context.tmdbID, mediaType:context.mediaType, season:context.season,
           episode:context.episode, currentTime:update.time, duration:update.duration, lastSource:provider.name}, context);
+        tracePlayer(event, true, update, "saved");
       };
       playerWrapper.append(tools);
       window.addEventListener("message", onMessage);
@@ -1044,6 +1067,7 @@ function createMovieCard(movie, autoplay = false) {
           playerWrapper.append(closeControl);
         }
         tools.remove();
+        debugLine?.remove();
         playerWrapper.removeEventListener("pointermove", onPlayerPointerMove);
         window.removeEventListener("message", onMessage);
       };
