@@ -46,14 +46,34 @@ test("offline uncached scripts receive a network error", async () => {
   assert.equal((await response).type, "error");
 });
 
-test("both hosts permit all configured frame origins and use the same policy", () => {
+test("both hosts use the same restrictive CSP and permit every configured frame origin", () => {
   const policy = JSON.parse(read("vercel.json")).headers[0].headers.find(h => h.key === "Content-Security-Policy").value;
   assert.ok(read("_headers").includes(policy));
-  const allowed = policy.split(";")[0].split(/\s+/);
+  for (const directive of ["default-src 'self'", "frame-ancestors 'self'", "object-src 'none'", "base-uri 'self'", "form-action 'self'", "script-src 'self' https://www.googletagmanager.com", "script-src-attr 'none'", "worker-src 'self'"]) {
+    assert.ok(policy.includes(directive), directive);
+  }
+  const frameSource = policy.split(";").find(directive => directive.trimStart().startsWith("frame-src "));
+  assert.ok(frameSource, "frame-src directive exists");
+  const allowed = frameSource.trim().split(/\s+/);
   const {providers} = require("../player-sources.js");
   for (const url of [...providers.map(p => p.base), "https://vidvault.to", "https://streamfree.top", "https://strmfree.st"]) {
     assert.ok(allowed.includes(new URL(url).origin), url);
   }
+});
+
+test("security headers, no-referrer embeds, and service-worker updates are deployed", () => {
+  const vercelHeaders = JSON.parse(read("vercel.json")).headers;
+  const mainHeaders = vercelHeaders[0].headers;
+  const get = key => mainHeaders.find(header => header.key === key)?.value;
+  assert.equal(get("Referrer-Policy"), "no-referrer");
+  assert.equal(get("X-Content-Type-Options"), "nosniff");
+  assert.equal(get("X-Frame-Options"), "SAMEORIGIN");
+  assert.match(get("Permissions-Policy"), /camera=\(\), microphone=\(\), geolocation=\(\), payment=\(\)/);
+  assert.match(get("Strict-Transport-Security"), /max-age=63072000/);
+  assert.deepEqual(vercelHeaders[1], {source:"/service-worker.js",headers:[{key:"Cache-Control",value:"no-cache, no-store, must-revalidate"}]});
+  assert.match(read("index.html"), /id="video-iframe"[^>]*referrerpolicy="no-referrer"/);
+  assert.match(read("provider-frame.js"), /frame\.referrerPolicy = "no-referrer"/);
+  assert.match(read("service-worker.js"), /stargazer-cache-v35/);
 });
 
 function providerSession() {
@@ -126,6 +146,7 @@ test("popup protection applies on every source, including downloads and live str
     const tokens = attributes.get("sandbox").split(" ");
     assert.equal(tokens.includes("allow-downloads"), download);
     assert.equal(tokens.some(t => /^allow-(popups|top-navigation)/.test(t)), false);
+    assert.equal(frame.referrerPolicy, "no-referrer");
   }
   choice = null;
   context.configureExternalFrame(frame);
@@ -173,10 +194,12 @@ test("protected source failure gives settings guidance without cycling providers
 
 test("settings particle configuration matches main-compatible preview wiring", () => {
   const html = read("settings.html");
+  const settings = read("settings.js");
   assert.match(html, /#particles-js\s*\{[^}]*z-index:\s*0;[^}]*pointer-events:\s*none;/);
   assert.match(html, /\.settings-container\s*\{[^}]*position:\s*relative;[^}]*z-index:\s*1/);
-  assert.match(html, /initParticles\(button.dataset.effect\)/);
-  assert.match(html, /postMessage\(\{type:\"particleEffect\", effect:currentEffect\}/);
+  assert.match(html, /<script src="\/settings\.js"><\/script>/);
+  assert.match(settings, /initParticles\(button.dataset.effect\)/);
+  assert.match(settings, /postMessage\(\{type:\"particleEffect\", effect:currentEffect\}/);
 });
 
 test("single source button cycles and updates numbered loader", () => {
@@ -322,7 +345,7 @@ test("settings particle layer is viewport-anchored and canvas fills it on mobile
   assert.match(layer[1], /pointer-events:\s*none\s*;/);
   assert.match(layer[1], /z-index:\s*0\s*;/);
   assert.match(html, /#particles-js\s*>\s*canvas\s*\{[^}]*width:\s*100%\s*;[^}]*height:\s*100%\s*;/);
-  assert.match(read("service-worker.js"), /stargazer-cache-v34/);
+  assert.match(read("service-worker.js"), /stargazer-cache-v35/);
 });
 
 test("last saved provider is reopened and low-percent progress remains visible", () => {

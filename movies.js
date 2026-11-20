@@ -1538,6 +1538,14 @@ suggestionsBox.addEventListener("click", async (e) => {
   if(!document.getElementById("trending-row")) return;
 
   const FALLBACK="https://via.placeholder.com/500x750?text=Stargazer";
+  const safeImageUrl=(value,fallback=FALLBACK)=>{
+    if(!value)return fallback;
+    try{
+      const url=new URL(String(value),location.origin);
+      const trusted=new Set([location.origin,"https://image.tmdb.org","https://via.placeholder.com"]);
+      return trusted.has(url.origin)&&(url.protocol==="https:"||url.origin===location.origin)?url.href:fallback;
+    }catch{return fallback;}
+  };
   const getList=()=>{try{return JSON.parse(localStorage.getItem(MY_LIST_KEY)||"[]")}catch{return[]}};
   window.isInMyList=(id,type)=>getList().some(x=>String(x.tmdbID)===String(id)&&x.mediaType===type);
   window.toggleMyList=(movie)=>{
@@ -1557,14 +1565,17 @@ suggestionsBox.addEventListener("click", async (e) => {
   };
   const esc=x=>String(x??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"}[c]));
   const norm=x=>{
+    if(!x||typeof x!=="object")return null;
     const type=x.media_type||x.mediaType||(x.title?"movie":"tv");
+    const tmdbID=String(x.id||x.tmdbID||"");
+    if(!/^\d+$/.test(tmdbID)||!["movie","tv"].includes(type))return null;
     return {
-      tmdbID:String(x.id||x.tmdbID),
+      tmdbID,
       mediaType:type,
       Title:x.title||x.name||x.Title||"Untitled",
       Year:(x.release_date||x.first_air_date||x.Year||"").split("-")[0]||"N/A",
-      Poster:x.poster_path?`${TMDB_IMAGE_BASE}${x.poster_path}`:(x.Poster||FALLBACK),
-      Backdrop:x.backdrop_path?`${TMDB_BACKDROP_BASE}${x.backdrop_path}`:(x.Backdrop||""),
+      Poster:safeImageUrl(x.poster_path?`${TMDB_IMAGE_BASE}${x.poster_path}`:x.Poster),
+      Backdrop:safeImageUrl(x.backdrop_path?`${TMDB_BACKDROP_BASE}${x.backdrop_path}`:x.Backdrop,""),
       Rating:x.vote_average != null ? Number(x.vote_average).toFixed(1) : (x.Rating || x.voteAverage || "N/A"),
       Plot:x.overview||x.Plot||""
     };
@@ -1572,13 +1583,14 @@ suggestionsBox.addEventListener("click", async (e) => {
 
   function row(id,items,{limit=12,removable=false,removeLabel='Remove from My List'}={}){
     const el=document.getElementById(id); if(!el)return;
-    if(!items?.length){el.innerHTML='<div class="media-empty">Nothing here yet.</div>';return;}
-    el.innerHTML=items.slice(0,limit).map(raw=>{
-      const x=norm(raw),p=getStoredProgress(x.tmdbID,x.mediaType);
+    const cards=(items||[]).map(norm).filter(Boolean).slice(0,limit);
+    if(!cards.length){el.innerHTML='<div class="media-empty">Nothing here yet.</div>';return;}
+    el.innerHTML=cards.map(x=>{
+      const p=getStoredProgress(x.tmdbID,x.mediaType);
       const badge=p && p.watched > 0 ? `${Math.max(1, Math.round(p.percent))}%` : x.mediaType==="tv" ? "TV" : "";
-      return `<article class="media-card" tabindex="0" role="button" aria-label="Open ${esc(x.Title)}" data-tmdbid="${x.tmdbID}" data-mediatype="${x.mediaType}">
+      return `<article class="media-card" tabindex="0" role="button" aria-label="Open ${esc(x.Title)}" data-tmdbid="${esc(x.tmdbID)}" data-mediatype="${esc(x.mediaType)}">
         <div class="media-poster-wrap">
-          <img class="media-poster" src="${x.Poster}" alt="${esc(x.Title)}" loading="lazy">
+          <img class="media-poster" src="${esc(x.Poster)}" alt="${esc(x.Title)}" loading="lazy">
           ${badge?`<span class="media-badge">${badge}</span>`:""}
           ${p?`<div class="media-progress"><span style="width:${Math.min(100,Math.max(0,p.percent))}%"></span></div>`:""}
           ${removable?`<button class="media-remove" title="${esc(removeLabel || 'Remove from My List')}" aria-label="${esc(removeLabel || 'Remove from My List')}">×</button>`:''}
@@ -1739,7 +1751,8 @@ suggestionsBox.addEventListener("click", async (e) => {
 
   function renderHero(raw){
     const x=norm(raw),hero=document.getElementById('hero-feature');
-    hero.innerHTML=`<img class="hero-feature-bg" src="${x.Backdrop||x.Poster}" alt=""><div class="hero-feature-content"><div class="hero-feature-meta">TRENDING · ${x.Year} · ★ ${x.Rating}</div><h3>${esc(x.Title)}</h3><p class="hero-feature-copy">${esc(x.Plot||'A Stargazer pick worth watching tonight.')}</p><div class="hero-actions"><button class="hero-watch">▶ Watch</button><button class="hero-list">${isInMyList(x.tmdbID,x.mediaType)?'✓ In My List':'+ My List'}</button></div></div>`;
+    if(!x){hero.textContent='Unable to load this title.';return;}
+    hero.innerHTML=`<img class="hero-feature-bg" src="${esc(x.Backdrop||x.Poster)}" alt=""><div class="hero-feature-content"><div class="hero-feature-meta">TRENDING · ${esc(x.Year)} · ★ ${esc(x.Rating)}</div><h3>${esc(x.Title)}</h3><p class="hero-feature-copy">${esc(x.Plot||'A Stargazer pick worth watching tonight.')}</p><div class="hero-actions"><button class="hero-watch">▶ Watch</button><button class="hero-list">${isInMyList(x.tmdbID,x.mediaType)?'✓ In My List':'+ My List'}</button></div></div>`;
     hero.querySelector('.hero-watch').onclick=async()=>{const m=await fetchMovieDetails(x.tmdbID,x.mediaType);if(m)createMovieCard(m,true)};
     hero.querySelector('.hero-list').onclick=()=>{const saved=toggleMyList(x);hero.querySelector('.hero-list').textContent=saved?'✓ In My List':'+ My List'};
   }

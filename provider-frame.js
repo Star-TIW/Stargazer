@@ -57,6 +57,9 @@ function initialProviderIndex(sources) {
 
 // Apply the viewer's choice before each third-party navigation.
 function configureExternalFrame(frame, download = false) {
+  // Do not disclose the Stargazer URL (or any future query parameters) to an
+  // external player. This applies in both normal and strict player modes.
+  frame.referrerPolicy = "no-referrer";
   if (!popupProtectionEnabled()) {
     frame.removeAttribute("sandbox");
     return;

@@ -90,22 +90,9 @@
   <script src="/live/live.js"></script>
   <script src="/particles.min.js"></script>
   <script src="/particle-config.js"></script>
-  <script>
-    if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.register("/service-worker.js");
-    }
-  </script>
-
-  <!-- Google tag (gtag.js) -->
+  <script src="/bootstrap.js"></script>
+  <script src="/analytics.js"></script>
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-G0V9JTCLBP"></script>
-  <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag() {
-      dataLayer.push(arguments);
-    }
-    gtag('js', new Date());
-    gtag('config', 'G-G0V9JTCLBP');
-  </script>
 </body>
 
 </html>
