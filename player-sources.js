@@ -7,16 +7,15 @@
   const providers = [
     { name: 'VidUP', resumeMode: 'param', resumeParam: 'startAt', base: 'https://vidup.to', protocol: 'player' },
     { name: 'VidFast', resumeMode: 'param', resumeParam: 'startAt', base: 'https://vidfast.vc', protocol: 'player', commands: true, query: 'autoPlay=true' },
-    { name: 'Viduki 1 · Multi Server', resumeMode: 'self',base: 'https://www.viduki.net/1', protocol: 'history', api: 1 },
-    { name: 'Viduki 2 · Multi Language', resumeMode: 'self',base: 'https://www.viduki.net/2', protocol: 'history', api: 2 },
-    { name: 'VidRock', resumeMode: 'self', base: 'https://vidrock.to', protocol: 'player', query: 'autoplay=true' },
     { name: 'VidZee', resumeMode: 'self', base: 'https://player.vidzee.wtf/embed', protocol: 'history' },
-    { name: 'Viduki 3 · Multi Embeds', resumeMode: 'self',base: 'https://www.viduki.net/3', protocol: 'history', api: 3 },
-    { name: 'Viduki 4 · Premium Embeds', resumeMode: 'self',base: 'https://www.viduki.net/4', protocol: 'history', api: 4 },
+    { name: 'VidRock', resumeMode: 'self', base: 'https://vidrock.to', protocol: 'player', query: 'autoplay=true' },
     { name: 'Vidy', resumeMode: 'param', resumeParam: 'progress', base: 'https://vidy.st', protocol: 'vidy', query: 'autoplay=true' },
+    { name: 'Viduki 2 · Multi Language', resumeMode: 'self',base: 'https://www.viduki.net/2', protocol: 'history', api: 2 },
+    { name: 'Viduki 1 · Multi Server', resumeMode: 'self',base: 'https://www.viduki.net/1', protocol: 'history', api: 1 },
+    { name: 'Viduki 3 · Multi Embeds', resumeMode: 'self',base: 'https://www.viduki.net/3', protocol: 'history', api: 3 },
     { name: 'VidLink', resumeMode: 'param', resumeParam: 'startAt', base: 'https://vidlink.pro', protocol: 'player', query: 'autoplay=true' }
-  ];
-  function orderSourcesForPopupProtection(sources, enabled) {
+    { name: 'Viduki 4 · Premium Embeds', resumeMode: 'self',base: 'https://www.viduki.net/4', protocol: 'history', api: 4 },
+  ];  function orderSourcesForPopupProtection(sources, enabled) {
     if (!enabled) return sources.slice();
     const preferred = sources.find(source => source.name === 'VidZee');
     return preferred ? [preferred, ...sources.filter(source => source !== preferred)] : sources.slice();
