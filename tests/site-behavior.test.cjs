@@ -152,13 +152,14 @@ test("popup protection starts movie and episode embeds on VidZee, with all sourc
   }
 });
 
-test("provider toolbar stays above loader on desktop and mobile", () => {
+test("toolbar stays above loader with one consolidated control block", () => {
   const css = read("movies.css");
   const loader = css.match(/\.stargazer-player-loader\s*\{[^}]*z-index:\s*(\d+)/);
   const toolbar = css.match(/#video-wrapper\.stargazer-player-wrapper \.provider-toolbar\s*\{[^}]*z-index:\s*(\d+)/);
-  assert.ok(loader && toolbar, "loader and toolbar must have explicit stacking levels");
+  assert.ok(loader && toolbar);
   assert.ok(Number(toolbar[1]) > Number(loader[1]));
-  assert.match(css, /@media \(max-width:768px\)\s*\{\s*#video-wrapper\.stargazer-player-wrapper \.provider-toolbar\s*\{\s*z-index:\s*1200/);
+  assert.doesNotMatch(css, /provider-source-chip|provider-source-picker|loader-source-name/);
+  assert.equal((css.match(/#video-wrapper\.stargazer-player-wrapper \.provider-toolbar\s*\{/g) || []).length, 1);
 });
 
 test("protected source failure gives settings guidance without cycling providers", () => {
@@ -177,14 +178,14 @@ test("settings particle configuration matches main-compatible preview wiring", (
   assert.match(html, /postMessage\(\{type:\"particleEffect\", effect:currentEffect\}/);
 });
 
-test("single next-source button cycles and updates numbered loader", () => {
+test("single next-source button cycles and numbered loader stays intact", () => {
   const source = read("movies.js");
   assert.match(source, /next\.onclick = \(\) => selectSource\(\(index \+ 1\) % sources\.length\)/);
   assert.match(source, /index = target;[\s\S]*?playback\.start\(\)/);
-  assert.match(source, /sourceLabel\.textContent = provider\.name \+ " · Switch source"/);
+  assert.match(source, /sourceLabel\.textContent = provider\.name/);
   assert.match(source, /caption\.textContent = "Loading player " \+ \(index \+ 1\)/);
+  assert.match(source, /switchWord\.textContent = "Switch"/);
   assert.doesNotMatch(source, /provider-source-picker|sourcePicker|refreshPicker|sourceChip/);
-  assert.doesNotMatch(source, /loader-source-name|sourceCaption/);
 });
 
 test("resume pill keeps named destination, dismissal and timeout", () => {
@@ -195,14 +196,20 @@ test("resume pill keeps named destination, dismissal and timeout", () => {
   assert.match(source, /dismissResume\.onclick/);
 });
 
-test("single source button, title and close align above loader", () => {
+test("cinematic controls and loader are accessible and spaced", () => {
   const css = read("movies.css");
   const source = read("movies.js");
   assert.match(source, /topRow\.append\(sourceGroup, barTitle, closeControl\)/);
-  assert.match(css, /provider-toolbar\.is-dimmed \{ opacity:\.35/);
-  assert.match(css, /provider-toolbar::before/);
-  assert.match(css, /provider-source-group \.next-provider \{/);
-  assert.match(css, /height:44px;min-height:44px/);
-  assert.match(css, /loader-scene \.loader-subtext \{\s*bottom:-17%/);
-  assert.match(css, /loader-source-name \{display:none!important\}/);
+  assert.match(css, /provider-toolbar\.is-dimmed::before/);
+  assert.match(css, /provider-source-group \.next-provider/);
+  assert.match(css, /height:44px; min-height:44px/);
+  assert.match(css, /top:calc\(100% \+ 24px\)/);
+  assert.match(css, /transition:opacity 250ms ease,visibility 250ms ease/);
+  assert.match(source, /loader-dots/);
+});
+
+test("unrated home cards omit zero-star ratings", () => {
+  const source = read("movies.js");
+  assert.match(source, /Number\(x\.Rating\) > 0/);
+  assert.match(source, /Number\(movie\.Rating\) > 0/);
 });
