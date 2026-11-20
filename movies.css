@@ -1326,3 +1326,78 @@ main#movie-card { width: min(94vw,1080px) !important; padding: clamp(16px,3vw,36
 @media (max-width:768px) {
   #video-wrapper.stargazer-player-wrapper .provider-toolbar { z-index:1200 !important; }
 }
+
+/* Unified Stargazer player controls */
+#video-wrapper.stargazer-player-wrapper .provider-toolbar {
+  position:absolute; top:max(10px,env(safe-area-inset-top)); left:max(10px,env(safe-area-inset-left));
+  right:max(10px,env(safe-area-inset-right)); width:auto; max-width:none;
+  z-index:1200!important; display:flex; flex-direction:column; align-items:stretch; gap:8px;
+  pointer-events:none; opacity:1; transition:opacity 180ms ease;
+}
+#video-wrapper.stargazer-player-wrapper .provider-toolbar.is-dimmed { opacity:.35; }
+#video-wrapper.stargazer-player-wrapper .provider-toolbar:hover,
+#video-wrapper.stargazer-player-wrapper .provider-toolbar:focus-within {opacity:1}
+.provider-top-row {display:flex; justify-content:space-between; align-items:center; min-height:44px; gap:10px; pointer-events:none}
+.provider-source-group {display:flex; align-items:center; gap:4px; min-width:0; pointer-events:auto}
+#video-wrapper .provider-source-chip, #video-wrapper .next-provider,
+#video-wrapper .provider-picker-close, #video-wrapper .provider-resume-dismiss,
+#video-wrapper .provider-resume-action, #video-wrapper .provider-settings-action {
+  position:static; min-height:44px; height:44px; border:1px solid rgba(239,239,136,.42);
+  border-radius:999px; background:rgba(0,0,0,.55); color:#efef88;
+  backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);
+  font:500 13px/1.2 inherit; cursor:pointer; transition:background 180ms ease,opacity 180ms ease;
+}
+#video-wrapper .provider-source-chip {display:flex; align-items:center; gap:8px; padding:0 13px; max-width:min(65vw,290px)}
+.provider-chip-name {overflow:hidden; white-space:nowrap; text-overflow:ellipsis; min-width:0}
+.provider-chip-count {background:rgba(239,239,136,.16);border-radius:999px;padding:3px 6px;white-space:nowrap}
+#video-wrapper .next-provider {width:44px; padding:0; font-size:25px}
+#video-wrapper #close-video-x.provider-close-pill {
+  position:static!important; flex:none; display:grid; place-items:center; width:44px!important;
+  height:44px!important; min-height:44px; padding:0!important; border-radius:50%!important;
+  background:rgba(0,0,0,.55)!important; border:1px solid rgba(239,239,136,.42)!important;
+  color:#efef88!important; font:500 25px/1 inherit!important;
+  backdrop-filter:blur(12px); pointer-events:auto!important;
+}
+#video-wrapper .provider-source-chip:focus-visible,
+#video-wrapper .next-provider:focus-visible,
+#video-wrapper .provider-source-picker button:focus-visible,
+#video-wrapper .provider-resume-pill button:focus-visible,
+#video-wrapper #close-video-x:focus-visible {outline:2px solid #efef88;outline-offset:3px}
+.provider-source-picker[hidden], .provider-resume-pill[hidden], .provider-settings-action[hidden] {display:none!important}
+.provider-source-picker {position:absolute;top:54px;left:0; width:min(390px,calc(100vw - 24px));
+  max-height:min(65vh,560px); overflow:auto; padding:12px; border-radius:18px;
+  border:1px solid rgba(239,239,136,.4);background:rgba(9,9,9,.96);
+  box-shadow:0 16px 50px #000b; pointer-events:auto;backdrop-filter:blur(16px)}
+.provider-picker-title {font-weight:700;color:#efef88;margin:4px 50px 10px 8px}
+#video-wrapper .provider-picker-close {position:absolute;right:10px;top:8px;width:44px;font-size:24px}
+.provider-picker-list {display:grid;gap:4px}
+#video-wrapper .provider-picker-option {width:100%;min-height:48px;display:flex;align-items:center;gap:8px;
+  text-align:left;padding:8px 10px;border:0;border-radius:12px;background:transparent;color:#fff;cursor:pointer}
+#video-wrapper .provider-picker-option[aria-current="true"] {background:rgba(239,239,136,.15);color:#efef88}
+.provider-picker-option-name {flex:1;min-width:0}
+.provider-picker-option small {font-size:11px;color:#bfbfbf;white-space:nowrap}
+.provider-resume-pill {display:flex;align-items:center;gap:7px;max-width:min(100%,480px);
+  height:44px;padding:0 6px 0 13px;border-radius:999px;border:1px solid rgba(239,239,136,.35);
+  background:rgba(0,0,0,.7);backdrop-filter:blur(12px);pointer-events:auto}
+.provider-resume-hint {padding:0!important;min-width:0;flex:1;overflow:hidden;text-overflow:ellipsis;
+  white-space:nowrap;background:none!important;font-size:12px!important}
+#video-wrapper .provider-resume-action {padding:0 8px;border:0;background:transparent;flex:none;
+  white-space:nowrap;font-size:12px}
+#video-wrapper .provider-resume-dismiss {width:30px;height:30px;min-height:30px;padding:0;flex:none}
+.loader-source-name {position:absolute;left:0;right:0;top:calc(50% + 84px);text-align:center;
+  font-size:12px;letter-spacing:.04em;color:#aaa;pointer-events:none}
+#video-wrapper .stargazer-player-loader.source-error {inset:auto 12px 20px 12px;width:auto;height:auto;
+  min-height:108px;max-width:460px;margin:auto;padding:16px 16px 64px;border-radius:18px;
+  border:1px solid rgba(239,239,136,.45);background:rgba(8,8,8,.95);pointer-events:auto}
+#video-wrapper .source-error .loader-subtext {line-height:1.5;font-size:13px}
+#video-wrapper .source-error .loader-source-name {display:none}
+#video-wrapper .provider-settings-action {position:absolute;bottom:12px;left:50%;transform:translateX(-50%);
+  padding:0 20px;pointer-events:auto;white-space:nowrap}
+@media(max-width:600px) {
+  #video-wrapper.stargazer-player-wrapper .provider-toolbar {top:max(8px,env(safe-area-inset-top));left:max(8px,env(safe-area-inset-left));right:max(8px,env(safe-area-inset-right));max-width:none}
+  .provider-source-picker {position:fixed;left:0;right:0;bottom:0;top:auto;width:100%;max-height:min(72dvh,600px);
+    padding:16px 12px max(20px,env(safe-area-inset-bottom));border-radius:20px 20px 0 0}
+  #video-wrapper .provider-source-chip {max-width:calc(100vw - 124px);padding:0 9px;gap:5px}
+  .provider-resume-pill {max-width:100%;font-size:12px}
+  #video-wrapper .provider-resume-action {max-width:42%;overflow:hidden;text-overflow:ellipsis}
+}
