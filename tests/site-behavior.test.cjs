@@ -237,7 +237,20 @@ test("resume notice joins switch control and loader dots have independent tracki
   assert.match(js, /new MutationObserver\(syncResumeStyle\)\.observe\(resumePill/);
   assert.match(js, /classList\.toggle\("has-resume", !resumePill\.hidden\)/);
   assert.match(css, /provider-resume-pill \{[\s\S]*?width:100%; max-width:100%/);
-  assert.match(css, /loader-player-label \{margin-right:-\.2em;/);
-  assert.match(css, /loader-dots \{[^}]*align-self:baseline;[^}]*letter-spacing:0;margin-left:\.1em;transform:translateY\(\.35em\)/);
+  assert.match(css, /loader-player-label \{position:relative;display:inline-block;/);
+  assert.match(css, /loader-dots \{position:absolute;left:100%;bottom:\.15em;[^}]*gap:2px;letter-spacing:0;margin-left:\.1em;transform:none/);
   assert.match(css, /loader-scene \.loader-subtext \{[^}]*align-items:baseline/);
+});
+
+test("mobile player close control is flex-aligned and loader dots attach to centered text", () => {
+  const css = read("movies.css");
+  const js = read("movies.js");
+  const settings = read("settings.html");
+  const sw = read("service-worker.js");
+  assert.doesNotMatch(css, /#close-video-x\s*\{[^}]*position:\s*absolute\s*!important/);
+  assert.doesNotMatch(css, /#close-video-x\s*\{[^}]*right:\s*\d+px\s*!important/);
+  assert.match(css, /#video-wrapper #close-video-x\.provider-close-pill\s*\{[^}]*margin-left:auto/);
+  assert.match(js, /loader-player-label">Loading player 1<span class="loader-dots"/);
+  assert.match(settings, /#particles-js\s*\{[^}]*z-index:\s*0/);
+  assert.match(sw, /stargazer-cache-v30/);
 });
