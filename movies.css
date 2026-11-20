@@ -1284,8 +1284,8 @@ main#movie-card { width: min(94vw,1080px) !important; padding: clamp(16px,3vw,36
   padding:0; background:#000; align-items:center; justify-content:center;
 }
 #video-wrapper.stargazer-player-wrapper {
-  position:relative; width:100vw; height:100dvh; min-height:0;
-  max-width:none; max-height:none; overflow:hidden; border-radius:0;
+  position:relative; width:min(100vw,177.7778dvh); height:auto; aspect-ratio:16 / 9; min-height:0;
+  max-width:100vw; max-height:100dvh; overflow:hidden; border-radius:0;
   background:#000; box-shadow:none;
 }
 #video-wrapper.stargazer-player-wrapper iframe#video-iframe,
@@ -1427,6 +1427,11 @@ main#movie-card { width: min(94vw,1080px) !important; padding: clamp(16px,3vw,36
   height:44px;padding:0 20px;white-space:nowrap;pointer-events:auto;
 }
 @media(max-width:600px) {
+  #video-wrapper.stargazer-player-wrapper {width:100vw;height:100dvh;aspect-ratio:auto;max-width:none;max-height:none}
+  #video-wrapper.stargazer-player-wrapper iframe#video-iframe,
+  #video-wrapper.stargazer-player-wrapper #native-video-player {
+    inset:50% 0 auto;transform:translateY(-50%);width:100%;height:auto;aspect-ratio:16 / 9;
+  }
   #video-wrapper .provider-top-row {gap:7px}
   #video-wrapper .provider-source-group .next-provider {max-width:48vw;padding:0 10px;gap:6px}
   #video-wrapper .provider-bar-title {font-size:13px}
