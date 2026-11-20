@@ -166,7 +166,7 @@
 
   function acceptsOrigin(source, origin) {
     if (origin === source.origin) return true;
-    if (source.name === 'Vidy') return origin === 'https://vidy.st';
+    if (source.name === 'Vidy') return origin === 'https://vidy.st' || origin === 'https://www.vidy.st';
     return source.name === 'VidFast' && /^https:\/\/vidfast\.(pro|in|io|me|net|pm|xyz|bz)$/.test(origin);
   }
   // Public postMessage APIs: envelope-based PLAYER_EVENT, Vidy's JSON events,
