@@ -16,6 +16,11 @@
     { name: 'Vidy', resumeMode: 'param', resumeParam: 'progress', base: 'https://vidy.st', protocol: 'vidy', query: 'autoplay=true' },
     { name: 'VidLink', resumeMode: 'param', resumeParam: 'startAt', base: 'https://vidlink.pro', protocol: 'player', query: 'autoplay=true' }
   ];
+  function orderSourcesForPopupProtection(sources, enabled) {
+    if (!enabled) return sources.slice();
+    const preferred = sources.find(source => source.name === 'VidZee');
+    return preferred ? [preferred, ...sources.filter(source => source !== preferred)] : sources.slice();
+  }
   function buildSources(context, primaryUrl, custom = []) {
     if (!/^\d+$/.test(String(context.tmdbID))) return [];
     const type = context.mediaType;
@@ -221,7 +226,7 @@
     return /^\/media\/(?:[\w-]+\/)*[\w-]+\.(?:mp4|webm)$/.test(path) ? path : null;
   }
 
-  const api = { getSource, providers, buildSources, decodeEvent, resumePosition, resumeUrl, decideResume, initialResumeSource, shouldAcceptCheckpoint, vidupStallStep, isHealthySourceEvent, nextFallbackSource, acceptsOrigin };
+  const api = { getSource, providers, buildSources, orderSourcesForPopupProtection, decodeEvent, resumePosition, resumeUrl, decideResume, initialResumeSource, shouldAcceptCheckpoint, vidupStallStep, isHealthySourceEvent, nextFallbackSource, acceptsOrigin };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.StargazerSources = api;
 })(typeof window !== 'undefined' ? window : globalThis);
