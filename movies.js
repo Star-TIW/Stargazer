@@ -736,7 +736,7 @@ function createMovieCard(movie, autoplay = false) {
       let lowSampleSince = 0;
       let sourceWatchdog = null;
       let stallMonitor = null;
-      let vidupStall = {position:-1, lastAdvanceAt:Date.now(), seekAt:0, userPaused:false, recoveries:0};
+      let vidupStall = {position:-1, lastAdvanceAt:Date.now(), seekAt:0, seekTarget:0, seekDirection:null, checkpoint:0, userPaused:false, recoveries:0};
       let lastAdvanceAt = Date.now();
       let lastAdvancePosition = -1;
       let triedVidFast = false;
@@ -767,7 +767,7 @@ function createMovieCard(movie, autoplay = false) {
           const provider = sources[index];
           clearTimeout(sourceWatchdog);
           clearInterval(stallMonitor);
-          vidupStall = {position:-1, lastAdvanceAt:Date.now(), seekAt:0, userPaused:false, recoveries:0};
+          vidupStall = {position:-1, lastAdvanceAt:Date.now(), seekAt:0, seekTarget:0, seekDirection:null, checkpoint:0, userPaused:false, recoveries:0};
           resumeHint.textContent = "";
           resumeAction.hidden = true;
           sourceStartedAt = Date.now();
@@ -817,6 +817,7 @@ function createMovieCard(movie, autoplay = false) {
             return playback.start();
           }
           switchResumeAt = window.StargazerSources.resumePosition(progress);
+          vidupStall.checkpoint = switchResumeAt;
           switchResumePending = switchResumeAt > 0;
           lastSeekRequestAt = 0;
           lastAdvanceAt = Date.now();
