@@ -227,3 +227,14 @@ test("no legacy boxed wrapper overrides can defeat full viewport player", () => 
   assert.match(css, /#video-container\.is-open\s*\{\s*padding:0; background:#000/);
   assert.match(read("movies.js"), /lincolnBtn\.setAttribute\("aria-label", "Scroll to bottom of page"\)/);
 });
+
+test("resume notice joins switch control and loader dots have independent tracking", () => {
+  const js = read("movies.js");
+  const css = read("movies.css");
+  assert.match(js, /sourceGroup\.append\(resumePill\)/);
+  assert.match(js, /tools\.append\(topRow\)/);
+  assert.match(css, /provider-source-group:has\(\.provider-resume-pill:not\(\[hidden\]\)\) \.next-provider \{border-radius:22px 22px 0 0;/);
+  assert.match(css, /provider-resume-pill \{[\s\S]*?width:100%; max-width:100%/);
+  assert.match(css, /loader-player-label \{margin-right:-\.2em;/);
+  assert.match(css, /loader-dots \{[^}]*letter-spacing:0;margin-left:\.1em/);
+});
