@@ -966,12 +966,28 @@ function createMovieCard(movie, autoplay = false) {
         debugLine.textContent = "Player debug enabled; waiting for message";
         playerWrapper.append(debugLine);
       }
+      let lastDebugSave = "none yet";
       const tracePlayer = (event, matched, update, result) => {
         if (!debugLine) return;
-        debugLine.textContent = "origin=" + (event?.origin || "none") +
+        let type = "unknown";
+        try {
+          const raw = typeof event?.data === "string" ? JSON.parse(event.data) : event?.data;
+          type = String(raw?.type || "other");
+          if (result === "decode rejected" && type === "MEDIA_DATA") result = "MEDIA_DATA ignored (unrecognized snapshot)";
+          else if (result === "decode rejected") result = "not a player event";
+          else if (result === "undated Vidy history ignored") result = "MEDIA_DATA ignored (undated history)";
+        } catch {
+          if (result === "decode rejected") result = "not a player event";
+        }
+        if (result === "saved" && update?.time != null) {
+          const kind = type === "PLAYER_EVENT" ? "timeupdate" : type === "MEDIA_DATA" ? "history" : type;
+          lastDebugSave = formatWatchTime(update.time) + " via " + sources[index].name + " (" + kind + ")";
+        }
+        debugLine.textContent = "latest: origin=" + (event?.origin || "none") +
           " source=" + (matched ? "match" : "mismatch") +
-          " decode=" + (update ? update.state + "/" + (update.time ?? "-") : "null") +
-          " saved=" + (result === "saved" ? "yes" : "no") + " reason=" + result;
+          " type=" + type +
+          " decode=" + (update ? update.state + "/" + (update.time ?? "-") : "none") +
+          " result=" + result + " | last save " + lastDebugSave;
       };
       const onMessage = event => {
         const provider = sources[index];
