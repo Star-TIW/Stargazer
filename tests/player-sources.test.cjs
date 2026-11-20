@@ -63,3 +63,32 @@ test("Vidy www redirect timeupdate is accepted for Continue Watching, but lookal
   assert.match(require("node:fs").readFileSync(require("node:path").join(__dirname,"..","movies.js"),"utf8"),
     /savePlaybackProgress\(\{tmdbId:context\.tmdbID,[\s\S]*?currentTime:update\.time, duration:update\.duration, lastSource:provider\.name\}/);
 });
+
+test("real Vidy JSON-string PLAYER_EVENT advances saved checkpoint to 654", () => {
+  const {buildSources,acceptsOrigin,decodeEvent,shouldAcceptCheckpoint} = require("../player-sources.js");
+  const context = {tmdbID:550,mediaType:"movie"};
+  const provider = buildSources(context,"https://vidup.to/movie/550").find(p => p.name === "Vidy");
+  const frameWindow = {};
+  const message = {
+    source:frameWindow,
+    origin:"https://www.vidy.st",
+    data:JSON.stringify({type:"PLAYER_EVENT",data:{event:"timeupdate",currentTime:654.2,duration:8348,id:"550",mediaType:"movie",season:null,episode:null}})
+  };
+  const progress = {watched:613,duration:8348};
+  let saved = {...progress};
+  const receive = event => {
+    if (event.source !== frameWindow || !acceptsOrigin(provider,event.origin)) return;
+    const update = decodeEvent(provider,event.data,context);
+    if (!update || update.history || !(update.duration > 0)) return;
+    if (!shouldAcceptCheckpoint(saved,update,0)) return;
+    saved = {watched:Math.floor(update.time),duration:update.duration};
+  };
+  receive(message);
+  assert.deepEqual(saved,{watched:654,duration:8348});
+  receive({...message,origin:"https://vidy.st.evil.com"});
+  assert.equal(saved.watched,654);
+  const movies = require("node:fs").readFileSync(require("node:path").join(__dirname,"..","movies.js"),"utf8");
+  assert.match(movies,/provider\.name === "Vidy" && !update\.updatedAt/);
+  assert.match(movies,/tracePlayer\(event, true, update, "saved"\)/);
+  assert.match(movies,/get\("debugPlayer"\) === "1"/);
+});
