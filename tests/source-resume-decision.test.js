@@ -64,3 +64,19 @@ test('Viduki 2 history progress also counts as healthy',()=>{
  const event=sourcesApi.decodeEvent(source,{type:'MEDIA_DATA',data:{id:27205,type:'movie',progress:{watched:630,duration:8000}}},context);
  assert.equal(sourcesApi.isHealthySourceEvent(event),true);
 });
+
+test('VidUP seek then ready at unchanged time for five seconds triggers reload',()=>{
+ let state={position:100,lastAdvanceAt:1000,seekAt:0,userPaused:false,recoveries:0};
+ state=sourcesApi.vidupStallStep(state,{state:'ready',event:'seeked',time:600},2000).state;
+ state=sourcesApi.vidupStallStep(state,{state:'ready',event:'playerstatus',time:600},3000).state;
+ assert.equal(sourcesApi.vidupStallStep(state,null,5900).reloadAt,null);
+ const stalled=sourcesApi.vidupStallStep(state,null,7000);
+ assert.equal(stalled.reloadAt,600);
+ assert.equal(sourcesApi.vidupStallStep(stalled.state,null,8000).reloadAt,null);
+});
+test('VidUP explicit pause outside seek grace prevents reload',()=>{
+ let state={position:100,lastAdvanceAt:1000,seekAt:0,userPaused:false,recoveries:0};
+ state=sourcesApi.vidupStallStep(state,{state:'ready',event:'seeked',time:600},2000).state;
+ state=sourcesApi.vidupStallStep(state,{state:'ready',event:'paused',time:600},5000).state;
+ assert.equal(sourcesApi.vidupStallStep(state,null,10000).reloadAt,null);
+});
