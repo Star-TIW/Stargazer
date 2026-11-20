@@ -708,7 +708,7 @@ function createMovieCard(movie, autoplay = false) {
           <div class="loader-glow"></div>
           <img class="loader-logo" src="${STARGAZER_LOGO_URL}" alt="" />
         </div>
-        <div class="loader-subtext"><span class="loader-player-label">Loading player 1<span class="loader-dots" aria-hidden="true"><i></i><i></i><i></i></span></span></div>
+        <div class="loader-subtext"><span class="loader-player-label">Loading player 1</span><span class="loader-dots" aria-hidden="true"><i></i><i></i><i></i></span></div>
       </div>
     `;
 
