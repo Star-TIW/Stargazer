@@ -201,3 +201,21 @@ test("player bar stays above loader with a matching close control", () => {
   assert.match(css, /#close-video-x\.provider-close-pill/);
   assert.match(css, /provider-source-picker\[hidden\]/);
 });
+
+test("player title shares toolbar dimming and source chip has a real separator", () => {
+  const js = read("movies.js");
+  const css = read("movies.css");
+  assert.match(js, /barTitle\.className = "provider-bar-title"/);
+  assert.match(js, /topRow\.append\(sourceGroup, barTitle, closeControl\)/);
+  assert.match(js, /separator\.textContent = " · "/);
+  assert.match(css, /provider-toolbar\.is-dimmed \{ opacity:\.35/);
+  assert.match(css, /provider-bar-title/);
+  assert.match(css, /provider-toolbar::before/);
+});
+
+test("loader provider name is positioned below numbered loader text", () => {
+  const css = read("movies.css");
+  assert.match(css, /loader-scene \.loader-subtext \{bottom:5%/);
+  assert.match(css, /loader-scene \.loader-source-name \{[\s\S]*?bottom:-8%/);
+  assert.match(css, /focus:not\(:focus-visible\)/);
+});
