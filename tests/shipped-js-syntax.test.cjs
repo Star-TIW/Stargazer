@@ -6,7 +6,7 @@ const path = require('node:path');
 
 const root = path.resolve(__dirname, '..');
 const tracked = execFileSync('git', ['ls-files', '-z'], { cwd: root, encoding: 'utf8' })
-  .split('\\0').filter(Boolean)
+  .split('\0').filter(Boolean)
   .filter(file => file.endsWith('.js') && !file.startsWith('node_modules/') && !file.startsWith('vendor/'));
 
 test('every tracked shipped JavaScript file parses, including movies.js', () => {
@@ -21,6 +21,6 @@ test('every tracked shipped JavaScript file parses, including movies.js', () => 
 test('changed player files contain no accidentally escaped source newlines', () => {
   for (const file of ['movies.js', 'player-sources.js', 'movies.css']) {
     const source = readFileSync(path.join(root, file), 'utf8');
-    assert.doesNotMatch(source, /\\\\n\\s{4,}\\S/, 'Escaped newline in ' + file);
+    assert.doesNotMatch(source, /\\n\s{4,}\S/, 'Escaped newline in ' + file);
   }
 });
