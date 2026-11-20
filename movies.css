@@ -1246,7 +1246,7 @@ main#movie-card { width: min(94vw,1080px) !important; padding: clamp(16px,3vw,36
   opacity:1; pointer-events:none; transition:opacity 180ms ease;
 }
 #video-wrapper .provider-top-row {
-  display:flex; align-items:center; justify-content:space-between; flex-wrap:nowrap; gap:12px;
+  display:flex; align-items:flex-start; justify-content:space-between; flex-wrap:nowrap; gap:12px;
   width:100%; min-height:44px; pointer-events:none;
 }
 #video-wrapper .provider-source-group {
@@ -1270,7 +1270,7 @@ main#movie-card { width: min(94vw,1080px) !important; padding: clamp(16px,3vw,36
 #video-wrapper .provider-source-label {min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
 #video-wrapper .provider-switch-word {flex:none; color:#aaa; font-size:13px; font-weight:500}
 #video-wrapper #close-video-x.provider-close-pill {
-  flex:0 0 44px; width:44px; padding:0; font:500 25px/1 Arial,sans-serif;
+  flex:0 0 44px; width:44px; padding:0; align-self:flex-start; font:500 25px/1 Arial,sans-serif;
 }
 #video-wrapper .provider-source-group .next-provider:hover,
 #video-wrapper #close-video-x.provider-close-pill:hover,
