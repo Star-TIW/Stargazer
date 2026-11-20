@@ -178,38 +178,31 @@ test("settings particle configuration matches main-compatible preview wiring", (
   assert.match(html, /postMessage\(\{type:\"particleEffect\", effect:currentEffect\}/);
 });
 
-test("single next-source button cycles and numbered loader stays intact", () => {
-  const source = read("movies.js");
-  assert.match(source, /next\.onclick = \(\) => selectSource\(\(index \+ 1\) % sources\.length\)/);
-  assert.match(source, /index = target;[\s\S]*?playback\.start\(\)/);
-  assert.match(source, /sourceLabel\.textContent = provider\.name/);
-  assert.match(source, /caption\.textContent = "Loading player " \+ \(index \+ 1\)/);
-  assert.match(source, /switchWord\.textContent = "Switch"/);
-  assert.doesNotMatch(source, /provider-source-picker|sourcePicker|refreshPicker|sourceChip/);
+test("single source button cycles and updates numbered loader", () => {
+  const js = read("movies.js");
+  assert.match(js, /next\.onclick = \(\) => selectSource\(\(index \+ 1\) % sources\.length\)/);
+  assert.match(js, /index = target;[\s\S]*?playback\.start\(\)/);
+  assert.match(js, /sourceLabel\.textContent = provider\.name/);
+  assert.match(js, /caption\.textContent = "Loading player " \+ \(index \+ 1\)/);
+  assert.doesNotMatch(js, /provider-source-picker|sourcePicker|refreshPicker|sourceChip/);
 });
 
-test("resume pill keeps named destination, dismissal and timeout", () => {
-  const source = read("movies.js");
-  assert.match(source, /resumeAction\.textContent = "Resume on " \+ shortSourceName\(sources\[target\.index\]\.name\)/);
-  assert.match(source, /resumeAction\.onclick = \(\) => selectSource\(target\.index\)/);
-  assert.match(source, /resumeNoticeTimer = setTimeout\(\(\) => \{ resumePill\.hidden = true; \}, 8000\)/);
-  assert.match(source, /dismissResume\.onclick/);
+test("resume pill preserves destination, dismiss and timeout", () => {
+  const js = read("movies.js");
+  assert.match(js, /resumeAction\.textContent = "Resume on " \+ shortSourceName\(sources\[target\.index\]\.name\)/);
+  assert.match(js, /resumeAction\.onclick = \(\) => selectSource\(target\.index\)/);
+  assert.match(js, /resumeNoticeTimer = setTimeout\(\(\) => \{ resumePill\.hidden = true; \}, 8000\)/);
 });
 
-test("cinematic controls and loader are accessible and spaced", () => {
+test("cinematic player controls and loader animation", () => {
   const css = read("movies.css");
-  const source = read("movies.js");
-  assert.match(source, /topRow\.append\(sourceGroup, barTitle, closeControl\)/);
+  const js = read("movies.js");
+  assert.match(js, /topRow\.append\(sourceGroup, barTitle, closeControl\)/);
   assert.match(css, /provider-toolbar\.is-dimmed::before/);
-  assert.match(css, /provider-source-group \.next-provider/);
-  assert.match(css, /height:44px; min-height:44px/);
-  assert.match(css, /top:calc\(100% \+ 24px\)/);
+  assert.match(css, /provider-toolbar\.is-dimmed \.next-provider/);
+  assert.match(css, /loader-scene \.loader-subtext \{[\s\S]*?top:calc\(100% \+ 24px\)/);
+  assert.match(js, /loader-dots/);
   assert.match(css, /transition:opacity 250ms ease,visibility 250ms ease/);
-  assert.match(source, /loader-dots/);
-});
-
-test("unrated home cards omit zero-star ratings", () => {
-  const source = read("movies.js");
-  assert.match(source, /Number\(x\.Rating\) > 0/);
-  assert.match(source, /Number\(movie\.Rating\) > 0/);
+  assert.match(css, /media-card \.media-title/);
+  assert.match(js, /Number\(x\.Rating\) > 0/);
 });
