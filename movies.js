@@ -926,7 +926,7 @@ function createMovieCard(movie, autoplay = false) {
           lastAdvancePosition = -1;
           manualResumeAt = provider.resumeParam ? 0 : switchResumeAt;
           const selfMismatch = provider.resumeMode === "self" && switchResumeAt > 30 &&
-            Number(progress?.watched) < Number(progress?.duration) * 0.95 && savedEntry?.lastSource !== provider.name;
+            Number(progress?.watched) < Number(progress?.duration) * 0.95;
           if (selfMismatch) {
             resumePill.hidden = false;
             resumeHint.textContent = "You were at " + formatWatchTime(switchResumeAt);
@@ -937,7 +937,8 @@ function createMovieCard(movie, autoplay = false) {
             resumeAction.hidden = false;
             resumeAction.textContent = "Resume on " + shortSourceName(sources[target.index].name);
             resumeAction.onclick = () => selectSource(target.index);
-            resumeNoticeTimer = setTimeout(() => { resumePill.hidden = true; }, 8000);
+            if (provider.name !== "VidZee" && provider.name !== "VidRock")
+              resumeNoticeTimer = setTimeout(() => { resumePill.hidden = true; }, 8000);
           }
           frame.src = window.StargazerSources.resumeUrl(provider, progress);
           videoFrame.replaceWith(frame);
