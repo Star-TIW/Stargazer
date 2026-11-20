@@ -171,7 +171,7 @@ async function renderImageDownloadPage() {
   content.innerHTML = `
     <img class="download-page-poster" src="${movie.Poster}" alt="${escapeHtml(movie.Title)} poster">
     <h1>${escapeHtml(movie.Title)}</h1>
-    <p>${escapeHtml(movie.Year)} · ★ ${escapeHtml(movie.Rating)}</p>
+    <p>${escapeHtml(movie.Year)}${Number(movie.Rating) > 0 ? " · ★ " + escapeHtml(movie.Rating) : ""}</p>
     <button id="download-image-button" class="download-page-button" type="button">⇩ Download</button>
     <div class="download-page-note">Image from TMDB</div>`;
 
@@ -707,7 +707,7 @@ function createMovieCard(movie, autoplay = false) {
           <div class="loader-glow"></div>
           <img class="loader-logo" src="${STARGAZER_LOGO_URL}" alt="" />
         </div>
-        <div class="loader-subtext">Loading player 1</div>
+        <div class="loader-subtext"><span class="loader-player-label">Loading player 1</span><span class="loader-dots" aria-hidden="true"><i></i><i></i><i></i></span></div>
       </div>
     `;
 
@@ -773,7 +773,10 @@ function createMovieCard(movie, autoplay = false) {
       swapIcon.setAttribute("aria-hidden", "true");
       const sourceLabel = document.createElement("span");
       sourceLabel.className = "provider-source-label";
-      next.append(swapIcon, sourceLabel);
+      const switchWord = document.createElement("span");
+      switchWord.className = "provider-switch-word";
+      switchWord.textContent = "Switch";
+      next.append(swapIcon, sourceLabel, switchWord);
       const resumeHint = document.createElement("span");
       resumeHint.className = "provider-resume-hint";
       resumeHint.setAttribute("aria-live", "polite");
@@ -820,7 +823,7 @@ function createMovieCard(movie, autoplay = false) {
         clearTimeout(resumeNoticeTimer);
         resumePill.hidden = true;
       };
-      const caption = status.querySelector(".loader-subtext");
+      const caption = status.querySelector(".loader-player-label");
       const settingsAction = document.createElement("button");
       settingsAction.type = "button";
       settingsAction.className = "provider-settings-action";
@@ -849,6 +852,10 @@ function createMovieCard(movie, autoplay = false) {
       tools.addEventListener("focusout", () => {
         if (status.classList.contains("is-hidden")) scheduleToolbarFade();
       });
+      const onPlayerPointerMove = event => {
+        if (event.target === playerWrapper || event.target === status) scheduleToolbarFade();
+      };
+      playerWrapper.addEventListener("pointermove", onPlayerPointerMove);
       const playback = providerPlayback({
         navigate(fail) {
           const provider = sources[index];
@@ -879,7 +886,8 @@ function createMovieCard(movie, autoplay = false) {
           }, 1000);
           status.classList.remove("is-hidden", "source-error");
           caption.textContent = "Loading player " + (index + 1);
-          sourceLabel.textContent = provider.name + " · Switch source";
+          sourceLabel.textContent = provider.name;
+          next.setAttribute("aria-label", provider.name + " · Switch source");
           const frame = videoFrame.cloneNode(false);
           frame.onerror = fail;
           frame.onload = () => {
@@ -1030,6 +1038,7 @@ function createMovieCard(movie, autoplay = false) {
           playerWrapper.append(closeControl);
         }
         tools.remove();
+        playerWrapper.removeEventListener("pointermove", onPlayerPointerMove);
         window.removeEventListener("message", onMessage);
       };
       playback.start();
@@ -1493,7 +1502,7 @@ suggestionsBox.addEventListener("click", async (e) => {
           ${removable?`<button class="media-remove" title="${esc(removeLabel || 'Remove from My List')}" aria-label="${esc(removeLabel || 'Remove from My List')}">×</button>`:''}
         </div>
         <div class="media-title" title="${esc(x.Title)}">${esc(x.Title)}</div>
-        <div class="media-meta">${x.Year} · ★ ${x.Rating}</div>
+        <div class="media-meta">${esc(x.Year || "New")}${Number(x.Rating) > 0 ? " · ★ " + esc(x.Rating) : ""}</div>
       </article>`;
     }).join("");
 
