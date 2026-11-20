@@ -89,7 +89,7 @@
   }
   function initialResumeSource(sources, progress, lastSource) {
     const seconds = resumePosition(progress);
-    if (seconds > 30 && Number(progress?.watched) < Number(progress?.duration) * 0.95) {
+    if (seconds > 0 && Number(progress?.watched) < Number(progress?.duration) * 0.95) {
       const index = sources.findIndex(source => source.name === lastSource);
       if (index >= 0) return index;
     }
