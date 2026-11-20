@@ -95,3 +95,13 @@ test('VidUP intentional backward seek is allowed below saved checkpoint',()=>{
  assert.equal(state.seekDirection,'backward');
  assert.equal(sourcesApi.vidupStallStep(state,null,6500).reloadAt,100);
 });
+
+test('popup protection puts VidZee first and preserves remaining provider order',()=>{
+ const context={tmdbID:550,mediaType:'movie'};
+ const original=sourcesApi.buildSources(context,'https://vidup.to/movie/550');
+ const protectedSources=sourcesApi.orderSourcesForPopupProtection(original,true);
+ assert.equal(protectedSources[0].name,'VidZee');
+ assert.deepEqual(protectedSources.slice(1).map(p=>p.name),original.filter(p=>p.name!=='VidZee').map(p=>p.name));
+ assert.deepEqual(sourcesApi.orderSourcesForPopupProtection(original,false).map(p=>p.name),original.map(p=>p.name));
+ assert.equal(original[0].name,'VidUP');
+});
