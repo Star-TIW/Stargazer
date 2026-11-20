@@ -427,7 +427,7 @@ function updateMovieWatchButton(button, movie) {
   if (movie.mediaType === "tv" && progress.season && progress.episode) {
     button.textContent = `Continue S${progress.season} E${progress.episode}: ${Math.max(1, Math.round(progress.percent))}%`;
   } else {
-    button.textContent = `Continue from ${formatWatchTime(progress.watched)} · ${Math.round(progress.percent)}%`;
+    button.textContent = `Continue from ${formatWatchTime(progress.watched)} · ${Math.max(1, Math.round(progress.percent))}%`;
   }
 }
 
