@@ -1188,7 +1188,7 @@ button#close-video-x {
   .loader-scene { opacity: 1; transform: translate(-50%, -50%); }
 }
 
-.stargazer-player-loader .loader-subtext { color: #d7d5b3; font-size: clamp(11px, 1.1vw, 13px); letter-spacing: 1px; }
+
 
 main#movie-card {
   position: relative !important; inset: auto !important; transform: none !important;
@@ -1196,11 +1196,7 @@ main#movie-card {
   margin: 72px auto 30px; padding: 16px; color: #eee; z-index: 2 !important;
 }
 #movie-card h2 { color: #efef88; }
-#close-card-x, .next-provider, #embedded-refresh {
-  padding: 8px 14px; min-height: 44px; width: auto; border-radius: 12px;
-  border: 1px solid #777; color: white; background: #171717; cursor: pointer;
-}
-.next-provider { position: absolute; left: 10px; top: 10px; z-index: 40; }
+#close-card-x, #embedded-refresh { padding:8px 14px; min-height:44px; border-radius:12px; border:1px solid #777; color:white; background:#171717; cursor:pointer; }
 #video-iframe[hidden], #embedded-page-controls[hidden], .stargazer-home[hidden] { display: none !important; }
 .media-row-nav { padding: 0; display: grid; place-items: center; }
 .text-button { padding: 8px; }
@@ -1210,7 +1206,7 @@ main#movie-card {
 .download-help { align-self: center; max-width: 24ch; background: #171717; color: white; padding: 6px; border-radius: 5px; }
 @media(max-width:600px) { #embedded-page-controls { flex-wrap:wrap; max-width:calc(100% - 72px); } }
 
-.provider-toolbar .next-provider { position: static; }
+
 .provider-resume-hint {
   padding: 6px 9px;
   border-radius: 8px;
@@ -1233,10 +1229,7 @@ main#movie-card { width: min(94vw,1080px) !important; padding: clamp(16px,3vw,36
 .detail-plot { max-width:66ch; line-height:1.65; }
 .detail-credits { display:grid; grid-template-columns:auto 1fr; gap:8px 14px; margin-top:16px; }
 .detail-credits dt { color:#efef88; }
-.stargazer-player-loader.source-error { inset:auto 12px 48px auto; width:min(235px,80%); height:34px; border-radius:10px; pointer-events:none; }
-.source-error .loader-scene { position:static; width:auto; height:100%; transform:none; animation:none; opacity:1; display:grid; place-items:center; }
-.source-error .loader-scene > :not(.loader-subtext), .source-error .loader-scene::after { display:none; }
-.source-error .loader-subtext { position:static; transform:none; animation:none; opacity:1; text-align:center; }
+
 @media(max-width:600px) {
   .detail-layout { grid-template-columns:minmax(78px,28%) 1fr; gap:12px 16px; }
   .detail-info { display:contents; }
@@ -1265,8 +1258,7 @@ main#movie-card { width: min(94vw,1080px) !important; padding: clamp(16px,3vw,36
 @media (max-width:768px), (max-height:500px) and (orientation:landscape) {
   #video-container { padding:0 !important; }
   #video-wrapper.stargazer-player-wrapper { width:100% !important; height:100dvh !important; min-height:0 !important; }
-  .provider-toolbar { left:max(8px,env(safe-area-inset-left)); top:max(8px,env(safe-area-inset-top)); }
-  #close-video-x { right:max(10px,env(safe-area-inset-right)) !important; top:max(8px,env(safe-area-inset-top)) !important; }
+
   .detail-backdrop main#movie-card { max-height:calc(100dvh - 24px) !important; padding:clamp(12px,3vw,20px); }
   .detail-info h2,.detail-credits dd { overflow-wrap:anywhere; min-width:0; }
 }
