@@ -6,15 +6,15 @@
   'use strict';
   const providers = [
     { name: 'VidUP', resumeMode: 'param', resumeParam: 'startAt', base: 'https://vidup.to', protocol: 'player' },
-    { name: 'VidLink', resumeMode: 'param', resumeParam: 'startAt', base: 'https://vidlink.pro', protocol: 'player', query: 'autoplay=true' },
     { name: 'VidFast', resumeMode: 'param', resumeParam: 'startAt', base: 'https://vidfast.vc', protocol: 'player', commands: true, query: 'autoPlay=true' },
-    { name: 'VidRock', resumeMode: 'self', base: 'https://vidrock.to', protocol: 'player', query: 'autoplay=true' },
-    { name: 'Vidy', resumeMode: 'param', resumeParam: 'progress', base: 'https://www.vidy.st', protocol: 'vidy', query: 'autoplay=true' },
-    { name: 'VidZee', resumeMode: 'self', base: 'https://player.vidzee.wtf/embed', protocol: 'history' },
     { name: 'Viduki 1 · Multi Server', resumeMode: 'self',base: 'https://www.viduki.net/1', protocol: 'history', api: 1 },
     { name: 'Viduki 2 · Multi Language', resumeMode: 'self',base: 'https://www.viduki.net/2', protocol: 'history', api: 2 },
+    { name: 'VidRock', resumeMode: 'self', base: 'https://vidrock.to', protocol: 'player', query: 'autoplay=true' },
+    { name: 'VidZee', resumeMode: 'self', base: 'https://player.vidzee.wtf/embed', protocol: 'history' },
     { name: 'Viduki 3 · Multi Embeds', resumeMode: 'self',base: 'https://www.viduki.net/3', protocol: 'history', api: 3 },
-    { name: 'Viduki 4 · Premium Embeds', resumeMode: 'self',base: 'https://www.viduki.net/4', protocol: 'history', api: 4 }
+    { name: 'Viduki 4 · Premium Embeds', resumeMode: 'self',base: 'https://www.viduki.net/4', protocol: 'history', api: 4 },
+    { name: 'Vidy', resumeMode: 'param', resumeParam: 'progress', base: 'https://vidy.st', protocol: 'vidy', query: 'autoplay=true' },
+    { name: 'VidLink', resumeMode: 'param', resumeParam: 'startAt', base: 'https://vidlink.pro', protocol: 'player', query: 'autoplay=true' }
   ];
   function buildSources(context, primaryUrl, custom = []) {
     if (!/^\d+$/.test(String(context.tmdbID))) return [];
@@ -22,8 +22,8 @@
     if (!['movie', 'tv'].includes(type)) return [];
     if (type === 'tv' && ![context.season, context.episode].every(n => /^\d+$/.test(String(n)) && Number(n) > 0)) return [];
     const path = `${type}/${context.tmdbID}${type === 'tv' ? `/${context.season}/${context.episode}` : ''}`;
-    const candidates = providers.map((p, i) => {
-      const url = new URL(i === 0 ? primaryUrl : `${p.base}/${path}`);
+    const candidates = providers.map(p => {
+      const url = new URL(p.name === 'VidUP' ? primaryUrl : `${p.base}/${path}`);
       if (p.query) new URLSearchParams(p.query).forEach((value, key) => url.searchParams.set(key, value));
       if (type === 'tv' && ['VidRock', 'VidZee'].includes(p.name)) url.searchParams.set('autonext', 'true');
       if (p.name === 'VidRock') url.searchParams.set('theme', 'eab308');
@@ -80,6 +80,27 @@
     const preferred = sources.findIndex(p => p.name === lastSource && p.resumeMode === 'param');
     const fallback = preferred >= 0 ? preferred : sources.findIndex(p => p.resumeMode === 'param');
     return {index:fallback >= 0 ? fallback : selectedIndex, seconds, redirected:fallback >= 0};
+  }
+  function initialResumeSource(sources, progress, lastSource) {
+    const seconds = resumePosition(progress);
+    if (seconds > 30 && Number(progress?.watched) < Number(progress?.duration) * 0.95) {
+      const eligible = ['VidUP', 'VidFast', 'Viduki 1 · Multi Server', 'Viduki 2 · Multi Language'];
+      const index = sources.findIndex(source => source.name === lastSource && eligible.includes(source.name));
+      if (index >= 0) return index;
+    }
+    return sources.findIndex(source => source.name === 'VidUP') >= 0 ? sources.findIndex(source => source.name === 'VidUP') : 0;
+  }
+  function shouldAcceptCheckpoint(progress, incoming, elapsed, startOver = false) {
+    const checkpoint = Number(progress?.watched) || 0;
+    const duration = Number(incoming?.duration);
+    const time = Number(incoming?.time);
+    if (!(duration > 0) || !Number.isFinite(time) || time < 0) return false;
+    return startOver || checkpoint <= 30 || time >= checkpoint - 60 || elapsed >= 60;
+  }
+  function nextFallbackSource(sources, currentIndex, triedVidFast = false) {
+    const fast = sources.findIndex(source => source.name === 'VidFast');
+    if (!triedVidFast && fast >= 0 && currentIndex !== fast) return {index:fast, triedVidFast:true};
+    return {index:(currentIndex + 1) % sources.length, triedVidFast:true};
   }
   function resumeUrl(source, progress) {
     const url = new URL(source.url);
@@ -153,7 +174,7 @@
     return /^\/media\/(?:[\w-]+\/)*[\w-]+\.(?:mp4|webm)$/.test(path) ? path : null;
   }
 
-  const api = { getSource, providers, buildSources, decodeEvent, resumePosition, resumeUrl, decideResume, acceptsOrigin };
+  const api = { getSource, providers, buildSources, decodeEvent, resumePosition, resumeUrl, decideResume, initialResumeSource, shouldAcceptCheckpoint, nextFallbackSource, acceptsOrigin };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.StargazerSources = api;
 })(typeof window !== 'undefined' ? window : globalThis);
