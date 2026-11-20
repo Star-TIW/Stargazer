@@ -163,7 +163,7 @@ test("provider toolbar stays above loader on desktop and mobile", () => {
 
 test("protected source failure gives settings guidance without cycling providers", () => {
   const source = read("movies.js");
-  const fallback = source.slice(source.indexOf("const fallback = () => {"), source.indexOf("const next = document.createElement", source.indexOf("const fallback = () => {"));
+  const fallback = source.slice(source.indexOf("const fallback = () => {"), source.indexOf("const next = document.createElement", source.indexOf("const fallback = () => {")));
   assert.match(fallback, /if \(popupProtectionEnabled\(\)\)/);
   assert.match(fallback, /Turn off Block player popups and redirects/);
   assert.ok(fallback.indexOf("return;") < fallback.indexOf("nextFallbackSource"), "protected branch must exit before switching");
