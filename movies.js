@@ -486,7 +486,7 @@ function createMovieCard(movie, autoplay = false) {
   if (posterContainer) {
     const lincolnBtn = document.createElement("button");
     lincolnBtn.id = "lincoln-btn";
-    lincolnBtn.setAttribute("aria-label", "Lincoln information");
+    lincolnBtn.setAttribute("aria-label", "Scroll to bottom of page");
     lincolnBtn.style.position = "absolute";
     lincolnBtn.style.top = "5px";
     lincolnBtn.style.left = "5px";
