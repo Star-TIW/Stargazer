@@ -80,3 +80,18 @@ test('VidUP explicit pause outside seek grace prevents reload',()=>{
  state=sourcesApi.vidupStallStep(state,{state:'ready',event:'paused',time:600},5000).state;
  assert.equal(sourcesApi.vidupStallStep(state,null,10000).reloadAt,null);
 });
+
+test('VidUP late pre-seek timeupdate cannot replace 600s recovery target',()=>{
+ let state={position:2.7,lastAdvanceAt:1000,seekAt:0,seekTarget:0,seekDirection:null,checkpoint:600,userPaused:false,recoveries:0};
+ state=sourcesApi.vidupStallStep(state,{state:'playing',event:'seeked',time:600},2000).state;
+ state=sourcesApi.vidupStallStep(state,{state:'ready',event:'timeupdate',time:6},2300).state;
+ assert.equal(state.position,600);
+ assert.equal(state.seekTarget,600);
+ assert.equal(sourcesApi.vidupStallStep(state,null,6500).reloadAt,600);
+});
+test('VidUP intentional backward seek is allowed below saved checkpoint',()=>{
+ let state={position:600,lastAdvanceAt:1000,seekAt:0,seekTarget:0,seekDirection:null,checkpoint:600,userPaused:false,recoveries:0};
+ state=sourcesApi.vidupStallStep(state,{state:'ready',event:'seeked',time:100},2000).state;
+ assert.equal(state.seekDirection,'backward');
+ assert.equal(sourcesApi.vidupStallStep(state,null,6500).reloadAt,100);
+});
