@@ -24,16 +24,19 @@ test('supported TV options and no guessed self resume params',()=>{
  for(const p of built.filter(p=>p.resumeMode==='self')) assert.equal(new URL(sourcesApi.resumeUrl(p,progress)).searchParams.has('startAt'),false);
 });
 
-test('initial resume restores only reliable last source',()=>{
+test('initial resume reopens saving sources but excludes non-working or non-saving providers',()=>{
  const saved={watched:610,duration:3600};
- for(const name of ['VidUP','VidFast','Viduki 1 · Multi Server','Viduki 2 · Multi Language']){
-   const idx=sources.findIndex(p=>p.name===name);
-   assert.equal(sourcesApi.initialResumeSource(sources,saved,name),idx);
+ const excluded=new Set(['VidLink','Viduki 3 · Multi Embeds','Viduki 4 · Premium Embeds']);
+ for(const provider of [...sources,{name:'Vidy',resumeMode:'param'}]){
+   const list=provider.name==='Vidy'?[...sources,provider]:sources;
+   const idx=list.findIndex(p=>p.name===provider.name);
+   assert.equal(sourcesApi.initialResumeSource(list,saved,provider.name),
+     excluded.has(provider.name)?0:idx,provider.name);
  }
- for(const name of ['VidRock','VidZee','Vidy','VidLink','Viduki 3 · Multi Embeds','Viduki 4 · Premium Embeds'])
-   assert.equal(sourcesApi.initialResumeSource(sources,saved,name),0);
  assert.equal(sourcesApi.initialResumeSource(sources,{watched:0,duration:3600},'VidFast'),0);
+ assert.equal(sourcesApi.initialResumeSource(sources,{watched:20,duration:3600},'VidRock'),3);
 });
+
 test('low samples cannot overwrite a checkpoint before sixty seconds',()=>{
  const checkpoint={watched:610,duration:3600};
  assert.equal(sourcesApi.shouldAcceptCheckpoint(checkpoint,{time:0,duration:3600},0),false);
