@@ -145,9 +145,33 @@ document.addEventListener("DOMContentLoaded", () => {
     nextSource.textContent = `Next source (${activeEmbedIndex + 1}/${activeEmbeds.length})`;
   };
 
+  const providerPage = document.createElement("a");
+  providerPage.className = "watch-btn";
+  providerPage.textContent = "Open PPV.ST";
+  providerPage.target = "_blank";
+  providerPage.rel = "noopener noreferrer";
+  providerPage.hidden = true;
+
+  const openPlayer = (embeds, page) => {
+    providerPage.hidden = !page;
+    if (page) providerPage.href = page;
+    else providerPage.removeAttribute("href");
+    clearTimeout(hideVideoTimer);
+    activeEmbeds = embeds;
+    activeEmbedIndex = 0;
+    showEmbed();
+    videoContainer.style.display = "flex";
+    setTimeout(() => {
+      videoContainer.style.opacity = 1;
+      videoContainer.querySelector("#video-wrapper").style.transform = "scale(1)";
+      try { videoIframe.contentWindow?.focus(); } catch { }
+      videoIframe.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 50);
+  };
+
   const toolbar = document.createElement("div");
   toolbar.className = "provider-toolbar";
-  toolbar.append(nextSource);
+  toolbar.append(nextSource, providerPage);
 
   nextSource.onclick = () => {
     activeEmbedIndex = (activeEmbedIndex + 1) % activeEmbeds.length;
@@ -252,7 +276,7 @@ document.addEventListener("DOMContentLoaded", () => {
     return Array.from(names).map(normalize).filter(Boolean);
   };
 
-  const findStreamFreeStreamForEvent = (ev, streams) => {
+  const findStreamForEvent = (ev, streams) => {
     try {
       const comp = ev.competitions?.[0] || {};
       const competitors = comp.competitors || [];
@@ -290,7 +314,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const runnerUp = ranked[1];
       // Avoid silently linking a game when two events look equally plausible.
       if (best.score < 10 || (runnerUp && best.score - runnerUp.score < 1.25)) {
-        console.info("No unambiguous StreamFree stream", { event: ev.name, candidates: ranked.slice(0, 2) });
+        console.info("No unambiguous sports stream", { event: ev.name, candidates: ranked.slice(0, 2) });
         return null;
       }
       return best.stream;
@@ -456,14 +480,34 @@ document.addEventListener("DOMContentLoaded", () => {
       watchBtn.style.cursor = "not-allowed";
 
       const showTime = new Date(gameStart.getTime() - 10 * 60 * 1000);
+      const ppv = gameStreams[ev.id]?.ppv;
+      if (ppv) {
+        const embedded = ppv.embed && !popupProtectionEnabled();
+        const option = document.createElement(embedded ? "button" : "a");
+        option.className = "watch-btn";
+        option.textContent = embedded ? "Watch on PPV.ST" : "Open PPV.ST";
+        if (embedded) {
+          option.type = "button";
+          option.onclick = () => {
+            playerRequest++;
+            openPlayer([ppv.embed], ppv.page);
+          };
+        } else {
+          option.href = ppv.page || ppv.embed;
+          option.target = "_blank";
+          option.rel = "noopener noreferrer";
+        }
+        watchBtn.after(option);
+      }
       let checking = false;
       const updateWatchButton = () => {
         if (checking) return;
         const now = new Date();
         const stream = gameStreams[ev.id];
 
+        watchBtn.hidden = Boolean(ppv && !stream?.embeds?.length);
         if (now >= showTime && stream?.embeds?.length) {
-          watchBtn.innerText = "Watch Live";
+          watchBtn.innerText = ppv ? "Watch on StreamFree" : "Watch Live";
           watchBtn.disabled = false;
           watchBtn.style.opacity = 1;
           watchBtn.style.cursor = "pointer";
@@ -496,17 +540,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (gameStreams[ev.id]?.key === stream.key) gameStreams[ev.id].embeds = embeds;
         updateWatchButton();
         if (request !== playerRequest || !embeds?.length || gameStreams[ev.id]?.key !== stream.key) return;
-        clearTimeout(hideVideoTimer);
-        activeEmbeds = embeds;
-        activeEmbedIndex = 0;
-        showEmbed();
-        videoContainer.style.display = "flex";
-        setTimeout(() => {
-          videoContainer.style.opacity = 1;
-          videoContainer.querySelector("#video-wrapper").style.transform = "scale(1)";
-          try { videoIframe.contentWindow?.focus(); } catch { }
-          videoIframe.scrollIntoView({ behavior: "smooth", block: "center" });
-        }, 50);
+        openPlayer(embeds);
       });
     }
 
@@ -580,12 +614,17 @@ document.addEventListener("DOMContentLoaded", () => {
       const eligibleEvents = events.filter(ev => !ev.competitions?.[0]?.status?.type?.completed &&
         Date.parse(ev.date) <= Date.now() + 10 * 60 * 1000);
       if (eligibleEvents.length) {
-        const streamFreeStreams = await fetchStreamFreeStreams(sportConfig);
-        lookupFailed = streamFreeStreams === null;
+        const [streamFreeStreams, ppvGroups] = await Promise.all([
+          fetchStreamFreeStreams(sportConfig), PpvSports.listings()
+        ]);
+        const ppvEvents = PpvSports.events(ppvGroups, sport);
+        lookupFailed = streamFreeStreams === null || ppvGroups === null;
         await Promise.all(eligibleEvents.map(async ev => {
-          const stream = findStreamFreeStreamForEvent(ev, streamFreeStreams || []);
-          if (!stream?.stream_key) return;
-          nextGameStreams[ev.id] = { key: stream.stream_key, embeds: await getLiveSources(stream.stream_key) };
+          const stream = findStreamForEvent(ev, streamFreeStreams || []);
+          const ppv = findStreamForEvent(ev, ppvEvents);
+          if (!stream?.stream_key && !ppv) return;
+          nextGameStreams[ev.id] = { ppv, key: stream?.stream_key,
+            embeds: stream?.stream_key ? await getLiveSources(stream.stream_key) : [] };
         }));
       }
       if (request !== scheduleRequest || sport !== currentSport) return;
