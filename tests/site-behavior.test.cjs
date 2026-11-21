@@ -436,3 +436,35 @@ test("unreleased TMDB titles show a local-date badge only before first release",
   assert.ok(source.includes('movie.isUnreleased ? `<p class="detail-release-badge"'));
   assert.ok(source.includes("escapeHtml(movie.releaseLabel)"));
 });
+
+test("live player shows the current provider and cycles back to the first feed", () => {
+  const live = read("live/live.js");
+  const button = { append() {}, setAttribute(key, value) { this[key] = value; } };
+  const context = vm.createContext({
+    document: { createElement: tag => tag === "button" ? button : { setAttribute() {} } },
+    configureExternalFrame() {}, videoIframe: {}, button
+  });
+  vm.runInContext(live.slice(live.indexOf("  let activeEmbeds"), live.indexOf("  const openPlayer"))
+    + live.slice(live.indexOf("  nextSource.onclick"), live.indexOf("  const setupVideoOverlay")), context);
+  vm.runInContext('activeEmbeds = [...namedSources(["a"], "StreamFree"), ...namedSources(["b", "c"], "PPV.ST")]; showEmbed()', context);
+  for (const [url, name] of [["a", "StreamFree"], ["b", "PPV.ST"], ["c", "PPV.ST 2"], ["a", "StreamFree"]]) {
+    assert.equal(context.videoIframe.src, url);
+    assert.equal(vm.runInContext("sourceLabel.textContent", context), name);
+    button.onclick();
+  }
+  vm.runInContext('activeEmbeds = namedSources(["b"], "PPV.ST"); activeEmbedIndex = 0; showEmbed()', context);
+  assert.equal(button.disabled, true);
+  assert.equal(button.hidden, false);
+  assert.equal(button["aria-label"], "PPV.ST");
+});
+
+test("full team names outweigh a shared State suffix in college football listings", () => {
+  const live = read("live/live.js");
+  const match = vm.runInNewContext(live.slice(live.indexOf("  const normalize"), live.indexOf("  const getEmbedUrl")) + "\nfindStreamForEvent");
+  const event = { competitions: [{ competitors: [
+    { team: { displayName: "NC State Wolfpack", location: "NC State", name: "Wolfpack" } },
+    { team: { displayName: "Florida State Seminoles", location: "Florida State", name: "Seminoles" } }
+  ] }] };
+  const correct = { name: "NC State Wolfpack vs Florida State Seminoles" };
+  assert.equal(match(event, [{ name: "Ohio State vs Penn State" }, correct]), correct);
+});

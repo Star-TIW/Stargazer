@@ -135,15 +135,33 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const nextSource = document.createElement("button");
   nextSource.type = "button";
-  nextSource.className = "watch-btn";
+  nextSource.className = "next-provider";
   nextSource.hidden = true;
+  const swapIcon = document.createElement("span");
+  swapIcon.textContent = "⇄";
+  swapIcon.className = "provider-swap-icon";
+  swapIcon.setAttribute("aria-hidden", "true");
+  const sourceLabel = document.createElement("span");
+  const switchWord = document.createElement("span");
+  switchWord.className = "provider-switch-word";
+  switchWord.textContent = "Switch";
+  nextSource.append(swapIcon, sourceLabel, switchWord);
 
   const showEmbed = () => {
+    const source = activeEmbeds[activeEmbedIndex];
     configureExternalFrame(videoIframe);
-    videoIframe.src = activeEmbeds[activeEmbedIndex];
-    nextSource.hidden = activeEmbeds.length < 2;
-    nextSource.textContent = `Next source (${activeEmbedIndex + 1}/${activeEmbeds.length})`;
+    videoIframe.src = source.url;
+    sourceLabel.textContent = source.name;
+    nextSource.hidden = false;
+    const single = activeEmbeds.length === 1;
+    nextSource.disabled = single;
+    swapIcon.hidden = switchWord.hidden = single;
+    nextSource.setAttribute("aria-label", single ? source.name : source.name + " · Switch source");
   };
+
+  const namedSources = (urls, provider) => (urls || []).map((url, index) => ({
+    url, name: index === 0 ? provider : provider + " " + (index + 1)
+  }));
 
   const openPlayer = (embeds) => {
     clearTimeout(hideVideoTimer);
@@ -259,10 +277,6 @@ document.addEventListener("DOMContentLoaded", () => {
     if (t.location) names.add(t.location);
     if (t.abbreviation) names.add(t.abbreviation);
     if (teamObj.team && teamObj.team.abbreviation) names.add(teamObj.team.abbreviation);
-    Array.from(names).forEach((nm) => {
-      const parts = String(nm).split(" ");
-      if (parts.length > 1) names.add(parts[parts.length - 1]);
-    });
     return Array.from(names).map(normalize).filter(Boolean);
   };
 
@@ -283,7 +297,9 @@ document.addEventListener("DOMContentLoaded", () => {
       const eventTime = new Date(ev.date).getTime();
       const scoreCandidate = (candidates, title) => Math.max(...candidates.map((name) => {
         if (title === name) return 12;
-        if (title.includes(name)) return name.length <= 3 ? 4 : 9;
+        if ((" " + title + " ").includes(" " + name + " ")) {
+          return name.length <= 3 ? 4 : 8 + Math.min(name.split(" ").length, 5) * 2;
+        }
         const nameWords = name.split(" ").filter(word => word.length > 2);
         const overlap = nameWords.filter(word => title.split(" ").includes(word)).length;
         return nameWords.length ? overlap / nameWords.length * 6 : 0;
@@ -482,7 +498,8 @@ document.addEventListener("DOMContentLoaded", () => {
           watchBtn.style.opacity = 1;
           watchBtn.style.cursor = "pointer";
         } else if (now >= showTime) {
-          watchBtn.innerText = (streamLookupFailed || stream?.embeds === null) ? "Stream lookup unavailable" : "No stream available yet";
+          watchBtn.innerText = (streamLookupFailed || stream?.embeds === null) ? "Stream lookup unavailable"
+            : stream?.key ? "Stream listed, feed offline" : "No matching live listing";
           watchBtn.disabled = true;
           watchBtn.style.opacity = 0.6;
           watchBtn.style.cursor = "not-allowed";
@@ -514,7 +531,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
         current.embeds = embeds;
         updateWatchButton();
-        const sources = [...new Set([...(embeds || []), ...(current.ppv?.embeds || [])])];
+        const sources = [...namedSources(embeds, "StreamFree"), ...namedSources(current.ppv?.embeds, "PPV.ST")];
         if (sources.length) openPlayer(sources);
       });
     }
