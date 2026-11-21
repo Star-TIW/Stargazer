@@ -69,6 +69,35 @@ test("ESPN team logos are permitted and removed VidLink frames are blocked on bo
   assert.ok(!directive("frame-src").includes("https://vidlink.pro"));
 });
 
+test("live sports can query StreamFree and open only its confirmed live embeds", async () => {
+  const policy = JSON.parse(read("vercel.json")).headers[0].headers.find(h => h.key === "Content-Security-Policy").value;
+  const connect = policy.split(";").find(part => part.trim().startsWith("connect-src ")).trim().split(/\s+/);
+  const origins = ["https://streamfree.top", "https://strmfree.st"];
+  for (const origin of origins) assert.ok(connect.includes(origin));
+  const live = read("live/live.js");
+  const lookup = live.slice(live.indexOf("  const getEmbedUrl"), live.indexOf("  const getCachedStreamFreeStreams"));
+  const alt = origins[1] + "/embed/hockey/game1080p2";
+  let calls = 0;
+  let sources = [
+    { url: origins[1] + "/embed/hockey/game1080p", live: false },
+    { url: alt, live: true }, { url: alt, live: true },
+    { url: "https://example.com/embed/game", live: true }
+  ];
+  const resolve = vm.runInNewContext(lookup + "\ngetLiveSources", {
+    STREAMFREE_ORIGINS: origins, URL, AbortSignal,
+    fetch: async url => {
+      calls++;
+      assert.ok(url.pathname.startsWith("/api/v1/sources/"));
+      return { ok: true, json: async () => ({ sources }) };
+    }
+  });
+  assert.deepEqual(Array.from(await resolve("game")), [alt]);
+  await resolve("game");
+  assert.equal(calls, 1);
+  sources = [{ url: alt, live: false }];
+  assert.deepEqual(Array.from(await resolve("offline")), []);
+});
+
 test("security headers, no-referrer embeds, and service-worker updates are deployed", () => {
   const vercelHeaders = JSON.parse(read("vercel.json")).headers;
   const mainHeaders = vercelHeaders[0].headers;

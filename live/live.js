@@ -68,6 +68,8 @@ document.addEventListener("DOMContentLoaded", () => {
   let currentSport = SPORTS_CONFIG[savedSport] ? savedSport : "nfl";
   window.SGS_LIVE=(window.SGS_LIVE||[]).concat(['favoriteGames']);
   window.addEventListener('sgs:change',()=>{try{fetchGamesWindow(currentSport)}catch(e){}});
+  let scheduleRequest = 0;
+  let playerRequest = 0;
   let gameStreams = {};
   let streamLookupFailed = false;
 
@@ -201,6 +203,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const hideOverlay = () => {
       clearTimeout(hideVideoTimer);
+      playerRequest++;
       activeEmbeds = [];
       nextSource.hidden = true;
       videoIframe.src = "about:blank";
@@ -277,10 +280,11 @@ document.addEventListener("DOMContentLoaded", () => {
         const awayScore = scoreCandidate(awayCandidates, title);
         const timestamp = Number(stream.match_timestamp || 0);
         const streamTime = Number.isFinite(timestamp) && timestamp > 0 ? timestamp * 1000 : 0;
+        if (streamTime && Math.abs(streamTime - eventTime) > 12 * 3600000) return null;
         const timeScore = Number.isFinite(streamTime) && streamTime > 0 && Number.isFinite(eventTime)
           ? Math.max(0, 3 - Math.abs(streamTime - eventTime) / 3600000) : 0;
         return { stream, score: homeScore + awayScore + timeScore, homeScore, awayScore };
-      }).filter(item => item.homeScore >= 4 && item.awayScore >= 4).sort((a, b) => b.score - a.score);
+      }).filter(item => item && item.homeScore >= 4 && item.awayScore >= 4).sort((a, b) => b.score - a.score);
       if (!ranked.length) return null;
       const best = ranked[0];
       const runnerUp = ranked[1];
@@ -307,21 +311,31 @@ document.addEventListener("DOMContentLoaded", () => {
     return null;
   };
 
-  const getStreamFreeEmbeds = (stream) => {
-    const qualityRank = { "4K": 4, FHD: 3, HD: 2, SD: 1 };
-    const additional = Array.isArray(stream.additional_sources) ? stream.additional_sources : [];
-    const live = Array.isArray(stream.live_sources) ? stream.live_sources : [];
-    const legacy = Array.isArray(stream.sources) ? stream.sources : [];
-    const variants = [...additional, ...legacy].filter(source => source?.live === true)
-      .concat(live.filter(source => source && source.live !== false))
-      .sort((a, b) => (qualityRank[b.quality] || 0) - (qualityRank[a.quality] || 0));
-    const embeds = [stream.iframe, ...variants.map(source => source.url)].map(getEmbedUrl).filter(Boolean);
-    const mirrors = embeds.map(embed => {
-      const url = new URL(embed);
-      const mirror = STREAMFREE_ORIGINS.find(origin => origin !== url.origin);
-      return `${mirror}${url.pathname}${url.search}`;
-    });
-    return [...new Set([...embeds, ...mirrors])];
+  const sourceCache = new Map();
+  const getLiveSources = (key) => {
+    const now = Date.now();
+    for (const [cachedKey, entry] of sourceCache) {
+      if (entry.expires <= now) sourceCache.delete(cachedKey);
+    }
+    if (sourceCache.has(key)) return sourceCache.get(key).result;
+    const result = (async () => {
+      for (const origin of STREAMFREE_ORIGINS) {
+        try {
+          const response = await fetch(new URL("/api/v1/sources/" + encodeURIComponent(key), origin), {
+            cache: "no-store", signal: AbortSignal.timeout(5000)
+          });
+          if (response.status === 404) return [];
+          if (!response.ok) continue;
+          const { sources } = await response.json();
+          if (Array.isArray(sources)) {
+            return [...new Set(sources.filter(s => s?.live === true).map(s => getEmbedUrl(s.url)).filter(Boolean))];
+          }
+        } catch { /* Try the other API origin. */ }
+      }
+      return null;
+    })();
+    sourceCache.set(key, { result, expires: now + 15000 });
+    return result;
   };
 
   const getCachedStreamFreeStreams = (category) => {
@@ -442,17 +456,19 @@ document.addEventListener("DOMContentLoaded", () => {
       watchBtn.style.cursor = "not-allowed";
 
       const showTime = new Date(gameStart.getTime() - 10 * 60 * 1000);
+      let checking = false;
       const updateWatchButton = () => {
+        if (checking) return;
         const now = new Date();
         const stream = gameStreams[ev.id];
 
-        if (now >= showTime && stream) {
+        if (now >= showTime && stream?.embeds?.length) {
           watchBtn.innerText = "Watch Live";
           watchBtn.disabled = false;
           watchBtn.style.opacity = 1;
           watchBtn.style.cursor = "pointer";
         } else if (now >= showTime) {
-          watchBtn.innerText = streamLookupFailed ? "Stream lookup unavailable" : "No stream available yet";
+          watchBtn.innerText = (streamLookupFailed || stream?.embeds === null) ? "Stream lookup unavailable" : "No stream available yet";
           watchBtn.disabled = true;
           watchBtn.style.opacity = 0.6;
           watchBtn.style.cursor = "not-allowed";
@@ -468,11 +484,20 @@ document.addEventListener("DOMContentLoaded", () => {
       updateWatchButton();
       setInterval(updateWatchButton, 1000);
 
-      watchBtn.addEventListener("click", () => {
+      watchBtn.addEventListener("click", async () => {
         const stream = gameStreams[ev.id];
         if (!stream || Date.now() < showTime.getTime()) return;
+        const request = ++playerRequest;
+        checking = true;
+        watchBtn.disabled = true;
+        watchBtn.innerText = "Checking stream…";
+        const embeds = await getLiveSources(stream.key);
+        checking = false;
+        if (gameStreams[ev.id]?.key === stream.key) gameStreams[ev.id].embeds = embeds;
+        updateWatchButton();
+        if (request !== playerRequest || !embeds?.length || gameStreams[ev.id]?.key !== stream.key) return;
         clearTimeout(hideVideoTimer);
-        activeEmbeds = stream;
+        activeEmbeds = embeds;
         activeEmbedIndex = 0;
         showEmbed();
         videoContainer.style.display = "flex";
@@ -508,6 +533,7 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   const fetchGamesWindow = async (sport) => {
+    const request = ++scheduleRequest;
     try {
       const sportConfig = SPORTS_CONFIG[sport];
       if (!sportConfig) {
@@ -551,18 +577,18 @@ document.addEventListener("DOMContentLoaded", () => {
       // ---------- StreamFree API ----------
       const nextGameStreams = {};
       let lookupFailed = false;
-      if (todayEvents.length > 0) {
+      const eligibleEvents = events.filter(ev => !ev.competitions?.[0]?.status?.type?.completed &&
+        Date.parse(ev.date) <= Date.now() + 10 * 60 * 1000);
+      if (eligibleEvents.length) {
         const streamFreeStreams = await fetchStreamFreeStreams(sportConfig);
         lookupFailed = streamFreeStreams === null;
-
-        todayEvents.forEach((ev) => {
+        await Promise.all(eligibleEvents.map(async ev => {
           const stream = findStreamFreeStreamForEvent(ev, streamFreeStreams || []);
-          if (!stream) return;
-          const embeds = getStreamFreeEmbeds(stream);
-          if (embeds.length) nextGameStreams[ev.id] = embeds;
-        });
+          if (!stream?.stream_key) return;
+          nextGameStreams[ev.id] = { key: stream.stream_key, embeds: await getLiveSources(stream.stream_key) };
+        }));
       }
-      if (sport !== currentSport) return;
+      if (request !== scheduleRequest || sport !== currentSport) return;
       gameStreams = nextGameStreams;
       streamLookupFailed = lookupFailed;
 
@@ -573,7 +599,7 @@ document.addEventListener("DOMContentLoaded", () => {
       pinFavorites(upcomingGamesList);
 
     } catch (err) {
-      if (sport !== currentSport) return;
+      if (request !== scheduleRequest || sport !== currentSport) return;
       console.error("live.js: Critical error in fetchGamesWindow:", err);
       todayGamesList.innerHTML = upcomingGamesList.innerHTML = `<div class="game-card"><p style="text-align:center; color:#efef88;">Could not load games.</p></div>`;
     }
@@ -638,6 +664,8 @@ document.addEventListener("DOMContentLoaded", () => {
         setActiveSportButton(sport);
         if (sport === currentSport) return;
 
+        playerRequest++;
+        gameStreams = {};
         currentSport = sport;
         localStorage.setItem("selectedSport", sport);
         bannerText.textContent = `${sportConfig.emoji} ${sportConfig.displayName} - Stargazer Live`;
