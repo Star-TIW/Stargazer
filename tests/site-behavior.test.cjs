@@ -61,6 +61,14 @@ test("both hosts use the same restrictive CSP and permit every configured frame 
   }
 });
 
+test("ESPN team logos are permitted and removed VidLink frames are blocked on both hosts", () => {
+  const policy = JSON.parse(read("vercel.json")).headers[0].headers.find(h => h.key === "Content-Security-Policy").value;
+  assert.ok(read("_headers").includes(policy), "Cloudflare and Vercel CSP match");
+  const directive = name => policy.split(";").find(part => part.trim().startsWith(name + " "))?.trim().split(/\\s+/).slice(1) || [];
+  assert.ok(directive("img-src").includes("https://a.espncdn.com"));
+  assert.ok(!directive("frame-src").includes("https://vidlink.pro"));
+});
+
 test("security headers, no-referrer embeds, and service-worker updates are deployed", () => {
   const vercelHeaders = JSON.parse(read("vercel.json")).headers;
   const mainHeaders = vercelHeaders[0].headers;
@@ -73,7 +81,7 @@ test("security headers, no-referrer embeds, and service-worker updates are deplo
   assert.deepEqual(vercelHeaders[1], {source:"/service-worker.js",headers:[{key:"Cache-Control",value:"no-cache, no-store, must-revalidate"}]});
   assert.match(read("index.html"), /id="video-iframe"[^>]*referrerpolicy="no-referrer"/);
   assert.match(read("provider-frame.js"), /frame\.referrerPolicy = "no-referrer"/);
-  assert.match(read("service-worker.js"), /stargazer-cache-v36/);
+  assert.match(read("service-worker.js"), /stargazer-cache-v37/);
 });
 
 function providerSession() {
@@ -344,7 +352,7 @@ test("settings particle layer is viewport-anchored and canvas fills it on mobile
   assert.match(layer[1], /pointer-events:\s*none\s*;/);
   assert.match(layer[1], /z-index:\s*0\s*;/);
   assert.match(html, /#particles-js\s*>\s*canvas\s*\{[^}]*width:\s*100%\s*;[^}]*height:\s*100%\s*;/);
-  assert.match(read("service-worker.js"), /stargazer-cache-v36/);
+  assert.match(read("service-worker.js"), /stargazer-cache-v37/);
 });
 
 test("last saved provider is reopened and low-percent progress remains visible", () => {
