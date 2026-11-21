@@ -52,11 +52,17 @@ const PpvSports = (() => {
         if (!entry?.name) continue;
         const start = Number(entry.starts_at), end = Number(entry.ends_at);
         if (!Number(entry.always_live) && (!(start > 0) || start > now || (end > 0 && end <= now))) continue;
-        const uri = entry.uri_name;
-        const page = typeof uri === "string" && uri.split("/").every(part => /^[a-z0-9_-]+$/i.test(part))
-          ? "https://ppv.st/live/" + uri : null;
-        const embed = embedUrl(entry.iframe);
-        if (page || embed) result.push({ name: entry.name, match_timestamp: start, page, embed });
+        const variants = [entry, ...(Array.isArray(entry.substreams) ? entry.substreams : [])];
+        const embeds = new Set();
+        for (const variant of variants) {
+          const uri = variant?.uri_name;
+          const embed = embedUrl(variant?.iframe);
+          if (embed) embeds.add(embed);
+          else if (typeof uri === "string" && uri.split("/").every(part => /^[a-z0-9_-]+$/i.test(part))) {
+            embeds.add("https://taifood-blog.asia/embed/" + uri);
+          }
+        }
+        if (embeds.size) result.push({ name: entry.name, match_timestamp: start, embeds: [...embeds] });
       }
     }
     return result;

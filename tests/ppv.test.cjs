@@ -7,12 +7,12 @@ test("PPV distinguishes football leagues and only offers current events or alway
   const groups = [{ category: "Basketball", streams: [
     game, { ...game, name: "Later", starts_at: 151 }, { ...game, name: "Finished", ends_at: 150 }
   ] }, { category: "Football", streams: [{ ...game, name: "Soccer", always_live: 1, ends_at: 50 }] }];
-  assert.deepEqual(events(groups, "nba", 150).map(g => g.page), ["https://ppv.st/live/nba/week-8/nop-ind"]);
+  assert.deepEqual(events(groups, "nba", 150).flatMap(g => g.embeds), ["https://taifood-blog.asia/embed/nba/week-8/nop-ind"]);
   assert.equal(events(groups, "mls", 150)[0].name, "Soccer");
   assert.deepEqual(events(groups, "nfl", 150), []);
 });
 
-test("PPV uses its published embed URL or falls back to the provider event page", () => {
+test("PPV uses its published embed URL or builds an in-player URL from the stream identifier", () => {
   const entry = { name: "Game", uri_name: "nhl/game", always_live: 1 };
   const rows = events([{ category: "Ice Hockey", streams: [
     { ...entry, iframe: "https://taifood-blog.asia/embed/game" },
@@ -20,7 +20,6 @@ test("PPV uses its published embed URL or falls back to the provider event page"
     { ...entry, uri_name: "../other" }
   ] }], "nhl");
   assert.equal(rows.length, 2);
-  assert.equal(rows[0].embed, "https://taifood-blog.asia/embed/game");
-  assert.equal(rows[1].embed, null);
-  assert.equal(rows[1].page, "https://ppv.st/live/nhl/game");
+  assert.deepEqual(rows[0].embeds, ["https://taifood-blog.asia/embed/game"]);
+  assert.deepEqual(rows[1].embeds, ["https://taifood-blog.asia/embed/nhl/game"]);
 });

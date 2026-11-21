@@ -145,17 +145,7 @@ document.addEventListener("DOMContentLoaded", () => {
     nextSource.textContent = `Next source (${activeEmbedIndex + 1}/${activeEmbeds.length})`;
   };
 
-  const providerPage = document.createElement("a");
-  providerPage.className = "watch-btn";
-  providerPage.textContent = "Open PPV.ST";
-  providerPage.target = "_blank";
-  providerPage.rel = "noopener noreferrer";
-  providerPage.hidden = true;
-
-  const openPlayer = (embeds, page) => {
-    providerPage.hidden = !page;
-    if (page) providerPage.href = page;
-    else providerPage.removeAttribute("href");
+  const openPlayer = (embeds) => {
     clearTimeout(hideVideoTimer);
     activeEmbeds = embeds;
     activeEmbedIndex = 0;
@@ -171,7 +161,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const toolbar = document.createElement("div");
   toolbar.className = "provider-toolbar";
-  toolbar.append(nextSource, providerPage);
+  toolbar.append(nextSource);
 
   nextSource.onclick = () => {
     activeEmbedIndex = (activeEmbedIndex + 1) % activeEmbeds.length;
@@ -480,34 +470,14 @@ document.addEventListener("DOMContentLoaded", () => {
       watchBtn.style.cursor = "not-allowed";
 
       const showTime = new Date(gameStart.getTime() - 10 * 60 * 1000);
-      const ppv = gameStreams[ev.id]?.ppv;
-      if (ppv) {
-        const embedded = ppv.embed && !popupProtectionEnabled();
-        const option = document.createElement(embedded ? "button" : "a");
-        option.className = "watch-btn";
-        option.textContent = embedded ? "Watch on PPV.ST" : "Open PPV.ST";
-        if (embedded) {
-          option.type = "button";
-          option.onclick = () => {
-            playerRequest++;
-            openPlayer([ppv.embed], ppv.page);
-          };
-        } else {
-          option.href = ppv.page || ppv.embed;
-          option.target = "_blank";
-          option.rel = "noopener noreferrer";
-        }
-        watchBtn.after(option);
-      }
       let checking = false;
       const updateWatchButton = () => {
         if (checking) return;
         const now = new Date();
         const stream = gameStreams[ev.id];
 
-        watchBtn.hidden = Boolean(ppv && !stream?.embeds?.length);
-        if (now >= showTime && stream?.embeds?.length) {
-          watchBtn.innerText = ppv ? "Watch on StreamFree" : "Watch Live";
+        if (now >= showTime && (stream?.embeds?.length || stream?.ppv?.embeds.length)) {
+          watchBtn.innerText = "Watch Live";
           watchBtn.disabled = false;
           watchBtn.style.opacity = 1;
           watchBtn.style.cursor = "pointer";
@@ -535,12 +505,17 @@ document.addEventListener("DOMContentLoaded", () => {
         checking = true;
         watchBtn.disabled = true;
         watchBtn.innerText = "Checking stream…";
-        const embeds = await getLiveSources(stream.key);
+        const embeds = stream.key ? await getLiveSources(stream.key) : [];
         checking = false;
-        if (gameStreams[ev.id]?.key === stream.key) gameStreams[ev.id].embeds = embeds;
+        const current = gameStreams[ev.id];
+        if (request !== playerRequest || !current || current.key !== stream.key) {
+          updateWatchButton();
+          return;
+        }
+        current.embeds = embeds;
         updateWatchButton();
-        if (request !== playerRequest || !embeds?.length || gameStreams[ev.id]?.key !== stream.key) return;
-        openPlayer(embeds);
+        const sources = [...new Set([...(embeds || []), ...(current.ppv?.embeds || [])])];
+        if (sources.length) openPlayer(sources);
       });
     }
 
