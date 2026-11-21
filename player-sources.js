@@ -14,7 +14,6 @@
     { name: 'VidZee', resumeMode: 'self', base: 'https://player.vidzee.wtf/embed', protocol: 'history' },
     { name: 'Viduki 3 · Multi Embeds', resumeMode: 'self',base: 'https://www.viduki.net/3', protocol: 'history', api: 3 },
     { name: 'Viduki 4 · Premium Embeds', resumeMode: 'self',base: 'https://www.viduki.net/4', protocol: 'history', api: 4 },
-    { name: 'VidLink', resumeMode: 'param', resumeParam: 'startAt', base: 'https://vidlink.pro', protocol: 'player', query: 'autoplay=true' },
   ];
 
   function orderSourcesForPopupProtection(sources, enabled) {
@@ -90,7 +89,7 @@
   function initialResumeSource(sources, progress, lastSource) {
     const seconds = resumePosition(progress);
     if (seconds > 0 && Number(progress?.watched) < Number(progress?.duration) * 0.95) {
-      const excluded = ['VidLink', 'Viduki 3 · Multi Embeds', 'Viduki 4 · Premium Embeds'];
+      const excluded = ['Viduki 3 · Multi Embeds', 'Viduki 4 · Premium Embeds'];
       const index = sources.findIndex(source => source.name === lastSource && !excluded.includes(source.name));
       if (index >= 0) return index;
     }
@@ -153,9 +152,9 @@
   function isHealthySourceEvent(update) {
     return !!update && update.state !== "failed";
   }
-  function nextFallbackSource(sources, currentIndex, triedVidFast = false) {
+  function nextFallbackSource(sources, currentIndex, triedVidFast = false, manualSourceOverride = false) {
     const fast = sources.findIndex(source => source.name === 'VidFast');
-    if (!triedVidFast && fast >= 0 && currentIndex !== fast) return {index:fast, triedVidFast:true};
+    if (!manualSourceOverride && !triedVidFast && fast >= 0 && currentIndex !== fast) return {index:fast, triedVidFast:true};
     return {index:(currentIndex + 1) % sources.length, triedVidFast:true};
   }
   function resumeUrl(source, progress) {

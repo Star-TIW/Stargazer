@@ -1,23 +1,16 @@
 const assert = require('node:assert/strict');
 const test = require('node:test');
 const sourcesApi = require('../player-sources.js');
-const sources = [
-  {name:'VidUP', resumeMode:'param'},
-  {name:'VidLink', resumeMode:'param'},
-  {name:'VidFast', resumeMode:'param'},
-  {name:'VidRock', resumeMode:'self'},
-  {name:'VidZee', resumeMode:'self'},
-  ...[1,2,3,4].map(i=>({name:'Viduki '+i+[' · Multi Server',' · Multi Language',' · Multi Embeds',' · Premium Embeds'][i-1], resumeMode:'self'}))
-];
+const sources = sourcesApi.buildSources({tmdbID:550,mediaType:'movie'},'https://vidup.to/movie/550');
 const progress = {watched:1394,duration:3600};
 test('param source stays selected',()=>assert.equal(sourcesApi.decideResume(sources,1,progress,'VidUP').index,1));
-test('same self source stays selected',()=>assert.equal(sourcesApi.decideResume(sources,3,progress,'VidRock').index,3));
-test('different self source routes to param',()=>assert.equal(sourcesApi.decideResume(sources,4,progress,'VidRock').index,0));
-test('prefer previous param source',()=>assert.equal(sourcesApi.decideResume(sources,5,progress,'VidFast').index,2));
-test('all Viduki variants redirect when different',()=>{for(let i=5;i<9;i++) assert.equal(sourcesApi.decideResume(sources,i,progress,'VidRock').index,0)});
-test('manual override preserves self source',()=>assert.equal(sourcesApi.decideResume(sources,4,progress,'VidRock',true).index,4));
-test('under 30 seconds does not redirect',()=>assert.equal(sourcesApi.decideResume(sources,4,{watched:20,duration:3600},'VidUP').index,4));
-test('over 95 percent does not redirect',()=>assert.equal(sourcesApi.decideResume(sources,4,{watched:3500,duration:3600},'VidUP').index,4));
+test('same self source stays selected',()=>assert.equal(sourcesApi.decideResume(sources,5,progress,'VidRock').index,5));
+test('different self source routes to param',()=>assert.equal(sourcesApi.decideResume(sources,6,progress,'VidRock').index,0));
+test('prefer previous param source',()=>assert.equal(sourcesApi.decideResume(sources,3,progress,'VidFast').index,1));
+test('all Viduki variants redirect when different',()=>{for(const i of [3,4,7,8]) assert.equal(sourcesApi.decideResume(sources,i,progress,'VidRock').index,0)});
+test('manual override preserves self source',()=>assert.equal(sourcesApi.decideResume(sources,6,progress,'VidRock',true).index,6));
+test('under 30 seconds does not redirect',()=>assert.equal(sourcesApi.decideResume(sources,6,{watched:20,duration:3600},'VidUP').index,6));
+test('over 95 percent does not redirect',()=>assert.equal(sourcesApi.decideResume(sources,6,{watched:3500,duration:3600},'VidUP').index,6));
 test('supported TV options and no guessed self resume params',()=>{
  const built=sourcesApi.buildSources({tmdbID:123,mediaType:'tv',season:1,episode:2},'https://vidup.to/tv/123/1/2');
  for(const name of ['VidRock','VidZee']) assert.equal(new URL(built.find(p=>p.name===name).url).searchParams.get('autonext'),'true');
@@ -26,7 +19,7 @@ test('supported TV options and no guessed self resume params',()=>{
 
 test('initial resume reopens saving sources but excludes non-working or non-saving providers',()=>{
  const saved={watched:610,duration:3600};
- const excluded=new Set(['VidLink','Viduki 3 · Multi Embeds','Viduki 4 · Premium Embeds']);
+ const excluded=new Set(['Viduki 3 · Multi Embeds','Viduki 4 · Premium Embeds']);
  for(const provider of [...sources,{name:'Vidy',resumeMode:'param'}]){
    const list=provider.name==='Vidy'?[...sources,provider]:sources;
    const idx=list.findIndex(p=>p.name===provider.name);
@@ -34,7 +27,7 @@ test('initial resume reopens saving sources but excludes non-working or non-savi
      excluded.has(provider.name)?0:idx,provider.name);
  }
  assert.equal(sourcesApi.initialResumeSource(sources,{watched:0,duration:3600},'VidFast'),0);
- assert.equal(sourcesApi.initialResumeSource(sources,{watched:20,duration:3600},'VidRock'),3);
+ assert.equal(sourcesApi.initialResumeSource(sources,{watched:20,duration:3600},'VidRock'),5);
 });
 
 test('low samples cannot overwrite a checkpoint before sixty seconds',()=>{
@@ -51,6 +44,32 @@ test('fallback tries VidFast before continuing through the ordered list',()=>{
  assert.equal(sources[first.index].name,'VidFast');
  const next=sourcesApi.nextFallbackSource(sources,first.index,first.triedVidFast);
  assert.equal(next.index,first.index+1);
+});
+
+test('Switch source cycles every provider in order and wraps from Viduki 4 to VidUP',()=>{
+ const expected=['VidUP','VidFast','Vidy','Viduki 1 · Multi Server','Viduki 2 · Multi Language','VidRock','VidZee','Viduki 3 · Multi Embeds','Viduki 4 · Premium Embeds','VidUP'];
+ const visited=[sources[0].name];
+ let index=0;
+ for(let n=1;n<expected.length;n++){
+   index=(index+1)%sources.length;
+   visited.push(sources[index].name);
+ }
+ assert.deepEqual(visited,expected);
+});
+test('manual switch failures always proceed to next source, including wrap to VidUP',()=>{
+ for(let index=0;index<sources.length;index++){
+   for(const triedVidFast of [false,true]){
+     const next=sourcesApi.nextFallbackSource(sources,index,triedVidFast,true);
+     assert.equal(next.index,(index+1)%sources.length,sources[index].name);
+   }
+ }
+ const final=sourcesApi.nextFallbackSource(sources,sources.length-1,false,true);
+ assert.equal(sources[final.index].name,'VidUP');
+});
+test('VidLink is completely absent from the shipped provider catalog',()=>{
+ assert.equal(sources.length,9);
+ assert.equal(sources.some(source=>source.name==='VidLink'||source.origin==='https://vidlink.pro'),false);
+ assert.equal(sourcesApi.providers.some(source=>source.name==='VidLink'),false);
 });
 
 test('history MEDIA_DATA is a healthy event and must cancel fallback',()=>{

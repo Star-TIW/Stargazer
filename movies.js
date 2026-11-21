@@ -781,7 +781,7 @@ function createMovieCard(movie, autoplay = false) {
           return;
         }
         if (failoverCount >= sources.length + 1) return;
-        const nextSource = window.StargazerSources.nextFallbackSource(sources, index, triedVidFast);
+        const nextSource = window.StargazerSources.nextFallbackSource(sources, index, triedVidFast, manualSourceOverride);
         triedVidFast = nextSource.triedVidFast;
         index = nextSource.index;
         failoverCount++;

@@ -73,7 +73,7 @@ test("security headers, no-referrer embeds, and service-worker updates are deplo
   assert.deepEqual(vercelHeaders[1], {source:"/service-worker.js",headers:[{key:"Cache-Control",value:"no-cache, no-store, must-revalidate"}]});
   assert.match(read("index.html"), /id="video-iframe"[^>]*referrerpolicy="no-referrer"/);
   assert.match(read("provider-frame.js"), /frame\.referrerPolicy = "no-referrer"/);
-  assert.match(read("service-worker.js"), /stargazer-cache-v35/);
+  assert.match(read("service-worker.js"), /stargazer-cache-v36/);
 });
 
 function providerSession() {
@@ -189,7 +189,7 @@ test("protected source failure gives settings guidance without cycling providers
   assert.match(fallback, /if \(popupProtectionEnabled\(\)\)/);
   assert.match(fallback, /Turn off Block player popups and redirects/);
   assert.ok(fallback.indexOf("return;") < fallback.indexOf("nextFallbackSource"), "protected branch must exit before switching");
-  assert.match(fallback, /nextFallbackSource\(sources, index, triedVidFast\)/);
+  assert.match(fallback, /nextFallbackSource\(sources, index, triedVidFast, manualSourceOverride\)/);
 });
 
 test("settings particle configuration matches main-compatible preview wiring", () => {
@@ -311,19 +311,18 @@ test("mobile player toolbar spans viewport and loader caption is optically cente
 
 test("unprotected source ranking follows observed resume reliability", () => {
   const {providers,buildSources,orderSourcesForPopupProtection} = require("../player-sources.js");
-  const expected = ["VidUP","VidFast","Vidy","Viduki 1 · Multi Server","Viduki 2 · Multi Language","VidRock","VidZee","Viduki 3 · Multi Embeds","Viduki 4 · Premium Embeds","VidLink"];
+  const expected = ["VidUP","VidFast","Vidy","Viduki 1 · Multi Server","Viduki 2 · Multi Language","VidRock","VidZee","Viduki 3 · Multi Embeds","Viduki 4 · Premium Embeds"];
   assert.deepEqual(providers.map(p => p.name), expected);
   const sources = buildSources({tmdbID:550,mediaType:"movie"}, "https://vidup.to/movie/550");
   assert.deepEqual(orderSourcesForPopupProtection(sources,false).map(p => p.name), expected);
   assert.equal(orderSourcesForPopupProtection(sources,true)[0].name,"VidZee");
 });
 
-test("Vidy successful iframe load cancels fallback while VidLink can still time out", () => {
+test("Vidy successful iframe load cancels fallback", () => {
   const js = read("movies.js");
   assert.match(js, /\(provider\.protocol === "history" \|\| provider\.protocol === "vidy"\) && videoFrame\?\.dataset\?\.loaded === "true"/);
   assert.match(js, /if \(provider\.protocol === "history" \|\| provider\.protocol === "vidy"\) clearTimeout\(sourceWatchdog\)/);
   assert.match(js, /frame\.dataset\.loaded = "true"/);
-  assert.doesNotMatch(js, /provider\.name === "VidLink"\) clearTimeout\(sourceWatchdog\)/);
 });
 
 test("resume notice names its actual destination, never the currently selected self-resume source", () => {
@@ -345,13 +344,13 @@ test("settings particle layer is viewport-anchored and canvas fills it on mobile
   assert.match(layer[1], /pointer-events:\s*none\s*;/);
   assert.match(layer[1], /z-index:\s*0\s*;/);
   assert.match(html, /#particles-js\s*>\s*canvas\s*\{[^}]*width:\s*100%\s*;[^}]*height:\s*100%\s*;/);
-  assert.match(read("service-worker.js"), /stargazer-cache-v35/);
+  assert.match(read("service-worker.js"), /stargazer-cache-v36/);
 });
 
 test("last saved provider is reopened and low-percent progress remains visible", () => {
   const {buildSources,initialResumeSource} = require("../player-sources.js");
   const sources = buildSources({tmdbID:550,mediaType:"movie"},"https://vidup.to/movie/550");
-  const excluded = new Set(["VidLink","Viduki 3 · Multi Embeds","Viduki 4 · Premium Embeds"]);
+  const excluded = new Set(["Viduki 3 · Multi Embeds","Viduki 4 · Premium Embeds"]);
   for (const provider of sources) {
     assert.equal(initialResumeSource(sources,{watched:46,duration:8348},provider.name),
       excluded.has(provider.name) ? 0 : sources.findIndex(source => source.name === provider.name), provider.name);

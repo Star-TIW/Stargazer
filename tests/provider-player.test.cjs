@@ -3,9 +3,9 @@ const assert = require('node:assert/strict');
 const { buildSources, decodeEvent } = require('../player-sources.js');
 const context = { tmdbID: '550', mediaType: 'movie' };
 const primary = 'https://vidup.to/movie/550?startAt=120';
-test('ten unique HTTPS sources preserve the primary resume URL', () => {
+test('nine unique HTTPS sources preserve the primary resume URL', () => {
   const sources = buildSources(context, primary);
-  assert.equal(sources.length, 10); assert.equal(new Set(sources.map(x => x.url)).size, 10);
+  assert.equal(sources.length, 9); assert.equal(new Set(sources.map(x => x.url)).size, 9);
   assert.equal(sources[0].url, primary);
   assert.ok(sources.every(s => new URL(s.url).protocol === 'https:'));
 });
@@ -20,7 +20,7 @@ test('custom providers are validated, deduplicated, capped, and cannot displace 
   assert.equal(sources.length, 10); assert.equal(sources[0].name, 'VidUP');
   assert.equal(sources[1].origin, 'https://custom.example');
 });
-test('documented VidLink and VidRock mtmdbId must match', () => {
+test('documented player event mtmdbId must match', () => {
   const source = { protocol: 'player' };
   assert.equal(decodeEvent(source, {type:'PLAYER_EVENT',data:{event:'play',mtmdbId:550}}, context).state, 'ready');
   assert.equal(decodeEvent(source, {type:'PLAYER_EVENT',data:{event:'play',mtmdbId:551}}, context), null);
@@ -46,7 +46,7 @@ test('TV history uses the selected episode rather than another episode progress'
   assert.equal(decodeEvent({protocol:'history'},payload,tv).time,30);
 });
 
-test('all ten providers expose seconds and duration for the shared progress store', () => {
+test('all nine providers expose seconds and duration for the shared progress store', () => {
   for (const source of buildSources(context, primary)) {
     const history = {'550': {id:550,type:'movie',progress:{watched:120.5,duration:600}}};
     const update = decodeEvent(source, {type:'MEDIA_DATA',data:JSON.stringify(history)}, context);
@@ -67,7 +67,7 @@ test('resume uses the current episode position and each documented parameter', (
   const tv = {...context,mediaType:'tv',season:2,episode:3};
   for (const source of buildSources(tv, 'https://vidup.to/tv/550/2/3')) {
     const url = new URL(resumeUrl(source,{watched:151.9,duration:900}));
-    const key = {VidUP:'startAt',VidFast:'startAt',VidLink:'startAt',Vidy:'progress'}[source.name];
+    const key = {VidUP:'startAt',VidFast:'startAt',Vidy:'progress'}[source.name];
     if (key) assert.equal(url.searchParams.get(key),'151',source.name);
     else assert.equal(url.href,source.url);
     const finished = new URL(resumeUrl(source,{watched:899,duration:900}));
