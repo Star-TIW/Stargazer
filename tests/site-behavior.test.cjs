@@ -171,7 +171,7 @@ test("a provider failure offers source switching without an automatic retry", ()
   assert.deepEqual(s.events, ["failed"]);
 });
 
-test("popup protection applies on every source, including downloads and live streams", () => {
+test("popup protection applies to movie, episode and download frames", () => {
   let choice = null;
   const context = vm.createContext({localStorage:{getItem:() => choice}});
   vm.runInContext(read("provider-frame.js"), context);
@@ -190,7 +190,6 @@ test("popup protection applies on every source, including downloads and live str
   assert.equal(attributes.has("sandbox"), false);
   assert.ok(read("movies.js").includes("configureExternalFrame(videoFrame, true)"));
   assert.ok(read("movies.js").includes("configureExternalFrame(frame)"));
-  assert.ok(read("live/live.js").includes("configureExternalFrame(videoIframe)"));
 });
 
 test("popup protection starts movie and episode embeds on VidZee, with all sources reachable", () => {
@@ -442,13 +441,15 @@ test("live player shows the current provider and cycles back to the first feed",
   const button = { append() {}, setAttribute(key, value) { this[key] = value; } };
   const context = vm.createContext({
     document: { createElement: tag => tag === "button" ? button : { setAttribute() {} } },
-    configureExternalFrame() {}, videoIframe: {}, button
+    videoIframe: { sandbox: true, removeAttribute(key) { delete this[key]; } }, button
   });
   vm.runInContext(live.slice(live.indexOf("  let activeEmbeds"), live.indexOf("  const openPlayer"))
     + live.slice(live.indexOf("  nextSource.onclick"), live.indexOf("  const setupVideoOverlay")), context);
   vm.runInContext('activeEmbeds = [...namedSources(["a"], "StreamFree"), ...namedSources(["b", "c"], "PPV.ST")]; showEmbed()', context);
   for (const [url, name] of [["a", "StreamFree"], ["b", "PPV.ST"], ["c", "PPV.ST 2"], ["a", "StreamFree"]]) {
     assert.equal(context.videoIframe.src, url);
+    assert.equal("sandbox" in context.videoIframe, false);
+    context.videoIframe.sandbox = true;
     assert.equal(vm.runInContext("sourceLabel.textContent", context), name);
     button.onclick();
   }

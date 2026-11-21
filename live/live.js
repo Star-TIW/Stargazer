@@ -149,7 +149,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const showEmbed = () => {
     const source = activeEmbeds[activeEmbedIndex];
-    configureExternalFrame(videoIframe);
+    videoIframe.referrerPolicy = "no-referrer";
+    videoIframe.removeAttribute("sandbox");
     videoIframe.src = source.url;
     sourceLabel.textContent = source.name;
     nextSource.hidden = false;
@@ -485,6 +486,7 @@ document.addEventListener("DOMContentLoaded", () => {
       watchBtn.style.opacity = 0.6;
       watchBtn.style.cursor = "not-allowed";
 
+      const broadcasters = [...new Set((comp.broadcasts || []).flatMap(b => b.names || []).filter(Boolean))];
       const showTime = new Date(gameStart.getTime() - 10 * 60 * 1000);
       let checking = false;
       const updateWatchButton = () => {
@@ -500,6 +502,7 @@ document.addEventListener("DOMContentLoaded", () => {
         } else if (now >= showTime) {
           watchBtn.innerText = (streamLookupFailed || stream?.embeds === null) ? "Stream lookup unavailable"
             : stream?.key ? "Stream listed, feed offline" : "No matching live listing";
+          if (broadcasters.length) watchBtn.innerText += " · " + broadcasters.join(" / ");
           watchBtn.disabled = true;
           watchBtn.style.opacity = 0.6;
           watchBtn.style.cursor = "not-allowed";
