@@ -64,7 +64,7 @@ test("both hosts use the same restrictive CSP and permit every configured frame 
 test("ESPN team logos are permitted and removed VidLink frames are blocked on both hosts", () => {
   const policy = JSON.parse(read("vercel.json")).headers[0].headers.find(h => h.key === "Content-Security-Policy").value;
   assert.ok(read("_headers").includes(policy), "Cloudflare and Vercel CSP match");
-  const directive = name => policy.split(";").find(part => part.trim().startsWith(name + " "))?.trim().split(/\\s+/).slice(1) || [];
+  const directive = name => policy.split(";").find(part => part.trim().startsWith(name + " "))?.trim().split(/\s+/).slice(1) || [];
   assert.ok(directive("img-src").includes("https://a.espncdn.com"));
   assert.ok(!directive("frame-src").includes("https://vidlink.pro"));
 });
