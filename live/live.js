@@ -543,9 +543,12 @@ document.addEventListener("DOMContentLoaded", () => {
         }
         current.embeds = embeds;
         updateWatchButton();
-        const sources = [...namedSources(embeds, "StreamFree"), ...namedSources(current.ppv?.embeds, "PPV.ST"), ...namedSources(current.tim, "TimStreams")];
+        // Prefer primary feeds. TimStreams and Matchora can display a sandbox warning
+        // from their own nested player, even though Stargazer does not sandbox its iframe.
+        // Keep them selectable, but only after the other matched providers.
+        const sources = [...namedSources(embeds, "StreamFree"), ...namedSources(current.ppv?.embeds, "PPV.ST"), ...current.dami];
+        sources.push(...namedSources(current.tim, "TimStreams"));
         if (current.matchora) sources.push({ url: current.matchora, name: "Matchora" });
-        sources.push(...current.dami);
         if (sources.length) openPlayer(sources);
       });
     }
