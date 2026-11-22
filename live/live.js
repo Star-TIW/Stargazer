@@ -494,7 +494,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const now = new Date();
         const stream = gameStreams[ev.id];
 
-        if (now >= showTime && (stream?.embeds?.length || stream?.ppv?.embeds.length || stream?.tim?.length || stream?.matchora)) {
+        if (now >= showTime && (stream?.embeds?.length || stream?.ppv?.embeds.length || stream?.tim?.length || stream?.matchora || stream?.dami?.length)) {
           watchBtn.innerText = "Watch Live";
           watchBtn.disabled = false;
           watchBtn.style.opacity = 1;
@@ -536,6 +536,7 @@ document.addEventListener("DOMContentLoaded", () => {
         updateWatchButton();
         const sources = [...namedSources(embeds, "StreamFree"), ...namedSources(current.ppv?.embeds, "PPV.ST"), ...namedSources(current.tim, "TimStreams")];
         if (current.matchora) sources.push({ url: current.matchora, name: "Matchora" });
+        sources.push(...current.dami);
         if (sources.length) openPlayer(sources);
       });
     }
@@ -610,8 +611,8 @@ document.addEventListener("DOMContentLoaded", () => {
       const eligibleEvents = events.filter(ev => !ev.competitions?.[0]?.status?.type?.completed &&
         Date.parse(ev.date) <= Date.now() + 10 * 60 * 1000);
       if (eligibleEvents.length) {
-        const [streamFreeStreams, ppvGroups, timFeeds, matchoraEvents] = await Promise.all([
-          fetchStreamFreeStreams(sportConfig), PpvSports.listings(), TimStreams.listings(), Matchora.listings()
+        const [streamFreeStreams, ppvGroups, timFeeds, matchoraEvents, damiEvents] = await Promise.all([
+          fetchStreamFreeStreams(sportConfig), PpvSports.listings(), TimStreams.listings(), Matchora.listings(), DamiTV.listings()
         ]);
         const ppvEvents = PpvSports.events(ppvGroups, sport);
         lookupFailed = streamFreeStreams === null || ppvGroups === null || timFeeds === null || matchoraEvents === null;
@@ -620,8 +621,9 @@ document.addEventListener("DOMContentLoaded", () => {
           const ppv = findStreamForEvent(ev, ppvEvents);
           const tim = Array.from(timFeeds?.get(String(ev.id)) || []);
           const matchora = Matchora.find(matchoraEvents, sport, ev);
-          if (!stream?.stream_key && !ppv && !tim.length && !matchora) return;
-          nextGameStreams[ev.id] = { ppv, tim, matchora, key: stream?.stream_key,
+          const dami = DamiTV.find(damiEvents, sport, ev, findStreamForEvent);
+          if (!stream?.stream_key && !ppv && !tim.length && !matchora && !dami.length) return;
+          nextGameStreams[ev.id] = { ppv, tim, matchora, dami, key: stream?.stream_key,
             embeds: stream?.stream_key ? await getLiveSources(stream.stream_key) : [] };
         }));
       }
