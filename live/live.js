@@ -494,7 +494,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const now = new Date();
         const stream = gameStreams[ev.id];
 
-        if (now >= showTime && (stream?.embeds?.length || stream?.ppv?.embeds.length || stream?.tim?.length)) {
+        if (now >= showTime && (stream?.embeds?.length || stream?.ppv?.embeds.length || stream?.tim?.length || stream?.matchora)) {
           watchBtn.innerText = "Watch Live";
           watchBtn.disabled = false;
           watchBtn.style.opacity = 1;
@@ -535,6 +535,7 @@ document.addEventListener("DOMContentLoaded", () => {
         current.embeds = embeds;
         updateWatchButton();
         const sources = [...namedSources(embeds, "StreamFree"), ...namedSources(current.ppv?.embeds, "PPV.ST"), ...namedSources(current.tim, "TimStreams")];
+        if (current.matchora) sources.push({ url: current.matchora, name: "Matchora" });
         if (sources.length) openPlayer(sources);
       });
     }
@@ -609,17 +610,18 @@ document.addEventListener("DOMContentLoaded", () => {
       const eligibleEvents = events.filter(ev => !ev.competitions?.[0]?.status?.type?.completed &&
         Date.parse(ev.date) <= Date.now() + 10 * 60 * 1000);
       if (eligibleEvents.length) {
-        const [streamFreeStreams, ppvGroups, timFeeds] = await Promise.all([
-          fetchStreamFreeStreams(sportConfig), PpvSports.listings(), TimStreams.listings()
+        const [streamFreeStreams, ppvGroups, timFeeds, matchoraEvents] = await Promise.all([
+          fetchStreamFreeStreams(sportConfig), PpvSports.listings(), TimStreams.listings(), Matchora.listings()
         ]);
         const ppvEvents = PpvSports.events(ppvGroups, sport);
-        lookupFailed = streamFreeStreams === null || ppvGroups === null || timFeeds === null;
+        lookupFailed = streamFreeStreams === null || ppvGroups === null || timFeeds === null || matchoraEvents === null;
         await Promise.all(eligibleEvents.map(async ev => {
           const stream = findStreamForEvent(ev, streamFreeStreams || []);
           const ppv = findStreamForEvent(ev, ppvEvents);
           const tim = Array.from(timFeeds?.get(String(ev.id)) || []);
-          if (!stream?.stream_key && !ppv && !tim.length) return;
-          nextGameStreams[ev.id] = { ppv, tim, key: stream?.stream_key,
+          const matchora = Matchora.find(matchoraEvents, sport, ev);
+          if (!stream?.stream_key && !ppv && !tim.length && !matchora) return;
+          nextGameStreams[ev.id] = { ppv, tim, matchora, key: stream?.stream_key,
             embeds: stream?.stream_key ? await getLiveSources(stream.stream_key) : [] };
         }));
       }
