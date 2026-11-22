@@ -469,3 +469,19 @@ test("full team names outweigh a shared State suffix in college football listing
   const correct = { name: "NC State Wolfpack vs Florida State Seminoles" };
   assert.equal(match(event, [{ name: "Ohio State vs Penn State" }, correct]), correct);
 });
+
+test("MLS full-time matches have no Watch button, while the second half and extra time stay eligible", () => {
+  const live = read("live/live.js");
+  const finished = vm.runInNewContext(live.slice(live.indexOf("  const gameStatus"), live.indexOf("  // ---------- Render Game Card")) + "\ngameFinished");
+  for (const [status, expected] of [
+    [{ completed: true, state: "post", shortDetail: "FT" }, true],
+    [{ state: "post", shortDetail: "FT-Pens" }, true],
+    [{ completed: false, state: "in", shortDetail: "67'" }, false],
+    [{ state: "in", shortDetail: "ET" }, false]
+  ]) {
+    assert.equal(finished({ competitions: [{ status: { type: status } }] }), expected);
+    assert.equal(finished({ status: { type: status } }), expected);
+  }
+  assert.ok(live.includes('${gameFinished(ev) ? "" : `<div'));
+  assert.ok(live.includes("events.filter(ev => !gameFinished(ev)"));
+});

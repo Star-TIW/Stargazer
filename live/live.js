@@ -408,6 +408,12 @@ document.addEventListener("DOMContentLoaded", () => {
     return null;
   };
 
+  const gameStatus = ev => ev.competitions?.[0]?.status?.type || ev.status?.type || {};
+  const gameFinished = ev => {
+    const status = gameStatus(ev);
+    return status.completed === true || status.state === "post";
+  };
+
   // ---------- Render Game Card ----------
   const renderGameCard = (ev) => {
     const comp = ev.competitions?.[0] || {};
@@ -416,7 +422,10 @@ document.addEventListener("DOMContentLoaded", () => {
     const away = competitors.find(t => t.homeAway === "away") || competitors[1] || {};
     const startIso = ev.date;
     const startText = formatStartTime(startIso);
-    const statusText = comp.status?.type?.shortDetail || comp.status?.type?.description || "Scheduled";
+    const status = gameStatus(ev);
+    const statusText = gameFinished(ev)
+      ? status.detail && status.detail !== "FT" ? status.detail : status.description || "Full Time"
+      : status.shortDetail || status.description || "Scheduled";
     const homeScore = home.score ?? "-";
     const awayScore = away.score ?? "-";
     const gameStart = new Date(startIso);
@@ -442,7 +451,7 @@ document.addEventListener("DOMContentLoaded", () => {
         ${escapeHtml(away.team?.abbreviation || "AW")}: ${escapeHtml(String(awayScore))} &nbsp; - &nbsp;
         ${escapeHtml(home.team?.abbreviation || "HM")}: ${escapeHtml(String(homeScore))}
       </div>
-      ${statusText.includes("Final") ? "" : `<div style="margin-top:10px;display:flex;gap:8px;justify-content:center;"><button class="watch-btn">Available 10 mins before start</button></div>`}
+      ${gameFinished(ev) ? "" : `<div style="margin-top:10px;display:flex;gap:8px;justify-content:center;"><button class="watch-btn">Available 10 mins before start</button></div>`}
     `;
 
     // Favorite star
@@ -596,19 +605,12 @@ document.addEventListener("DOMContentLoaded", () => {
       const upcomingEvents = events.filter(ev => new Date(ev.date) >= todayEnd);
 
       // Sort today's games so non-final are above finals
-      todayEvents.sort((a, b) => {
-        const aStatus = a.competitions?.[0]?.status?.type?.description?.toLowerCase() || "";
-        const bStatus = b.competitions?.[0]?.status?.type?.description?.toLowerCase() || "";
-        const aFinal = aStatus.includes("final");
-        const bFinal = bStatus.includes("final");
-        if (aFinal === bFinal) return 0;
-        return aFinal ? 1 : -1;
-      });
+      todayEvents.sort((a, b) => Number(gameFinished(a)) - Number(gameFinished(b)));
 
       // ---------- StreamFree API ----------
       const nextGameStreams = {};
       let lookupFailed = false;
-      const eligibleEvents = events.filter(ev => !ev.competitions?.[0]?.status?.type?.completed &&
+      const eligibleEvents = events.filter(ev => !gameFinished(ev) &&
         Date.parse(ev.date) <= Date.now() + 10 * 60 * 1000);
       if (eligibleEvents.length) {
         const [streamFreeStreams, ppvGroups, timFeeds, matchoraEvents, damiEvents] = await Promise.all([
