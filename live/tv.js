@@ -129,6 +129,9 @@
       const artwork=document.createElement("div");
       artwork.className="sg-tv-artwork";
       artwork.setAttribute("aria-hidden","true");
+      // SVG artwork fallback is local, so cards remain branded when a remote logo fails.
+      const fallbackSvg=`<svg xmlns="http://www.w3.org/2000/svg" width="600" height="350" viewBox="0 0 600 350"><rect width="600" height="350" fill="#292516"/><text x="300" y="190" text-anchor="middle" font-family="Arial,sans-serif" font-size="110" font-weight="bold" fill="#d7ba66">${channel.name.replace(/[&<>"]/g,"").slice(0,10)}</text></svg>`;
+      artwork.style.backgroundImage="url("+JSON.stringify("data:image/svg+xml;charset=utf-8,"+encodeURIComponent(fallbackSvg))+")";
       if(channel.poster){
         const img=new Image();
         img.referrerPolicy="no-referrer";
