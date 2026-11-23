@@ -28,16 +28,3 @@
 #sg-tv-live-list .sg-tv-source-count{color:#ddd;font-size:.79rem}
 @media(prefers-reduced-motion:reduce){#sg-tv-live-list .sg-tv-artwork{filter:none;transform:none}}
 
-
-.sg-stream-search{position:fixed;z-index:88;top:135px;left:50%;transform:translateX(-50%);width:min(650px,calc(100% - 26px));display:flex;align-items:center;gap:12px;padding:9px 12px;border:1px solid #8e8347;border-radius:14px;background:rgba(22,22,19,.96);box-shadow:0 8px 25px #0008;color:#efef88}
-.sg-stream-search label{font-weight:750;white-space:nowrap;font-size:.85rem}
-.sg-search-controls{display:flex;flex:1;min-width:0;gap:8px}
-.sg-search-controls input{width:100%;min-width:0;padding:10px 12px;border:1px solid #605b3b;border-radius:10px;background:#101010;color:#fff;outline:none;font:inherit}
-.sg-search-controls input:focus{border-color:#efef88;box-shadow:0 0 0 2px #efef8830}
-.sg-search-controls button{display:grid;place-items:center;flex:none;width:43px;border:1px solid #777048;border-radius:10px;background:#302c1f;color:#efef88;cursor:pointer}
-.sg-search-controls button:hover{background:#49412b}
-.sg-spinning svg{animation:sg-reload .6s ease}
-@keyframes sg-reload{to{transform:rotate(360deg)}}
-.live-scroll-container{top:211px!important;height:calc(100% - 211px)!important}
-#sg-tv-live-list .game-card[hidden],#today-games .game-card[hidden],#upcoming-games .game-card[hidden]{display:none!important}
-@media(max-width:520px){.sg-stream-search{top:135px;gap:6px;flex-direction:column;align-items:stretch;padding:7px 10px}.sg-stream-search label{font-size:.75rem}.live-scroll-container{top:230px!important;height:calc(100% - 230px)!important}}
