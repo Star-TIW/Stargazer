@@ -16,11 +16,11 @@
 #sg-tv-live-list .sg-tv-artwork{
  position:absolute;inset:-12px;z-index:-2;pointer-events:none;
  background-position:center;background-repeat:no-repeat;background-size:cover;
- opacity:.23;filter:blur(9px) saturate(.85);transform:scale(1.08);
+ opacity:.48;filter:blur(2.5px) saturate(.95);transform:scale(1.03);
 }
 #sg-tv-live-list .sg-tv-card::before{
  content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;
- background:linear-gradient(145deg,rgba(223,185,76,.20),rgba(12,12,12,.56) 60%,rgba(193,155,60,.14));
+ background:linear-gradient(145deg,rgba(223,185,76,.10),rgba(12,12,12,.40) 60%,rgba(193,155,60,.07));
 }
 #sg-tv-live-list .sg-tv-card>*:not(.sg-tv-artwork){position:relative;z-index:1}
 #sg-tv-live-list .sg-tv-channel-name{font-weight:800;font-size:1.18rem;overflow-wrap:anywhere;text-shadow:0 2px 12px #000}
