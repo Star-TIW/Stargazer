@@ -9,6 +9,7 @@
   
   <link rel="stylesheet" href="/home.css" />
   <link rel="stylesheet" href="live.css" />
+  <link rel="stylesheet" href="/live/multiview.css" />
   <link rel="manifest" href="/manifest.json">
 <meta name="theme-color" content="#efef88">
 
@@ -62,6 +63,24 @@
     </div>
 
     <main class="live-container">
+      <section id="sg-multiview" aria-label="Multi-view">
+        <button type="button" class="mv-toggle" aria-expanded="false" aria-controls="mv-panel">Multi-view</button>
+        <div class="mv-panel" id="mv-panel" hidden>
+          <div class="mv-head">
+            <h2>Multi-view</h2>
+            <div class="mv-actions">
+              <label for="mv-layout">Layout</label>
+              <select class="mv-layout" id="mv-layout"><option value="2">Dual</option><option value="4">Quad</option></select>
+              <button type="button" class="mv-start" disabled>Start streams</button>
+              <button type="button" class="mv-stop" disabled>Stop all</button>
+            </div>
+          </div>
+          <p class="mv-count">0 / 2 selected</p>
+          <div class="mv-picker" aria-label="Select live games"></div>
+          <div class="mv-stage" hidden></div>
+          <p class="mv-note">Players load together when you press Start. Third-party players may block autoplay and do not expose reliable audio or pause controls to Stargazer.</p>
+        </div>
+      </section>
 
       <!-- Today’s Games Section -->
       <div class="games-section">
@@ -91,6 +110,7 @@
   <script src="/live/matchora.js"></script>
   <script src="/live/timstreams.js"></script>
   <script src="/live/ppv.js"></script>
+  <script src="/live/multiview.js"></script>
   <script src="/live/live.js"></script>
   <script src="/particles.min.js"></script>
   <script src="/particle-config.js"></script>
