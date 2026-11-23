@@ -641,6 +641,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       pinFavorites(todayGamesList);
       pinFavorites(upcomingGamesList);
+      window.dispatchEvent(new CustomEvent("stargazer:live-games", { detail: { streams: gameStreams } }));
 
     } catch (err) {
       if (request !== scheduleRequest || sport !== currentSport) return;
