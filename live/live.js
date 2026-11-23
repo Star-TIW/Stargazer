@@ -245,6 +245,7 @@ document.addEventListener("DOMContentLoaded", () => {
       hideVideoTimer = setTimeout(() => videoContainer.style.display = "none", 400);
     };
 
+    window.StargazerLiveClosePlayer = hideOverlay;
     closeVideoX.onclick = hideOverlay;
     videoContainer.onclick = (e) => { if (e.target === videoContainer) hideOverlay(); };
   };
