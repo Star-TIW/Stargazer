@@ -548,7 +548,12 @@ body::before {
 }
 
 
-html { scrollbar-gutter: stable; scrollbar-width: auto; }
+/* The browser's reserved scrollbar gutter created the dark vertical strip on desktop.
+   Keep the page centered without reserving an extra column. */
+@media (min-width: 769px) and (pointer: fine) {
+  html { scrollbar-gutter: auto; scrollbar-width: none; }
+  html::-webkit-scrollbar { display: none; width: 0; height: 0; }
+}
 .site-footer { position: relative; }
 
 
