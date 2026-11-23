@@ -68,10 +68,7 @@
     }
     window.StargazerLiveOpenPlayer(channel.sources);
   };
-  const closePlayer=()=>{
-    // The normal sports player owns its overlay and close controls.
-    // Do not create a second iframe, which can cause audio overlap.
-  };
+  const closePlayer=()=>{ window.StargazerLiveClosePlayer?.(); };
   function status(message){
     list.replaceChildren();
     const card=document.createElement("div");
@@ -144,15 +141,10 @@
   document.querySelectorAll(".sport-btn[data-sport]").forEach(button=>{
     button.addEventListener("click",()=>switchTV(false));
   });
-  const collapse=()=>{
-    const expanded=header.getAttribute("aria-expanded")!=="true";
-    header.setAttribute("aria-expanded",String(expanded));
-    list.hidden=!expanded;
-    header.querySelector(".arrow").textContent=expanded?"▼":"▲";
+  header.onkeydown=event=>{
+    if(event.key==="Enter"||event.key===" "){
+      event.preventDefault();
+      header.click();
+    }
   };
-  header.onclick=collapse;
-  header.onkeydown=e=>{
-    if(e.key==="Enter"||e.key===" "){e.preventDefault();collapse()}
-  };
-  
 })();
