@@ -492,3 +492,25 @@ body.sg-live-player-open { overflow: hidden !important; }
     background: transparent !important;
   }
 }
+
+/* TV loading and empty state uses the same full-width presentation as sports. */
+#tv-channels .tv-status-card,
+.games-list .tv-status-card {
+  grid-column: 1 / -1;
+  justify-self: stretch;
+  align-self: stretch;
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  min-height: 130px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  font-size: clamp(16px,1.3vw,20px);
+  font-weight: 700;
+  color: #efef88;
+  text-align: center;
+}
+#tv-channels .tv-status-card:hover,
+.games-list .tv-status-card:hover { transform: none; }
