@@ -10,6 +10,7 @@
   <link rel="stylesheet" href="/home.css" />
   <link rel="stylesheet" href="live.css" />
   <link rel="stylesheet" href="/live/multiview.css" />
+  <link rel="stylesheet" href="/live/tv.css" />
   <link rel="manifest" href="/manifest.json">
 <meta name="theme-color" content="#efef88">
 
@@ -52,9 +53,14 @@
       <button class="sport-btn" data-sport="nhl" aria-pressed="false">🏒 NHL</button>
       <button class="sport-btn" data-sport="mls" aria-pressed="false">⚽ MLS</button>
       <button class="sport-btn" data-sport="cfb" aria-pressed="false">🏈 College Football</button>
+      <button class="sport-btn" id="sg-tv-tab" type="button" aria-pressed="false">📺 TV</button>
     </div>
   </div>
 
+  <section id="sg-tv" hidden aria-label="TV channels">
+    <div class="sg-tv-heading"><h2>TV Channels</h2><p>Find major networks and free official live channels.</p></div>
+    <div class="sg-tv-grid" id="sg-tv-grid"></div>
+  </section>
   <div class="live-scroll-container">
     <div class="live-banner">
       <div class="banner-text" id="banner-text">
@@ -105,6 +111,7 @@
     </main>
   </div>
 
+  <script src="/live/tv.js"></script>
   <script src="/provider-frame.js"></script>
   <script src="/live/damitv.js"></script>
   <script src="/live/matchora.js"></script>
