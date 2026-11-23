@@ -200,7 +200,7 @@
     }else closePlayer();
   };
   window.addEventListener("stargazer:tv-reload",()=>{loadedAt=0;refresh()});
-  tvButton.onclick=()=>switchTV(section.hidden);
+  tvButton.onclick=()=>{ if(section.hidden) switchTV(true); };
   try{if(localStorage.getItem("selectedSport")==="tv")switchTV(true)}catch{}
   document.querySelectorAll(".sport-btn[data-sport]").forEach(button=>{
     button.addEventListener("click",()=>switchTV(false));
