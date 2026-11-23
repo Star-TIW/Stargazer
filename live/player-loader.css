@@ -225,3 +225,38 @@
 .mv-tile .sg-live-loader .sgl-scene{width:min(190px,52%,35dvh)}
 .mv-tile .sg-live-loader .sgl-subtext{font-size:clamp(7px,.85vw,11px);letter-spacing:.08em}
 @media(prefers-reduced-motion:reduce){.sg-live-loader *{animation:none!important}.sg-live-loader .sgl-scene{opacity:1;transform:translate(-50%,-50%)}}
+
+/* Keep loading text within the visible player, never beneath the tile edge. */
+.sg-live-loader .sgl-scene{height:auto;max-height:none}
+.sg-live-loader .sgl-subtext{
+ position:absolute;
+ top:calc(100% + 10px);
+ bottom:auto;
+ left:50%;
+ right:auto;
+ transform:translateX(-50%);
+ width:max-content;
+ max-width:min(90vw,340px);
+ margin:0;
+ padding:0;
+ white-space:nowrap;
+ text-align:center;
+ font-size:clamp(10px,1.5vw,13px);
+ line-height:1.5;
+ letter-spacing:.09em;
+}
+.sg-mv-shell .mv-screen .sg-live-loader .sgl-scene{
+ width:min(190px,40%,24dvh);
+ top:43%;
+}
+.sg-mv-shell .mv-screen .sg-live-loader .sgl-subtext{
+ top:calc(100% + 9px);
+ max-width:calc(90vw - 40px);
+ font-size:clamp(10px,1.6vw,12px);
+ line-height:1.4;
+ letter-spacing:.08em;
+}
+@media(max-width:700px){
+ .sg-mv-shell .mv-screen .sg-live-loader .sgl-scene{width:min(180px,38%,23dvh);top:42%}
+ .sg-mv-shell .mv-screen .sg-live-loader .sgl-subtext{top:calc(100% + 8px);font-size:11px}
+}
