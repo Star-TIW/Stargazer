@@ -67,8 +67,8 @@
     const rows=Array.isArray(data?.events)?data.events:[];
     const byName=new Map();
     for(const row of rows){
-      if(row?.isevent!==false||row.vip||!Array.isArray(row.streams))continue;
-      const name=String(row.name||row.title||"").trim();
+      if(row?.isevent===true||row.vip||!Array.isArray(row.streams))continue;
+      const name=String(row.name||row.title||row.channel_name||"").trim();
       if(!name)continue;
       const sources=[];
       for(const stream of row.streams){
@@ -81,7 +81,9 @@
       }
       if(!sources.length)continue;
       const key=normalize(name);
-      const saved=byName.get(key)||{name,poster:null,sources:[]};
+      const poster=[row.poster,row.image,row.logo,row.thumbnail].find(value=>typeof value==="string"&&/^https:\/\//.test(value))||null;
+      const saved=byName.get(key)||{name,poster,sources:[]};
+      if(!saved.poster)saved.poster=poster;
       saved.sources.push(...sources);
       byName.set(key,saved);
     }
@@ -124,9 +126,13 @@
       const image=document.createElement("div");
       if(channel.poster){
         const img=document.createElement("img");
-        img.src=channel.poster;img.alt="";img.loading="lazy";img.className="sg-tv-channel-art";
+        img.alt=channel.name+" logo";img.loading="lazy";img.className="sg-tv-channel-art";
+        img.referrerPolicy="no-referrer";
+        img.onerror=()=>{img.remove();const fallback=document.createElement("span");fallback.className="sg-tv-logo-fallback";fallback.textContent=channel.name.slice(0,3).toUpperCase();image.append(fallback)};
+        img.src=channel.poster;
         image.append(img);
       }
+      if(!channel.poster){const fallback=document.createElement("span");fallback.className="sg-tv-logo-fallback";fallback.textContent=channel.name.slice(0,3).toUpperCase();image.append(fallback)}
       const title=document.createElement("div");
       title.className="sg-tv-channel-name";
       title.textContent=channel.name;
