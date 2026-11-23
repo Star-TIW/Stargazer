@@ -28,7 +28,9 @@
       let minTimer = null;
       let safetyTimer = null;
       let fadeTimer = null;
+      const onLoad = () => { loaded = true; showIfReady(); };
       const cleanup = () => {
+        if (frame) frame.removeEventListener("load", onLoad);
         if (settled) return;
         settled = true;
         if (minTimer !== null) clearTimeout(minTimer);
@@ -41,7 +43,6 @@
       const showIfReady = () => { if (loaded && minimumElapsed) cleanup(); };
       minTimer = setTimeout(() => { minimumElapsed = true; showIfReady(); }, OPEN_MS);
       safetyTimer = setTimeout(cleanup, 6500);
-      const onLoad = () => { loaded = true; showIfReady(); };
       if (frame) frame.addEventListener("load", onLoad, {once:true});
       return {close:cleanup, element:overlay};
     }
