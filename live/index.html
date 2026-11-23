@@ -60,6 +60,24 @@
   <section id="sg-tv" class="live-scroll-container" hidden aria-label="Live TV">
     <div class="live-banner"><div class="banner-text">Live TV - Stargazer</div></div>
     <main class="live-container">
+      <section id="sg-tv-multiview" class="sg-mv-root" aria-label="TV Multi-view">
+        <button type="button" class="mv-toggle" aria-expanded="false" aria-controls="tv-mv-panel">Multi-view</button>
+        <div class="mv-panel" id="tv-mv-panel" hidden>
+          <div class="mv-head">
+            <h2>TV Multi-view</h2>
+            <div class="mv-actions">
+              <label for="tv-mv-layout">Layout</label>
+              <select class="mv-layout" id="tv-mv-layout"><option value="2">Dual</option><option value="4">Quad</option></select>
+              <button type="button" class="mv-start" disabled>Start streams</button>
+              <button type="button" class="mv-stop" disabled>Stop all</button>
+            </div>
+          </div>
+          <p class="mv-count">0 / 2 selected</p>
+          <div class="mv-picker" aria-label="Select TV channels"></div>
+          <div class="mv-stage" hidden></div>
+          <p class="mv-note">Choose a channel to focus on.</p>
+        </div>
+      </section>
       <div class="games-section">
         <div class="games-header" id="sg-tv-live-toggle" data-target="sg-tv-live-list" role="button" tabindex="0" aria-expanded="true">
           <h2 class="live-title">Live Now</h2><span class="arrow" aria-hidden="true">▼</span>
@@ -78,7 +96,7 @@
     </div>
 
     <main class="live-container">
-      <section id="sg-multiview" aria-label="Multi-view">
+      <section id="sg-multiview" class="sg-mv-root" aria-label="Multi-view">
         <button type="button" class="mv-toggle" aria-expanded="false" aria-controls="mv-panel">Multi-view</button>
         <div class="mv-panel" id="mv-panel" hidden>
           <div class="mv-head">
