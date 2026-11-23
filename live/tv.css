@@ -1,24 +1,11 @@
-#sg-tv[hidden],.live-scroll-container[hidden],#sg-tv [hidden]{display:none!important}
-#sg-tv{max-width:1200px;margin:16px auto 30px;padding:0 16px;color:#fff;box-sizing:border-box}
-#sg-tv *{box-sizing:border-box}
-.sg-tv-heading{padding:14px 8px}
-.sg-tv-heading h2{color:#efef88;font-size:1.55rem;margin:0 0 5px}
-.sg-tv-heading p{color:#c8c8b6;font-size:.9rem;margin:0}
-#sg-tv .sg-tv-section{margin:10px 0 20px}
-#sg-tv .games-header{cursor:pointer}
-#sg-tv-live-list{padding:10px;display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,280px),1fr));gap:10px;max-height:none!important;opacity:1!important}
-.sg-tv-status{color:#c8c8bd;padding:22px 10px;grid-column:1/-1}
-.sg-tv-channel{display:flex;align-items:center;gap:12px;text-align:left;min-width:0;min-height:90px;padding:10px;background:#1c1d1a;border:1px solid #666746;border-radius:14px;color:#fff;cursor:pointer;transition:transform .2s,border-color .2s}
-.sg-tv-channel:hover,.sg-tv-channel:focus-visible{transform:translateY(-2px);border-color:#efef88}
-.sg-tv-art{width:65px;height:65px;flex-shrink:0;display:grid;place-items:center;background:#292a23;border-radius:10px;overflow:hidden;font-size:1.5rem}
-.sg-tv-art img{width:100%;height:100%;object-fit:contain}
-.sg-tv-info{display:flex;flex:1;flex-direction:column;gap:7px;min-width:0}
-.sg-tv-info strong{font-size:.95rem;overflow-wrap:anywhere}
-.sg-tv-info small{font-size:.72rem;color:#efef88}
-.sg-tv-watch{font-size:.8rem;background:#b5b56a;color:#171717;padding:9px;border-radius:9px;font-weight:800}
-.sg-tv-player{margin:16px 0 24px;background:#111;border:1px solid #77774e;border-radius:15px;overflow:hidden}
-.sg-tv-playerbar{display:flex;gap:8px;align-items:center;padding:10px;background:#25261c}
-.sg-tv-playing{flex:1;min-width:0;font-size:.9rem}
-.sg-tv-playerbar button{border:1px solid #77774e;border-radius:8px;background:#34352b;color:#efef88;padding:9px;cursor:pointer}
-.sg-tv-player iframe{width:100%;height:min(60vw,550px);min-height:230px;border:0;display:block;background:#000}
-@media(max-width:600px){#sg-tv{padding:0 12px}#sg-tv-live-list{grid-template-columns:1fr}.sg-tv-player iframe{height:56vw;min-height:210px}}
+/* TV uses the exact same .games-section, .games-header, .games-list,
+   .game-card and .watch-btn styles as the sports page. */
+#sg-tv[hidden],.live-scroll-container[hidden],#sg-tv-live-list[hidden]{display:none!important}
+#sg-tv{width:100%;min-width:0;box-sizing:border-box}
+#sg-tv .live-container{width:100%}
+#sg-tv-live-list{min-height:90px}
+#sg-tv-live-list .game-card{min-width:0}
+#sg-tv-live-list .sg-tv-channel-art{width:58px;height:58px;object-fit:contain;border-radius:10px;background:#222;margin:auto}
+#sg-tv-live-list .sg-tv-channel-name{font-weight:800;font-size:1.06rem;overflow-wrap:anywhere}
+#sg-tv-live-list .sg-tv-status{color:#efef88;margin-top:9px;font-size:.85rem}
+#sg-tv-live-list .sg-tv-source-count{color:#c5c5be;font-size:.78rem;margin-top:6px}
