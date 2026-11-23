@@ -57,6 +57,13 @@
     </div>
   </div>
 
+  <div class="sg-stream-search" role="search">
+    <label for="sg-stream-query">Search streams</label>
+    <div class="sg-search-controls">
+      <input id="sg-stream-query" type="search" autocomplete="off" placeholder="Search games, teams, or TV channels..." aria-label="Search live streams">
+      <button type="button" id="sg-stream-reload" aria-label="Reload streams" title="Reload streams"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 7v5h-5"/><path d="M4 17v-5h5"/><path d="M5.6 9a7 7 0 0 1 12.1-2L20 12M4 12l2.3 5A7 7 0 0 0 18.4 15"/></svg></button>
+    </div>
+  </div>
   <section id="sg-tv" class="live-scroll-container" hidden aria-label="Live TV">
     <div class="live-banner"><div class="banner-text">Live TV - Stargazer</div></div>
     <main class="live-container">
@@ -139,6 +146,7 @@
   </div>
 
   <script src="/live/tv.js"></script>
+  <script src="/live/search.js"></script>
   <script src="/provider-frame.js"></script>
   <script src="/live/damitv.js"></script>
   <script src="/live/matchora.js"></script>
