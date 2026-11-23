@@ -115,7 +115,8 @@
   function status(message){
     list.replaceChildren();
     const card=document.createElement("div");
-    card.className="game-card";
+    card.className="game-card tv-status-card";
+    card.setAttribute("role","status");
     card.textContent=message;
     list.append(card);
   }
