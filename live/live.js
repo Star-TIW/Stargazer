@@ -261,6 +261,7 @@ document.addEventListener("DOMContentLoaded", () => {
       wrapper.style.transform = "scale(.985)";
       document.body.classList.remove("sg-live-player-open");
       hideVideoTimer = setTimeout(() => {
+        if (videoContainer.style.opacity !== "0") return;
         videoContainer.style.display = "none";
         videoContainer.classList.remove("is-open");
         wrapper.style.transform = "";
