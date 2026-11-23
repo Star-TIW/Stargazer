@@ -60,74 +60,24 @@
       .filter(c=>c.sources.length)
       .sort((a,b)=>rank(a.name)-rank(b.name)||a.name.localeCompare(b.name));
   };
-  let loading=null,loadedAt=0,channels=[],activeSources=[],activeIndex=0,overlay=null,iframe=null;
+  let loading=null,loadedAt=0,channels=[];
+  const openPlayer=channel=>{
+    if(typeof window.StargazerLiveOpenPlayer!=="function"){
+      console.warn("Stargazer Live player not initialized");
+      return;
+    }
+    window.StargazerLiveOpenPlayer(channel.sources);
+  };
+  const closePlayer=()=>{
+    // The normal sports player owns its overlay and close controls.
+    // Do not create a second iframe, which can cause audio overlap.
+  };
   function status(message){
     list.replaceChildren();
     const card=document.createElement("div");
     card.className="game-card";
     card.textContent=message;
     list.append(card);
-  }
-  function closePlayer(){
-    if(iframe)iframe.src="about:blank";
-    overlay?.remove();
-    overlay=null;iframe=null;activeSources=[];
-  }
-  function openPlayer(channel){
-    closePlayer();
-    activeSources=channel.sources;
-    activeIndex=0;
-    overlay=document.createElement("div");
-    overlay.id="video-container";
-    overlay.style.cssText="position:fixed;inset:0;width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.85);z-index:1000;opacity:1;transition:opacity .4s ease";
-    const wrapper=document.createElement("div");
-    wrapper.id="video-wrapper";
-    wrapper.style.cssText="position:relative;width:75vw;height:75vh;max-width:1200px;max-height:800px;background:#000;border-radius:12px;box-shadow:0 4px 20px rgba(239,239,136,.3);overflow:hidden";
-    const close=document.createElement("button");
-    close.id="close-video-x";
-    close.type="button";
-    close.textContent="×";
-    close.setAttribute("aria-label","Close player");
-    close.style.cssText="position:absolute;top:10px;right:15px;color:#efef88;font-size:32px;font-weight:bold;cursor:pointer;z-index:250";
-    close.onclick=closePlayer;
-    iframe=document.createElement("iframe");
-    iframe.id="video-iframe";
-    iframe.title=channel.name+" Live TV";
-    iframe.setAttribute("frameborder","0");
-    iframe.setAttribute("allow","autoplay; fullscreen; encrypted-media; picture-in-picture");
-    iframe.setAttribute("allowfullscreen","");
-    iframe.referrerPolicy="no-referrer";
-    iframe.style.cssText="width:100%;height:100%;border:none;display:block";
-    // Use the SAME overlay toolbar class and player controls as live games.
-    const toolbar=document.createElement("div");
-    toolbar.className="provider-toolbar";
-    const next=document.createElement("button");
-    next.type="button";
-    next.className="next-provider";
-    const swap=document.createElement("span");
-    swap.className="provider-swap-icon";
-    swap.textContent="⇄";
-    swap.setAttribute("aria-hidden","true");
-    const label=document.createElement("span");
-    const switchText=document.createElement("span");
-    switchText.className="provider-switch-word";
-    switchText.textContent="Switch";
-    next.append(swap,label,switchText);
-    const show=()=>{
-      iframe.src=activeSources[activeIndex].url;
-      label.textContent=activeSources[activeIndex].name;
-      const single=activeSources.length<2;
-      next.disabled=single;
-      switchText.hidden=swap.hidden=single;
-      next.setAttribute("aria-label",single?label.textContent:label.textContent+" · Switch source");
-    };
-    next.onclick=()=>{activeIndex=(activeIndex+1)%activeSources.length;show()};
-    toolbar.append(next);
-    wrapper.append(close,iframe,toolbar);
-    overlay.append(wrapper);
-    overlay.onclick=e=>{if(e.target===overlay)closePlayer()};
-    document.body.append(overlay);
-    show();
   }
   function render(){
     list.replaceChildren();
@@ -204,5 +154,5 @@
   header.onkeydown=e=>{
     if(e.key==="Enter"||e.key===" "){e.preventDefault();collapse()}
   };
-  window.addEventListener("keydown",e=>{if(e.key==="Escape"&&overlay)closePlayer()});
+  
 })();
