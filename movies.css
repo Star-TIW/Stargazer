@@ -1406,3 +1406,52 @@ main#movie-card { width: min(94vw,1080px) !important; padding: clamp(16px,3vw,36
 
 /* Edge fade belongs to the scrolling posters, not to the navigation buttons. */
 .stargazer-home .media-row {mask-image:linear-gradient(to right,#000 0%,#000 calc(100% - 50px),transparent 100%);-webkit-mask-image:linear-gradient(to right,#000 0%,#000 calc(100% - 50px),transparent 100%)}
+
+/* Desktop-only featured title layout. Preserve the existing mobile design. */
+@media (min-width: 769px) and (pointer: fine) {
+  #hero-feature.hero-feature {
+    box-sizing: border-box;
+    min-width: 0;
+    display: grid;
+    align-items: center;
+  }
+  #hero-feature .hero-feature-content {
+    position: relative;
+    inset: auto;
+    z-index: 2;
+    box-sizing: border-box;
+    width: 100%;
+    min-width: 0;
+    max-height: 100%;
+    padding: clamp(18px, 2.3vw, 32px);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+    overflow: hidden;
+  }
+  #hero-feature .hero-feature-meta {
+    margin: 0 0 clamp(6px, .8vw, 12px);
+    line-height: 1.35;
+    flex: none;
+  }
+  #hero-feature .hero-feature-content h3 {
+    margin: 0 0 clamp(7px, 1vw, 14px);
+    max-width: 100%;
+    font-size: clamp(23px, 2.5vw, 42px);
+    line-height: 1.12;
+    overflow-wrap: anywhere;
+    text-wrap: balance;
+  }
+  #hero-feature .hero-feature-copy {
+    margin: 0;
+    max-width: 100%;
+    line-height: 1.5;
+    flex: 0 1 auto;
+  }
+  #hero-feature .hero-actions {
+    flex: none;
+    margin-top: clamp(12px, 1.3vw, 18px);
+    flex-wrap: wrap;
+  }
+}
