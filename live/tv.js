@@ -60,6 +60,45 @@
       .filter(c=>c.sources.length)
       .sort((a,b)=>rank(a.name)-rank(b.name)||a.name.localeCompare(b.name));
   };
+  // TimStreams exposes non-event listings alongside the sports-event schedule.
+  // Include them only when they are explicitly channel-style entries and have
+  // public non-VIP iframe URLs on the same validated host used by its game feeds.
+  const timChannelsFrom=data=>{
+    const rows=Array.isArray(data?.events)?data.events:[];
+    const byName=new Map();
+    for(const row of rows){
+      if(row?.isevent!==false||row.vip||!Array.isArray(row.streams))continue;
+      const name=String(row.name||row.title||"").trim();
+      if(!name)continue;
+      const sources=[];
+      for(const stream of row.streams){
+        if(!stream?.url||stream.vip)continue;
+        try{
+          const url=new URL(stream.url);
+          if(url.origin!=="https://shoewiki.click"||url.username||url.password||url.pathname==="/")continue;
+          sources.push({url:url.href,name:"TimStreams"});
+        }catch{}
+      }
+      if(!sources.length)continue;
+      const key=normalize(name);
+      const saved=byName.get(key)||{name,poster:null,sources:[]};
+      saved.sources.push(...sources);
+      byName.set(key,saved);
+    }
+    return [...byName.values()];
+  };
+  const mergeChannels=(damitv,tim)=>{
+    const byName=new Map();
+    for(const channel of [...damitv,...tim]){
+      const key=normalize(channel.name);
+      const previous=byName.get(key);
+      if(previous){
+        previous.sources=[...new Map([...previous.sources,...channel.sources].map(s=>[s.url,s])).values()];
+        if(!previous.poster)previous.poster=channel.poster;
+      }else byName.set(key,{...channel});
+    }
+    return [...byName.values()].sort((a,b)=>rank(a.name)-rank(b.name)||a.name.localeCompare(b.name));
+  };
   let loading=null,loadedAt=0,channels=[];
   const openPlayer=channel=>{
     if(typeof window.StargazerLiveOpenPlayer!=="function"){
@@ -109,12 +148,17 @@
     loading=(async()=>{
       if(!channels.length)status("Loading live TV channels...");
       try{
-        const response=await fetch("https://ondemand.st/papi/api/streams",{
-          credentials:"omit",signal:AbortSignal.timeout(9000),cache:"no-store"
-        });
-        if(!response.ok)throw Error("TV listing unavailable");
-        const data=await response.json();
-        channels=channelsFrom(data);
+        const [damiResult,timResult]=await Promise.allSettled([
+          fetch("https://ondemand.st/papi/api/streams",{credentials:"omit",signal:AbortSignal.timeout(9000),cache:"no-store"})
+            .then(async response=>{if(!response.ok)throw Error("DAMITV unavailable");return channelsFrom(await response.json());}),
+          fetch("https://tim-streams.com/api/live-upcoming",{credentials:"omit",signal:AbortSignal.timeout(9000),cache:"no-store"})
+            .then(async response=>{if(!response.ok)throw Error("TimStreams unavailable");return timChannelsFrom(await response.json());})
+        ]);
+        if(damiResult.status==="rejected"&&timResult.status==="rejected")throw Error("No TV providers reachable");
+        channels=mergeChannels(
+          damiResult.status==="fulfilled"?damiResult.value:[],
+          timResult.status==="fulfilled"?timResult.value:[]
+        );
         loadedAt=Date.now();
         render();
       }catch(error){
