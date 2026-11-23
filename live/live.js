@@ -149,12 +149,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const showEmbed = () => {
     const source = activeEmbeds[activeEmbedIndex];
-    // Some hosts require the embedding site origin for their allowlist checks.
-    videoIframe.referrerPolicy = "strict-origin-when-cross-origin";
+    // TimStreams requires the embedding origin; other providers retain the original privacy setting.
+    videoIframe.referrerPolicy = /^(?:TimStreams)(?:\s|$)/i.test(source.name) ? "strict-origin-when-cross-origin" : "no-referrer";
     videoIframe.removeAttribute("sandbox");
     videoIframe.src = source.url;
-    directSource.href = source.url;
-    directSource.title = "Open " + source.name + " directly if embedding is blocked";
     sourceLabel.textContent = source.name;
     nextSource.hidden = false;
     const single = activeEmbeds.length === 1;
@@ -185,21 +183,9 @@ document.addEventListener("DOMContentLoaded", () => {
     }, 50);
   };
 
-  const directSource = document.createElement("a");
-  directSource.className = "live-open-direct";
-  directSource.textContent = "Open source";
-  directSource.target = "_blank";
-  directSource.rel = "noopener noreferrer";
-  directSource.setAttribute("aria-label", "Open current stream in a new tab");
-  Object.assign(directSource.style, {
-    display: "inline-flex", alignItems: "center", justifyContent: "center",
-    padding: "8px 12px", borderRadius: "9px", border: "1px solid rgba(239,239,136,.55)",
-    color: "#efef88", fontSize: "13px", textDecoration: "none", whiteSpace: "nowrap"
-  });
-
   const toolbar = document.createElement("div");
   toolbar.className = "provider-toolbar";
-  toolbar.append(nextSource, directSource);
+  toolbar.append(nextSource);
 
   nextSource.onclick = () => {
     activeEmbedIndex = (activeEmbedIndex + 1) % activeEmbeds.length;
