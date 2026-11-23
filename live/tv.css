@@ -1,14 +1,24 @@
-#sg-tv[hidden],.live-scroll-container[hidden]{display:none!important}
-#sg-tv{max-width:1200px;margin:20px auto;padding:0 16px 36px;color:#f4f4f4;box-sizing:border-box}
+#sg-tv[hidden],.live-scroll-container[hidden],#sg-tv [hidden]{display:none!important}
+#sg-tv{max-width:1200px;margin:16px auto 30px;padding:0 16px;color:#fff;box-sizing:border-box}
 #sg-tv *{box-sizing:border-box}
-.sg-tv-heading{border:1px solid #77774b;border-radius:18px;padding:20px;background:#25261d;margin-bottom:16px}
-.sg-tv-heading h2{color:#efef88;margin:0 0 7px;font-size:clamp(1.5rem,4vw,2rem)}
-.sg-tv-heading p{margin:0;color:#c8c8ba;font-size:.95rem}
-.sg-tv-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,210px),1fr));gap:13px}
-.sg-tv-card{display:flex;flex-direction:column;gap:9px;min-height:155px;padding:17px;border:1px solid #56563a;border-radius:16px;background:linear-gradient(145deg,#292b22,#161714);color:#fff;text-decoration:none;transition:transform .2s,border-color .2s,box-shadow .2s}
-.sg-tv-card:hover,.sg-tv-card:focus-visible{transform:translateY(-3px);border-color:#efef88;box-shadow:0 9px 22px #0006}
-.sg-tv-card small{color:#c4c493;font-size:.72rem;text-transform:uppercase;letter-spacing:.08em}
-.sg-tv-card strong{font-size:1.25rem;color:#fff}
-.sg-tv-card span{font-size:.85rem;color:#d0d0c6;flex:1}
-.sg-tv-card em{font-size:.78rem;font-style:normal;color:#efef88;font-weight:700}
-@media(max-width:540px){.sg-tv-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.sg-tv-card{padding:12px;min-height:165px}.sg-tv-card strong{font-size:1.08rem}}
+.sg-tv-heading{padding:14px 8px}
+.sg-tv-heading h2{color:#efef88;font-size:1.55rem;margin:0 0 5px}
+.sg-tv-heading p{color:#c8c8b6;font-size:.9rem;margin:0}
+#sg-tv .sg-tv-section{margin:10px 0 20px}
+#sg-tv .games-header{cursor:pointer}
+#sg-tv-live-list{padding:10px;display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,280px),1fr));gap:10px;max-height:none!important;opacity:1!important}
+.sg-tv-status{color:#c8c8bd;padding:22px 10px;grid-column:1/-1}
+.sg-tv-channel{display:flex;align-items:center;gap:12px;text-align:left;min-width:0;min-height:90px;padding:10px;background:#1c1d1a;border:1px solid #666746;border-radius:14px;color:#fff;cursor:pointer;transition:transform .2s,border-color .2s}
+.sg-tv-channel:hover,.sg-tv-channel:focus-visible{transform:translateY(-2px);border-color:#efef88}
+.sg-tv-art{width:65px;height:65px;flex-shrink:0;display:grid;place-items:center;background:#292a23;border-radius:10px;overflow:hidden;font-size:1.5rem}
+.sg-tv-art img{width:100%;height:100%;object-fit:contain}
+.sg-tv-info{display:flex;flex:1;flex-direction:column;gap:7px;min-width:0}
+.sg-tv-info strong{font-size:.95rem;overflow-wrap:anywhere}
+.sg-tv-info small{font-size:.72rem;color:#efef88}
+.sg-tv-watch{font-size:.8rem;background:#b5b56a;color:#171717;padding:9px;border-radius:9px;font-weight:800}
+.sg-tv-player{margin:16px 0 24px;background:#111;border:1px solid #77774e;border-radius:15px;overflow:hidden}
+.sg-tv-playerbar{display:flex;gap:8px;align-items:center;padding:10px;background:#25261c}
+.sg-tv-playing{flex:1;min-width:0;font-size:.9rem}
+.sg-tv-playerbar button{border:1px solid #77774e;border-radius:8px;background:#34352b;color:#efef88;padding:9px;cursor:pointer}
+.sg-tv-player iframe{width:100%;height:min(60vw,550px);min-height:230px;border:0;display:block;background:#000}
+@media(max-width:600px){#sg-tv{padding:0 12px}#sg-tv-live-list{grid-template-columns:1fr}.sg-tv-player iframe{height:56vw;min-height:210px}}
