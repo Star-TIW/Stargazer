@@ -9,3 +9,5 @@
 #sg-tv-live-list .sg-tv-channel-name{font-weight:800;font-size:1.06rem;overflow-wrap:anywhere}
 #sg-tv-live-list .sg-tv-status{color:#efef88;margin-top:9px;font-size:.85rem}
 #sg-tv-live-list .sg-tv-source-count{color:#c5c5be;font-size:.78rem;margin-top:6px}
+
+#sg-tv-live-list .sg-tv-logo-fallback{display:grid;place-items:center;margin:0 auto;width:58px;height:58px;border-radius:10px;background:rgba(239,239,136,.12);border:1px solid rgba(239,239,136,.3);color:#efef88;font-size:.85rem;font-weight:800;letter-spacing:.03em}
