@@ -10,7 +10,6 @@
   let games = [], selected = new Set(), tiles = [], focused = null;
   let filter = "", viewMode = "side";
   const audioOwner = root.id;
-  let audioSafe = false;
   const overlay = document.createElement("div");
   overlay.className = "sg-mv-overlay"; overlay.hidden = true;
   overlay.setAttribute("role","dialog"); overlay.setAttribute("aria-modal","true");
@@ -22,13 +21,7 @@
   const view = document.createElement("button"); view.type = "button"; view.className = "sg-mv-switch"; view.textContent = "Stack views";
   const fullscreen = document.createElement("button"); fullscreen.type = "button"; fullscreen.className = "sg-mv-fullscreen"; fullscreen.textContent = "Full screen";
   const close = document.createElement("button"); close.type = "button"; close.className = "sg-mv-close"; close.textContent = "×"; close.setAttribute("aria-label","Close Multi-view");
-  const safeButton = document.createElement("button");
-  safeButton.type = "button";
-  safeButton.className = "sg-mv-audio-safe";
-  safeButton.setAttribute("aria-pressed","false");
-  safeButton.title = "Guaranteed single audio: inactive videos stop until selected";
-  safeButton.textContent = "Audio safe: Off";
-  topbar.append(heading,audioHint,safeButton,view,fullscreen,close);
+  topbar.append(heading,audioHint,view,fullscreen,close);
   shell.append(topbar); overlay.append(shell); document.body.append(overlay);
   const setView = mode => { viewMode = mode; stage.classList.toggle("mv-stacked",mode === "stack"); view.textContent = mode === "stack" ? "Side by side" : "Stack views"; };
   view.onclick = () => setView(viewMode === "side" ? "stack" : "side");
@@ -124,43 +117,11 @@
       t.focus.textContent = active ? "● Selected" : "Select";
       t.focus.setAttribute("aria-pressed",String(active));
       t.focus.setAttribute("aria-label",(active?"Audio focused on ":"Focus audio on ")+t.name);
-      if(audioSafe){
-        if(!active){
-          t.loader?.close();
-          t.loader = null;
-          if(t.frame.getAttribute("src") !== "about:blank") t.frame.src = "about:blank";
-          t.placeholder.hidden = false;
-          t.frame.hidden = true;
-        } else {
-          t.placeholder.hidden = true;
-          t.frame.hidden = false;
-          if(t.frame.getAttribute("src") !== t.sources[t.sourceIndex].url) navigate(t);
-        }
-      } else {
-        t.placeholder.hidden = true;
-        t.frame.hidden = false;
-        requestMute(t.frame,!active);
-      }
+      requestMute(t.frame,!active);
     });
     const activeName = tiles.find(t=>t.id===id)?.name || "Stream";
     audioHint.textContent = "Audio: "+activeName;
-    note.textContent = audioSafe ? "Audio safe: only "+activeName+" is playing. Select another tile to switch." : "Audio focus: "+activeName+". Some external players may require manual muting.";
-  };
-  safeButton.onclick = () => {
-    audioSafe = !audioSafe;
-    safeButton.setAttribute("aria-pressed",String(audioSafe));
-    safeButton.textContent = audioSafe ? "Audio safe: On" : "Audio safe: Off";
-    if(tiles.length){
-      if(audioSafe) focus(focused || tiles[0].id);
-      else {
-        tiles.forEach(t => {
-          t.placeholder.hidden = true;
-          t.frame.hidden = false;
-          if(t.frame.getAttribute("src") !== t.sources[t.sourceIndex].url) navigate(t);
-        });
-        focus(focused || tiles[0].id);
-      }
-    }
+    note.textContent = "All videos stay live. Audio focus requests depend on provider support.";
   };
   start.onclick = () => {
     stopAll();
@@ -188,32 +149,25 @@
       frame.loading = "eager";
       const screen = document.createElement("div");
       screen.className = "mv-screen";
-      const placeholder = document.createElement("button");
-      placeholder.type = "button";
-      placeholder.className = "mv-audio-safe-placeholder";
-      placeholder.hidden = true;
-      placeholder.textContent = "Tap to play "+game.name;
-      placeholder.onclick = () => focus(game.id);
-      const tile = {id:game.id,name:game.name,element,screen,frame,placeholder,focus:focusButton,sources:game.sources,sourceIndex:0,loader:null};
-      frame.addEventListener("load",()=>{if(!audioSafe)requestMute(frame,focused!==game.id);});
+      const tile = {id:game.id,name:game.name,element,screen,frame,focus:focusButton,sources:game.sources,sourceIndex:0,loader:null};
+      frame.addEventListener("load",()=>requestMute(frame,focused!==game.id));
       element.addEventListener("click",e=>{if(e.target===element)focus(game.id)});
       focusButton.onclick = () => focus(game.id);
       source.onclick = () => {
         sourceIndex = (sourceIndex + 1) % game.sources.length;
         tile.sourceIndex = sourceIndex;
         source.textContent = game.sources[sourceIndex].name + " ↻";
-        if(audioSafe)focus(game.id);
-        else navigate(tile);
+        navigate(tile);
       };
       toolbar.append(title,focusButton,source);
-      screen.append(frame,placeholder);
+      screen.append(frame);
       element.append(toolbar,screen);
       stage.append(element);
       tiles.push(tile);
     }
     // All navigations occur synchronously in the Start click, not in a timer.
     chosen.forEach((game,i) => {
-      if(!audioSafe || i===0)navigate(tiles[i]);
+      navigate(tiles[i]);
     });
     if (tiles.length) {
       stage.hidden = false;
