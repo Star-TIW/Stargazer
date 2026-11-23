@@ -317,3 +317,60 @@
   #video-wrapper { width:100% !important; height:100dvh !important; max-height:none !important; border-radius:0 !important; }
 }
 @media(max-width:600px) { .games-list { grid-template-columns:minmax(0,1fr); } }
+
+
+/* Movies-style edge-to-edge live player, shared by Sports and TV. */
+body.sg-live-player-open{overflow:hidden!important}
+#video-container{position:fixed!important;inset:0!important;width:100vw!important;height:100dvh!important;
+ z-index:20000!important;display:none;align-items:stretch!important;justify-content:stretch!important;
+ padding:0!important;margin:0!important;background:#000!important;opacity:0;
+ transition:opacity .22s ease!important;overscroll-behavior:contain}
+#video-container.is-open{display:flex!important}
+#video-container #video-wrapper{position:relative!important;inset:auto!important;flex:1 1 100%;
+ display:block!important;width:100vw!important;height:100dvh!important;max-width:none!important;
+ max-height:none!important;min-height:0!important;margin:0!important;padding:0!important;
+ border:0!important;border-radius:0!important;box-shadow:none!important;background:#000!important;
+ overflow:hidden!important;isolation:isolate;transform:scale(.985);
+ transition:transform .28s cubic-bezier(.2,.8,.2,1)!important}
+#video-container #video-iframe{position:absolute!important;inset:0!important;display:block!important;
+ width:100%!important;height:100%!important;border:0!important;border-radius:0!important;
+ background:#000!important;filter:none!important;transform:none!important}
+#video-container .provider-toolbar{position:absolute!important;top:0!important;right:0!important;left:0!important;
+ z-index:1200!important;display:block!important;width:100%!important;box-sizing:border-box;
+ padding:max(12px,env(safe-area-inset-top)) max(12px,env(safe-area-inset-right))
+ 0 max(12px,env(safe-area-inset-left));pointer-events:none}
+#video-container .provider-toolbar::before{content:"";position:absolute;z-index:-1;inset:0 0 auto;
+ height:108px;background:linear-gradient(to bottom,rgba(0,0,0,.78),transparent);pointer-events:none}
+#video-container .provider-top-row{display:flex;align-items:flex-start;justify-content:space-between;
+ gap:12px;width:100%;min-height:44px}
+#video-container .provider-source-group{display:flex;min-width:0;max-width:min(65vw,480px);pointer-events:auto}
+#video-container .provider-source-group .next-provider{position:relative;display:inline-flex;align-items:center;
+ gap:9px;min-height:44px;max-width:100%;padding:0 14px;border:1px solid rgba(239,239,136,.35);
+ border-radius:999px;background:rgba(20,20,20,.6);backdrop-filter:blur(12px);
+ color:#fff;font:600 15px/1.2 Arial,sans-serif;white-space:nowrap;cursor:pointer;
+ transition:background .2s ease,border-color .2s ease,transform .2s ease}
+#video-container .provider-source-group .next-provider:hover,
+#video-container #close-video-x:hover{border-color:#efef88;background:rgba(30,30,25,.88)}
+#video-container .provider-source-label{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#video-container .provider-switch-word{font-size:13px;color:#aaa}
+#video-container #close-video-x{position:static!important;flex:0 0 44px;display:flex;align-items:center;
+ justify-content:center;min-width:44px;min-height:44px;width:44px;height:44px;
+ margin:0!important;padding:0;border:1px solid rgba(239,239,136,.35);border-radius:50%;
+ background:rgba(20,20,20,.65);color:#efef88;font:700 30px/1 Arial,sans-serif;
+ backdrop-filter:blur(12px);cursor:pointer;pointer-events:auto;z-index:1!important;
+ transition:background .2s ease,transform .2s ease}
+#video-container .provider-toolbar button:focus-visible{outline:2px solid #efef88;outline-offset:3px}
+#video-container .provider-toolbar button:active{transform:scale(.96)}
+#video-container .sg-live-loader{z-index:1100}
+#video-container .sg-live-loader .sgl-scene{width:min(300px,55vw,46dvh)}
+#video-container .sg-live-loader .sgl-subtext{font-size:clamp(10px,1.2vw,13px)}
+@media(max-width:600px){
+ #video-container .provider-top-row{gap:7px}
+ #video-container .provider-source-group{max-width:calc(100vw - 86px)}
+ #video-container .provider-source-group .next-provider{padding:0 10px;gap:6px}
+ #video-container .provider-switch-word{font-size:12px}
+ #video-container #video-wrapper{width:100vw!important;height:100dvh!important}
+}
+@media(prefers-reduced-motion:reduce){
+ #video-container,#video-container #video-wrapper,#video-container .provider-toolbar button{transition:none!important}
+}
