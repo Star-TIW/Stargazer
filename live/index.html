@@ -57,9 +57,18 @@
     </div>
   </div>
 
-  <section id="sg-tv" hidden aria-label="TV channels">
-    <div class="sg-tv-heading"><h2>📺 Live TV</h2><p>Browse channels streaming right now.</p></div><div class="games-section sg-tv-section"><div class="games-header" id="sg-tv-live-toggle" role="button" tabindex="0" aria-expanded="true"><h2 class="live-title">Live Now</h2><span class="arrow">▼</span></div><div id="sg-tv-live-list" class="games-list collapsible open"><p class="sg-tv-status">Loading live channels...</p></div></div>
-    <div class="sg-tv-grid" id="sg-tv-grid" hidden></div>
+  <section id="sg-tv" class="live-scroll-container" hidden aria-label="Live TV">
+    <div class="live-banner"><div class="banner-text">Live TV - Stargazer</div></div>
+    <main class="live-container">
+      <div class="games-section">
+        <div class="games-header" id="sg-tv-live-toggle" role="button" tabindex="0" aria-expanded="true">
+          <h2 class="live-title">Live Now</h2><span class="arrow" aria-hidden="true">▼</span>
+        </div>
+        <div id="sg-tv-live-list" class="games-list collapsible open">
+          <div class="game-card">Loading channels...</div>
+        </div>
+      </div>
+    </main>
   </section>
   <div class="live-scroll-container">
     <div class="live-banner">
