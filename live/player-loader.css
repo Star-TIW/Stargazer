@@ -1,0 +1,227 @@
+.sg-live-loader {
+  position: absolute;
+  inset: 0;
+  z-index: 1100;
+  display: block;
+  overflow: hidden;
+  background: radial-gradient(circle at 50% 46%, #17130a 0%, #050505 42%, #000 78%);
+  color: #d5a83a;
+  opacity: 1;
+  visibility: visible;
+  transition: opacity .2s ease-out, visibility .2s;
+  pointer-events: all;
+}
+
+.sg-live-loader.is-visible {
+  opacity: 1;
+  visibility: visible;
+}
+
+.sg-live-loader.is-hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.sgl-scene {
+  position: absolute;
+  width: min(300px, 38%);
+  height: auto;
+  aspect-ratio: 1 / 1;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%) scale(.72);
+  opacity: 0;
+  filter: drop-shadow(0 0 24px rgba(213,168,58,.12));
+  animation: sgl-sceneEnter 1.15s cubic-bezier(.16,1,.3,1) forwards;
+}
+
+.sgl-logo-wrap {
+  position: absolute;
+  width: 64%;
+  height: 64%;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: sgl-logoReveal 2s cubic-bezier(.2,.75,.2,1) infinite;
+  z-index: 3;
+}
+
+.sgl-logo {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+  animation: sgl-logoPulse 2s ease-in-out infinite;
+  filter: drop-shadow(0 0 7px rgba(213,168,58,.15));
+}
+
+.sgl-glow {
+  position: absolute;
+  width: 48%;
+  height: 48%;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: #d5a83a;
+  opacity: .12;
+  filter: blur(30px);
+  animation: sgl-glowPulse 2s ease-in-out infinite;
+  z-index: -1;
+}
+
+.sgl-orbit {
+  position: absolute;
+  border: 2px solid rgba(213,168,58,.28);
+  border-radius: 50%;
+  width: 72%;
+  height: 72%;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  animation: sgl-orbitSpin 2s linear infinite;
+  z-index: 2;
+}
+
+.sgl-orbit::after {
+  content: "";
+  position: absolute;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #f5d56c;
+  box-shadow: 0 0 12px #d5a83a;
+  top: -4px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.sgl-orbit-b {
+  width: 82%;
+  height: 82%;
+  border-color: rgba(213,168,58,.10);
+  animation-direction: reverse;
+  animation-duration: 2.8s;
+}
+
+.sgl-orbit-b::after {
+  width: 4px;
+  height: 4px;
+  opacity: .75;
+}
+
+.sgl-streak {
+  position: absolute;
+  height: 3px;
+  width: 28%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, transparent, #f7d96e, transparent);
+  box-shadow: 0 0 12px rgba(213,168,58,.75);
+  transform: rotate(-43deg);
+  opacity: 0;
+  animation: sgl-shoot 2s ease-in-out infinite;
+  z-index: 1;
+}
+
+.sgl-streak-a { left: 9%; top: 43%; animation-delay: .05s; }
+.sgl-streak-b { left: 23%; top: 26%; width: 22%; animation-delay: .72s; }
+.sgl-streak-c { left: 46%; top: 51%; width: 20%; animation-delay: 1.25s; }
+
+.sgl-subtext {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 2%;
+  text-align: center;
+  color: #777;
+  font-size: clamp(7px, 1.1vw, 10px);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  animation: sgl-subtleBlink 2s ease-in-out infinite;
+  z-index: 4;
+}
+
+.sgl-scene::after {
+  content: "";
+  position: absolute;
+  bottom: 9%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 40%;
+  height: 8px;
+  border-radius: 50%;
+  background: #d5a83a;
+  opacity: .12;
+  filter: blur(12px);
+  animation: sgl-shadowPulse 2s ease-in-out infinite;
+}
+
+@keyframes sgl-sceneEnter {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(.72); }
+  55% { opacity: 1; transform: translate(-50%, -50%) scale(1.035); }
+  78% { transform: translate(-50%, -50%) scale(.985); }
+  100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+
+@keyframes sgl-logoReveal {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(.68) rotate(-4deg); }
+  18% { opacity: 1; transform: translate(-50%, -50%) scale(1.08) rotate(1deg); }
+  36% { transform: translate(-50%, -50%) scale(.98) rotate(0); }
+  52%, 100% { opacity: 1; transform: translate(-50%, -50%) scale(1) rotate(0); }
+}
+
+@keyframes sgl-logoPulse {
+  0%, 100% { filter: drop-shadow(0 0 5px rgba(213,168,58,.12)); }
+  50% { filter: drop-shadow(0 0 18px rgba(213,168,58,.5)); }
+}
+
+@keyframes sgl-glowPulse {
+  0%, 100% { transform: translate(-50%, -50%) scale(.75); opacity: .08; }
+  50% { transform: translate(-50%, -50%) scale(1.15); opacity: .2; }
+}
+
+@keyframes sgl-orbitSpin {
+  from { transform: translate(-50%, -50%) rotate(0deg); }
+  to { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+@keyframes sgl-shoot {
+  0% { opacity: 0; transform: translate(-55px, 55px) rotate(-43deg) scaleX(.4); }
+  15% { opacity: 1; }
+  34% { opacity: 0; transform: translate(75px, -75px) rotate(-43deg) scaleX(1); }
+  100% { opacity: 0; transform: translate(75px, -75px) rotate(-43deg) scaleX(1); }
+}
+
+@keyframes sgl-subtleBlink { 0%, 100% { opacity: .45; } 50% { opacity: 1; } }
+@keyframes sgl-playerBackdropIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes sgl-shadowPulse {
+  0%, 100% { transform: translateX(-50%) scaleX(.7); opacity: .08; }
+  50% { transform: translateX(-50%) scaleX(1); opacity: .2; }
+}
+
+
+/* Shared with live sports, TV and Multi-view. Mirrors the main player loader. */
+.sg-live-loader{isolation:isolate;z-index:200;pointer-events:auto}
+.sg-live-loader .sgl-scene{width:min(300px,55vw,42dvh);max-height:70dvh}
+.sg-live-loader .sgl-subtext{
+ top:calc(100% + 12px);bottom:auto;left:50%;right:auto;transform:translateX(-50%);
+ display:flex;align-items:baseline;justify-content:center;gap:0;width:max-content;max-width:90vw;
+ font:500 13px/1.4 Arial,sans-serif;color:rgba(239,239,136,.9);letter-spacing:.2em;white-space:nowrap;
+ text-transform:uppercase;animation:none
+}
+.sg-live-loader .sgl-dots{display:inline-flex;gap:3px;margin-left:3px}
+.sg-live-loader .sgl-dots i{height:3px;width:3px;border-radius:50%;background:currentColor;animation:sgl-dotPulse 1.2s ease-in-out infinite}
+.sg-live-loader .sgl-dots i:nth-child(2){animation-delay:.2s}
+.sg-live-loader .sgl-dots i:nth-child(3){animation-delay:.4s}
+@keyframes sgl-dotPulse{0%,80%,100%{opacity:.25;transform:scale(.7)}40%{opacity:1;transform:scale(1)}}
+.sg-live-loader.is-hidden{pointer-events:none}
+#video-wrapper{isolation:isolate}
+.mv-tile{isolation:isolate}
+.mv-tile .sg-live-loader .sgl-scene{width:min(190px,52%,35dvh)}
+.mv-tile .sg-live-loader .sgl-subtext{font-size:clamp(7px,.85vw,11px);letter-spacing:.08em}
+@media(prefers-reduced-motion:reduce){.sg-live-loader *{animation:none!important}.sg-live-loader .sgl-scene{opacity:1;transform:translate(-50%,-50%)}}
