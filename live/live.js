@@ -188,7 +188,7 @@ document.addEventListener("DOMContentLoaded", () => {
     videoContainer.classList.add("is-open");
     videoContainer.style.display = "flex";
     videoContainer.style.opacity = "1";
-    videoContainer.querySelector("#video-wrapper").style.transform = "scale(1)";
+
     closeVideoX.focus({preventScroll:true});
   };
 
@@ -221,6 +221,7 @@ document.addEventListener("DOMContentLoaded", () => {
       wrapper.id = "video-wrapper";
       videoContainer.append(wrapper);
     }
+    wrapper.classList.add("stargazer-player-wrapper");
     videoIframe = wrapper.querySelector("#video-iframe") || document.createElement("iframe");
     videoIframe.id = "video-iframe";
     videoIframe.title = "Live stream player";
@@ -258,13 +259,13 @@ document.addEventListener("DOMContentLoaded", () => {
       nextSource.hidden = true;
       videoIframe.src = "about:blank";
       videoContainer.style.opacity = "0";
-      wrapper.style.transform = "scale(.985)";
+
       document.body.classList.remove("sg-live-player-open");
       hideVideoTimer = setTimeout(() => {
         if (videoContainer.style.opacity !== "0") return;
         videoContainer.style.display = "none";
         videoContainer.classList.remove("is-open");
-        wrapper.style.transform = "";
+
       }, 220);
     };
 
