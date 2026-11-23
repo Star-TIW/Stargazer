@@ -11,3 +11,8 @@
 #sg-tv-live-list .sg-tv-source-count{color:#c5c5be;font-size:.78rem;margin-top:6px}
 
 #sg-tv-live-list .sg-tv-logo-fallback{display:grid;place-items:center;margin:0 auto;width:58px;height:58px;border-radius:10px;background:rgba(239,239,136,.12);border:1px solid rgba(239,239,136,.3);color:#efef88;font-size:.85rem;font-weight:800;letter-spacing:.03em}
+
+/* Closed TV list must not leave a blank panel behind. */
+#sg-tv-live-list[hidden]{display:none!important;min-height:0!important;padding:0!important;margin:0!important}
+#sg-tv .games-header:focus-visible{outline:2px solid #efef88;outline-offset:2px}
+#sg-tv .sg-tv-channel-art{max-width:100%;height:72px;width:110px;object-fit:contain;background:transparent}
