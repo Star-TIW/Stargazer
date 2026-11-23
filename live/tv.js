@@ -125,16 +125,20 @@
     for(const channel of channels){
       const card=document.createElement("div");
       card.className="game-card";
-      const image=document.createElement("div");
+      card.classList.add("sg-tv-card");
+      const artwork=document.createElement("div");
+      artwork.className="sg-tv-artwork";
+      artwork.setAttribute("aria-hidden","true");
       if(channel.poster){
-        const img=document.createElement("img");
-        img.alt=channel.name+" logo";img.loading="lazy";img.className="sg-tv-channel-art";
+        const img=new Image();
         img.referrerPolicy="no-referrer";
-        img.onerror=()=>{img.remove();const fallback=document.createElement("span");fallback.className="sg-tv-logo-fallback";fallback.textContent=channel.name.slice(0,3).toUpperCase();image.append(fallback)};
+        img.onload=()=>{
+          artwork.style.backgroundImage="url("+JSON.stringify(channel.poster)+")";
+          artwork.classList.add("has-image");
+        };
+        img.onerror=()=>{};
         img.src=channel.poster;
-        image.append(img);
       }
-      if(!channel.poster){const fallback=document.createElement("span");fallback.className="sg-tv-logo-fallback";fallback.textContent=channel.name.slice(0,3).toUpperCase();image.append(fallback)}
       const title=document.createElement("div");
       title.className="sg-tv-channel-name";
       title.textContent=channel.name;
@@ -147,7 +151,7 @@
       const watch=document.createElement("button");
       watch.type="button";watch.className="watch-btn";watch.textContent="Watch Live";
       watch.onclick=()=>openPlayer(channel);
-      card.append(image,title,state,sources,watch);
+      card.append(artwork,title,state,sources,watch);
       list.append(card);
     }
   }
@@ -193,17 +197,7 @@
   document.querySelectorAll(".sport-btn[data-sport]").forEach(button=>{
     button.addEventListener("click",()=>switchTV(false));
   });
-  const setExpanded=expanded=>{
-    header.setAttribute("aria-expanded",String(expanded));
-    list.hidden=!expanded;
-    list.classList.toggle("open",expanded);
-    list.classList.toggle("closed",!expanded);
-    list.style.maxHeight=expanded?"none":"0";
-    list.style.opacity=expanded?"1":"0";
-    const arrow=header.querySelector(".arrow");
-    if(arrow)arrow.style.transform=expanded?"rotate(180deg)":"rotate(0deg)";
-  };
-  header.addEventListener("click",()=>setExpanded(header.getAttribute("aria-expanded")!=="true"));
+  // The original sports handler controls this header's animation and collapse.
   header.onkeydown=event=>{
     if(event.key==="Enter"||event.key===" "){
       event.preventDefault();
