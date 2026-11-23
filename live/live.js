@@ -735,6 +735,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // ---------- Initialize ----------
   setupCollapsibles();
   setupSportSelector();
+  window.addEventListener("stargazer:sports-reload",()=>fetchGamesWindow(currentSport));
 
   // Set initial banner text and sport button
   const initialSportConfig = SPORTS_CONFIG[currentSport];
