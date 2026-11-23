@@ -7,10 +7,10 @@
   const header=document.getElementById("sg-tv-live-toggle");
   if(!tvButton||!section||!sports||!list||!header)return;
   const commonNames=[
-    "abc","cbs","nbc","fox","pbs","cw","espn","espn2","cnn","foxnews",
-    "msnbc","cnbc","tnt","tbs","usanetwork","fx","fxx","amc",
-    "a&e","history","discovery","nationalgeographic","animalplanet",
-    "foodnetwork","hgtv","tlc","cartoonnetwork","nickelodeon","disneychannel",
+    "abc","cbs","nbc","fox","espn","espn2","cnn","foxnews","pbs","cw",
+    "msnbc","cnbc","tnt","tbs","hbo","disneychannel","nickelodeon","cartoonnetwork","foxsports1","foxsports2","cbssportsnetwork","nflnetwork","nbatv","mlbnetwork","usanetwork","fx","fxx","amc",
+    "ae","history","discoverychannel","nationalgeographic","animalplanet",
+    "foodnetwork","hgtv","tlc","disneyjunior","disneyxd",
     "comedycentral","mtv","bet","bravo","e","lifetimetv","lifetime",
     "hallmark","nflnetwork","nbatv","mlbnetwork","foxsports1",
     "fs1","fs2","espnu","accnetwork","bigtennetwork","secnetwork"
@@ -193,6 +193,17 @@
   document.querySelectorAll(".sport-btn[data-sport]").forEach(button=>{
     button.addEventListener("click",()=>switchTV(false));
   });
+  const setExpanded=expanded=>{
+    header.setAttribute("aria-expanded",String(expanded));
+    list.hidden=!expanded;
+    list.classList.toggle("open",expanded);
+    list.classList.toggle("closed",!expanded);
+    list.style.maxHeight=expanded?"none":"0";
+    list.style.opacity=expanded?"1":"0";
+    const arrow=header.querySelector(".arrow");
+    if(arrow)arrow.style.transform=expanded?"rotate(180deg)":"rotate(0deg)";
+  };
+  header.addEventListener("click",()=>setExpanded(header.getAttribute("aria-expanded")!=="true"));
   header.onkeydown=event=>{
     if(event.key==="Enter"||event.key===" "){
       event.preventDefault();
