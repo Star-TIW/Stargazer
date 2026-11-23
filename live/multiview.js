@@ -1,7 +1,8 @@
 (() => {
   "use strict";
-  const root = document.getElementById("sg-multiview");
-  if (!root) return;
+  const roots = [...document.querySelectorAll(".sg-mv-root")];
+  for (const root of roots) {
+  const isTV = root.id === "sg-tv-multiview";
   const $ = selector => root.querySelector(selector);
   const picker = $(".mv-picker"), stage = $(".mv-stage"), count = $(".mv-count");
   const start = $(".mv-start"), stop = $(".mv-stop"), layout = $(".mv-layout");
@@ -64,7 +65,7 @@
       t.element.classList.toggle("mv-focused",active);
       t.focus.textContent = active ? "● Focused" : "Focus";
     });
-    note.textContent = "Focused: " + gameName(id);
+    note.textContent = "Focused: " + (games.find(g=>g.id===id)?.name || (isTV ? "Channel" : gameName(id)));
   };
   start.onclick = () => {
     stopAll();
@@ -86,7 +87,7 @@
       source.textContent = game.sources[0].name + " ↻";
       const frame = document.createElement("iframe");
       frame.title = game.name + " live stream";
-      frame.referrerPolicy = "strict-origin-when-cross-origin";
+      frame.referrerPolicy = /^TimStreams(?:\s|$)/i.test(game.sources[0].name) ? "strict-origin-when-cross-origin" : "no-referrer";
       frame.allow = "autoplay; fullscreen; encrypted-media; picture-in-picture";
       frame.allowFullscreen = true;
       frame.loading = "eager";
@@ -95,6 +96,7 @@
       source.onclick = () => {
         sourceIndex = (sourceIndex + 1) % game.sources.length;
         source.textContent = game.sources[sourceIndex].name + " ↻";
+        frame.referrerPolicy = /^TimStreams(?:\s|$)/i.test(game.sources[sourceIndex].name) ? "strict-origin-when-cross-origin" : "no-referrer";
         frame.src = game.sources[sourceIndex].url;
       };
       toolbar.append(title,focusButton,source);
@@ -124,7 +126,14 @@
     selected = new Set([...selected].slice(0,max));
     update();
   };
-  window.addEventListener("stargazer:live-games", event => {
+  window.addEventListener(isTV ? "stargazer:tv-channels" : "stargazer:live-games", event => {
+    if(isTV){
+      games=(event.detail?.channels||[]).map((channel,i)=>({id:"tv:"+channel.name.toLowerCase(),name:channel.name,sources:channel.sources||[]})).filter(g=>g.sources.length);
+      const valid=new Set(games.map(g=>g.id));
+      selected=new Set([...selected].filter(id=>valid.has(id)));
+      update();
+      return;
+    }
     const streams = event.detail?.streams || {};
     games = Object.entries(streams).map(([id,stream]) => ({
       id, name:gameName(id), sources:sourcesFor(stream)
@@ -134,4 +143,5 @@
     update();
   });
   update();
+  }
 })();
