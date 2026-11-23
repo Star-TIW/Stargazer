@@ -739,7 +739,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // Set initial banner text and sport button
   const initialSportConfig = SPORTS_CONFIG[currentSport];
   bannerText.textContent = `${initialSportConfig.emoji} ${initialSportConfig.displayName} - Stargazer Live`;
-  setActiveSportButton(currentSport);
+  if (savedSport !== "tv") setActiveSportButton(currentSport);
 
   // Initial fetch and periodic refresh
   [todayGamesList, upcomingGamesList].forEach(observeGrid);
