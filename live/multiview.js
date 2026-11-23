@@ -7,12 +7,11 @@
   const start = $(".mv-start"), stop = $(".mv-stop"), layout = $(".mv-layout");
   const toggle = $(".mv-toggle"), panel = $(".mv-panel"), note = $(".mv-note");
   let games = [], selected = new Set(), tiles = [], focused = null;
-  const MAX = 4;
   const sourcesFor = stream => [
     ...(stream.embeds || []).map((url,i) => ({url,name:"StreamFree" + (i ? " "+(i+1):"")})),
     ...(stream.ppv?.embeds || []).map((url,i) => ({url,name:"PPV.ST" + (i ? " "+(i+1):"")})),
-    ...(stream.dami || []),
-    ...(stream.tim || []).map((url,i) => ({url,name:"TimStreams" + (i ? " "+(i+1):"")})),
+    ...(stream.dami || []).map(s => typeof s === "string" ? {url:s,name:"DAMITV"} : s),
+    ...(stream.tim || []).map((s,i) => typeof s === "string" ? {url:s,name:"TimStreams" + (i ? " "+(i+1):"")} : s),
     ...(stream.matchora ? [{url:stream.matchora,name:"Matchora"}] : [])
   ].filter(s => s && typeof s.url === "string" && /^https:\/\//.test(s.url));
   const gameName = id => {
@@ -65,7 +64,7 @@
       t.element.classList.toggle("mv-focused",active);
       t.focus.textContent = active ? "● Focused" : "Focus";
     });
-    note.textContent = "Focused view: " + gameName(id) + ". External iframe audio cannot be muted automatically; use each provider's mute control.";
+    note.textContent = "Focused: " + gameName(id);
   };
   start.onclick = () => {
     stopAll();
@@ -87,7 +86,7 @@
       source.textContent = game.sources[0].name + " ↻";
       const frame = document.createElement("iframe");
       frame.title = game.name + " live stream";
-      frame.referrerPolicy = "no-referrer";
+      frame.referrerPolicy = "strict-origin-when-cross-origin";
       frame.allow = "autoplay; fullscreen; encrypted-media; picture-in-picture";
       frame.allowFullscreen = true;
       frame.loading = "eager";
