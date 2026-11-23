@@ -249,6 +249,8 @@ document.addEventListener("DOMContentLoaded", () => {
     videoContainer.onclick = (e) => { if (e.target === videoContainer) hideOverlay(); };
   };
   setupVideoOverlay();
+  // Reuse the sports player for live TV so its source switcher, overlay and sizing stay identical.
+  window.StargazerLiveOpenPlayer = openPlayer;
 
   // ---------- StreamFree API helpers ----------
   // ESPN remains the schedule source; StreamFree provides the playable embeds.
