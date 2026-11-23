@@ -263,3 +263,16 @@
 
 /* Multi-view uses the logo animation only, without loading captions. */
 .sg-mv-shell .mv-screen .sg-live-loader .sgl-subtext{display:none!important}
+
+/* Larger cinematic Stargazer animation inside Multi-view video frames. */
+.sg-mv-shell .mv-screen .sg-live-loader .sgl-scene{
+  width:min(86%, 390px, 54dvh);
+  max-width:none;
+  top:50%;
+}
+@media(max-width:700px){
+  .sg-mv-shell .mv-screen .sg-live-loader .sgl-scene{
+    width:min(84%, 330px, 46dvh);
+    top:50%;
+  }
+}
