@@ -109,7 +109,7 @@
       console.warn("Stargazer Live player not initialized");
       return;
     }
-    window.StargazerLiveOpenPlayer(channel.sources);
+    window.StargazerLiveOpenPlayer(channel.sources, channel.name);
   };
   const closePlayer=()=>{ window.StargazerLiveClosePlayer?.(); };
   function status(message){
