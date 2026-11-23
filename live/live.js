@@ -133,6 +133,7 @@ document.addEventListener("DOMContentLoaded", () => {
   let activeEmbedIndex = 0;
   let hideVideoTimer;
   let liveOpeningLoader = null;
+  let activeStreamTitle = "";
 
   const nextSource = document.createElement("button");
   nextSource.type = "button";
@@ -156,7 +157,7 @@ document.addEventListener("DOMContentLoaded", () => {
     liveOpeningLoader?.close();
     liveOpeningLoader = window.StargazerLiveLoader?.create(
       videoContainer.querySelector("#video-wrapper"),
-      "Loading " + source.name,
+      "Loading " + (activeStreamTitle || source.name),
       videoIframe
     );
     videoIframe.src = source.url;
@@ -172,7 +173,8 @@ document.addEventListener("DOMContentLoaded", () => {
     url, name: index === 0 ? provider : provider + " " + (index + 1)
   }));
 
-  const openPlayer = (embeds) => {
+  const openPlayer = (embeds, title = "") => {
+    activeStreamTitle = typeof title === "string" ? title.trim() : "";
     clearTimeout(hideVideoTimer);
     activeEmbeds = Array.isArray(embeds) ? embeds.filter(source => {
       try { const u = new URL(source.url); return u.protocol === "https:" && !!u.hostname; }
