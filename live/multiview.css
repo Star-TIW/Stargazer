@@ -99,3 +99,16 @@
 .sg-mv-shell .mv-screen .sg-live-loader{position:absolute;inset:0;z-index:3}
 .sg-mv-shell .mv-screen .sgl-scene{width:min(220px,52%,33dvh)}
 .sg-mv-shell .mv-screen .sgl-subtext{font-size:clamp(8px,1vw,12px);letter-spacing:.1em}
+
+/* Optional reliable audio isolation. Only the selected provider is loaded. */
+.sg-mv-topbar .sg-mv-audio-safe{white-space:nowrap;font-size:.76rem}
+.sg-mv-topbar .sg-mv-audio-safe[aria-pressed=true]{background:#efef88;color:#171711;border-color:#efef88}
+.sg-mv-shell .mv-screen .mv-audio-safe-placeholder{
+ display:flex;align-items:center;justify-content:center;width:100%;height:100%;
+ border:0;background:radial-gradient(circle at center,#242214,#050505 75%);
+ color:#f2eb9c;font-size:clamp(11px,1.2vw,16px);font-weight:700;
+ cursor:pointer;text-align:center;padding:12px
+}
+.sg-mv-shell .mv-screen .mv-audio-safe-placeholder[hidden],
+.sg-mv-shell .mv-screen iframe[hidden]{display:none!important}
+@media(max-width:700px){.sg-mv-topbar .sg-mv-audio-safe{font-size:.68rem;padding:7px 8px}}
