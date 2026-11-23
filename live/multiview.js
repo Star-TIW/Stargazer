@@ -5,7 +5,7 @@
   const isTV = root.id === "sg-tv-multiview";
   const $ = selector => root.querySelector(selector);
   const picker = $(".mv-picker"), stage = $(".mv-stage"), count = $(".mv-count");
-  const start = $(".mv-start"), stop = $(".mv-stop"), layout = $(".mv-layout");
+  const start = $(".mv-start"), layout = $(".mv-layout");
   const toggle = $(".mv-toggle"), panel = $(".mv-panel"), note = $(".mv-note");
   let games = [], selected = new Set(), tiles = [], focused = null;
   let filter = "", viewMode = "side";
@@ -85,7 +85,6 @@
     focused = null;
     stage.replaceChildren();
     stage.hidden = true;
-    stop.disabled = true;
     if(!overlay.hidden){overlay.hidden=true;panel.append(stage);}
   };
   // Keep all streams playing behind the loading animation. Ask cooperative
@@ -171,14 +170,12 @@
     });
     if (tiles.length) {
       stage.hidden = false;
-      stop.disabled = false;
       focus(tiles[0].id);
       shell.append(stage);
       overlay.hidden = false;
       stage.scrollIntoView({behavior:"instant",block:"nearest"});
     }
   };
-  stop.onclick = closeOverlay;
   toggle.onclick = () => {
     const open = panel.hidden;
     panel.hidden = !open;
