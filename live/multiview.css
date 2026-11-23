@@ -52,3 +52,10 @@
 @media(orientation:portrait){.sg-mv-shell .mv-layout-2,.sg-mv-shell .mv-layout-2.mv-stacked{grid-template-columns:minmax(0,1fr);grid-template-rows:repeat(2,minmax(0,1fr))}.sg-mv-topbar .sg-mv-switch{display:none}}
 @media(max-width:600px){.sg-mv-topbar{gap:6px;padding:8px}.sg-mv-topbar button{font-size:.75rem;padding:8px}.sg-mv-shell .mv-tilebar strong{font-size:.72rem}.sg-mv-shell .mv-tilebar button{font-size:.7rem;padding:5px}}
 @keyframes mv-appear{from{opacity:0}to{opacity:1}}
+
+:is(#sg-multiview,#sg-tv-multiview) .mv-search-row{display:flex;gap:8px;margin-top:14px;width:100%}
+:is(#sg-multiview,#sg-tv-multiview) .mv-search{flex:1;min-width:0;padding:11px 13px;border:1px solid #777048;border-radius:10px;background:#111;color:white;font:inherit;outline:none}
+:is(#sg-multiview,#sg-tv-multiview) .mv-search:focus{border-color:#efef88;box-shadow:0 0 0 2px #efef8830}
+:is(#sg-multiview,#sg-tv-multiview) .mv-reload{display:grid;place-items:center;min-width:44px;border:1px solid #777048;border-radius:10px;background:#302c1f;color:#efef88}
+:is(#sg-multiview,#sg-tv-multiview) .mv-reloading svg{animation:mv-reload-spin .6s ease}
+@keyframes mv-reload-spin{to{transform:rotate(360deg)}}
