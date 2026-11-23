@@ -28,7 +28,13 @@
   close.onclick = closeOverlay;
   overlay.addEventListener("click",e => { if(e.target === overlay)closeOverlay(); });
   document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!overlay.hidden)closeOverlay()});
-  window.addEventListener("stargazer:stream-search",e=>{filter=String(e.detail?.query||"").toLowerCase();update()});
+  const search = $(".mv-search"), reload = $(".mv-reload");
+  search.addEventListener("input",()=>{filter=search.value.trim().toLocaleLowerCase();update()});
+  reload.addEventListener("click",()=>{
+    reload.classList.remove("mv-reloading");void reload.offsetWidth;
+    reload.classList.add("mv-reloading");
+    window.dispatchEvent(new Event(isTV ? "stargazer:tv-reload" : "stargazer:sports-reload"));
+  });
   const sourcesFor = stream => [
     ...(stream.embeds || []).map((url,i) => ({url,name:"StreamFree" + (i ? " "+(i+1):"")})),
     ...(stream.ppv?.embeds || []).map((url,i) => ({url,name:"PPV.ST" + (i ? " "+(i+1):"")})),
