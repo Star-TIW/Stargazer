@@ -320,89 +320,160 @@
 
 
 
-/* Live player shell: source geometry copied directly from main/movies.css. */
-body.sg-live-player-open{overflow:hidden!important}
-#video-container{position:fixed!important;inset:0!important;z-index:20000!important;width:100vw!important;height:100dvh!important;display:none;align-items:center;justify-content:center;padding:0!important;margin:0!important;background:#000!important;opacity:0;transition:opacity .22s ease}
-#video-container.is-open{display:flex!important}
-#video-container #video-wrapper.stargazer-player-wrapper{position:fixed!important;inset:0!important;width:100vw!important;height:100dvh!important;max-width:none!important;max-height:none!important;min-height:0!important;border-radius:0!important;box-shadow:none!important;transform:none!important;transition:none!important}
-#video-container #video-iframe{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;border:0!important;border-radius:0!important;filter:none!important;transform:none!important}
-#video-wrapper.stargazer-player-wrapper {
-  position:fixed; inset:0; width:100vw; height:100dvh; min-height:0;
-  max-width:none; max-height:none; overflow:hidden; border-radius:0;
-  z-index:20001; isolation:isolate; background:#000; box-shadow:none;
+/* Full-viewport player. Controls are fixed to the viewport rather than a transformed wrapper.
+   This prevents the top-right close control drifting on mobile, tablet and desktop. */
+body.sg-live-player-open { overflow: hidden !important; }
+#video-container {
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100dvh !important;
+  z-index: 20000 !important;
+  display: none;
+  padding: 0 !important;
+  margin: 0 !important;
+  background: #000 !important;
+  opacity: 0;
+  transition: opacity 180ms ease;
+  overscroll-behavior: contain;
 }
-#video-wrapper.stargazer-player-wrapper iframe#video-iframe,
-#video-wrapper.stargazer-player-wrapper #native-video-player {
-  position:absolute; inset:0; display:block; width:100%; height:100%;
-  border:0; border-radius:0; background:#000;
+#video-container.is-open { display: block !important; }
+#video-container #video-wrapper.stargazer-player-wrapper {
+  position: absolute !important;
+  inset: 0 !important;
+  display: block !important;
+  width: 100% !important;
+  height: 100% !important;
+  max-width: none !important;
+  max-height: none !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  transform: none !important;
+  transition: none !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  background: #000 !important;
+  isolation: isolate;
+  overflow: hidden;
+}
+#video-wrapper.stargazer-player-wrapper #video-iframe {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  display: block !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  transform: none !important;
 }
 #video-wrapper.stargazer-player-wrapper .provider-toolbar {
-  position:absolute; z-index:1200; top:0; left:0; right:0;
-  width:100%; max-width:none; box-sizing:border-box; transform:none;
-  display:flex; flex-direction:column; gap:0;
-  padding:max(12px,env(safe-area-inset-top)) max(12px,env(safe-area-inset-right))
-    0 max(12px,env(safe-area-inset-left));
-  pointer-events:none; opacity:1; transition:none;
+  position: absolute !important;
+  inset: 0 0 auto 0 !important;
+  z-index: 1500 !important;
+  width: 100% !important;
+  max-width: none !important;
+  box-sizing: border-box !important;
+  display: block !important;
+  margin: 0 !important;
+  padding: max(12px, env(safe-area-inset-top))
+           max(12px, env(safe-area-inset-right))
+           0 max(12px, env(safe-area-inset-left)) !important;
+  transform: none !important;
+  pointer-events: none !important;
 }
-#video-wrapper .provider-toolbar::before {
-  content:""; position:absolute; z-index:-1; inset:0 0 auto; height:110px;
-  background:linear-gradient(to bottom,rgba(0,0,0,.8),transparent);
-  opacity:1; pointer-events:none; transition:opacity 180ms ease;
+#video-wrapper.stargazer-player-wrapper .provider-toolbar::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 110px;
+  background: linear-gradient(to bottom,rgba(0,0,0,.8),transparent);
+  z-index: -1;
+  pointer-events: none;
 }
-#video-wrapper .provider-top-row {
-  display:flex; align-items:flex-start; justify-content:space-between; flex-wrap:nowrap; gap:12px;
-  width:100%; max-width:none; min-width:0; box-sizing:border-box; min-height:44px; pointer-events:none;
+#video-wrapper.stargazer-player-wrapper .provider-top-row {
+  display: grid !important;
+  grid-template-columns: minmax(0,1fr) 44px !important;
+  align-items: start !important;
+  column-gap: 12px !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  min-height: 44px !important;
+  box-sizing: border-box !important;
+  pointer-events: none !important;
 }
-#video-wrapper .provider-source-group {
-  display:flex; flex-direction:column; align-items:stretch; flex:0 1 auto; width:max-content; max-width:min(65vw,480px); min-width:0; pointer-events:auto;
+#video-wrapper.stargazer-player-wrapper .provider-source-group {
+  display: flex !important;
+  min-width: 0 !important;
+  width: max-content !important;
+  max-width: min(480px,100%) !important;
+  pointer-events: auto !important;
 }
-#video-wrapper .provider-source-group .next-provider,
-#video-wrapper #close-video-x.provider-close-pill {
-  position:static; display:inline-flex; align-items:center; justify-content:center;
-  height:44px; min-height:44px; margin:0; box-sizing:border-box;
-  border:1px solid rgba(239,239,136,.35); border-radius:999px;
-  background:rgba(20,20,20,.6); backdrop-filter:blur(12px);
-  -webkit-backdrop-filter:blur(12px); color:white; cursor:pointer;
-  pointer-events:auto; opacity:1; transition:opacity 180ms ease,
-    border-color 180ms ease,transform 180ms ease,background 180ms ease;
+#video-wrapper.stargazer-player-wrapper .provider-source-group .next-provider {
+  position: static !important;
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+  max-width: 100%;
+  min-height: 44px;
+  padding: 0 14px;
+  border: 1px solid rgba(239,239,136,.35);
+  border-radius: 999px;
+  background: rgba(20,20,20,.65);
+  color: #fff;
+  font: 600 15px/1.2 Arial,sans-serif;
+  white-space: nowrap;
+  cursor: pointer;
+  pointer-events: auto !important;
+  backdrop-filter: blur(12px);
 }
-#video-wrapper .provider-source-group .next-provider {
-  gap:9px; max-width:100%; min-width:0; width:100%;
-  padding:0 14px; font:600 15px/1.2 Arial,sans-serif; white-space:nowrap;
+#video-wrapper.stargazer-player-wrapper .provider-source-group .next-provider[hidden] {display:none!important}
+#video-wrapper.stargazer-player-wrapper .provider-source-label {
+  min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
 }
-#video-wrapper .provider-swap-icon {flex:none; font-size:19px; line-height:1; color:#efef88}
-#video-wrapper .provider-source-label {min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
-#video-wrapper .provider-switch-word {flex:none; color:#aaa; font-size:13px; font-weight:500}
-#video-wrapper #close-video-x.provider-close-pill {
-  flex:0 0 44px; width:44px; padding:0; margin-left:auto; align-self:flex-start; color:#efef88; font:500 25px/1 Arial,sans-serif;
+#video-wrapper.stargazer-player-wrapper #close-video-x.provider-close-pill {
+  position: static !important;
+  inset: auto !important;
+  grid-column: 2 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 44px !important;
+  min-width: 44px !important;
+  max-width: 44px !important;
+  height: 44px !important;
+  min-height: 44px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  box-sizing: border-box !important;
+  border: 1px solid rgba(239,239,136,.35) !important;
+  border-radius: 50% !important;
+  background: rgba(20,20,20,.65) !important;
+  color: #efef88 !important;
+  font: 500 25px/1 Arial,sans-serif !important;
+  transform: none !important;
+  pointer-events: auto !important;
+  cursor: pointer !important;
+  backdrop-filter: blur(12px);
 }
-#video-wrapper .provider-source-group .next-provider:hover,
-#video-wrapper #close-video-x.provider-close-pill:hover,
-#video-wrapper .provider-source-group .next-provider:focus-visible,
-#video-wrapper #close-video-x.provider-close-pill:focus-visible {
-  border-color:#efef88;
+#video-wrapper.stargazer-player-wrapper .provider-toolbar button:focus-visible {
+  outline:2px solid #efef88;outline-offset:3px;
 }
-#video-wrapper #close-video-x.provider-close-pill:hover {color:#efef88}
-#video-wrapper .provider-source-group .next-provider:active,
-#video-wrapper #close-video-x.provider-close-pill:active {transform:scale(.97)}
-#video-wrapper .provider-toolbar button:focus:not(:focus-visible) {outline:none}
-#video-wrapper .provider-toolbar button:focus-visible {outline:2px solid #efef88;outline-offset:3px}
-#video-wrapper .provider-toolbar.is-dimmed::before {opacity:0}
-#video-wrapper .provider-toolbar.is-dimmed .next-provider,
-#video-wrapper .provider-toolbar.is-dimmed .provider-close-pill {opacity:.7}
-#video-wrapper .provider-toolbar:hover::before,
-#video-wrapper .provider-toolbar:focus-within::before,
-#video-wrapper .provider-toolbar:hover .next-provider,
-#video-wrapper .provider-toolbar:focus-within .next-provider,
-#video-wrapper .provider-toolbar:hover .provider-close-pill,
-#video-wrapper .provider-toolbar:focus-within .provider-close-pill {opacity:1}
-
-#video-wrapper.stargazer-player-wrapper .provider-toolbar{z-index:1300}
-#video-wrapper.stargazer-player-wrapper .provider-top-row{pointer-events:none}
-#video-wrapper.stargazer-player-wrapper .provider-source-group{pointer-events:auto}
-#video-wrapper.stargazer-player-wrapper #close-video-x.provider-close-pill{pointer-events:auto;position:static!important;top:auto!important;right:auto!important;bottom:auto!important;left:auto!important;transform:none;z-index:auto!important}
-#video-wrapper.stargazer-player-wrapper .provider-source-group .next-provider[hidden]{display:none!important}
-#video-wrapper.stargazer-player-wrapper .sg-live-loader{z-index:1100}
-#video-wrapper.stargazer-player-wrapper .sg-live-loader .sgl-scene{width:min(300px,55vw,42dvh)}
-@media(max-width:600px){#video-wrapper.stargazer-player-wrapper .provider-source-group{max-width:min(80vw,480px)}}
-@media(prefers-reduced-motion:reduce){#video-container{transition:none!important}}
+#video-wrapper.stargazer-player-wrapper .provider-toolbar button:hover {
+  border-color:#efef88 !important;
+}
+#video-wrapper.stargazer-player-wrapper .sg-live-loader { z-index: 1100; }
+#video-wrapper.stargazer-player-wrapper .sg-live-loader .sgl-scene {
+  width: min(300px,55vw,42dvh);
+}
+@media(max-width:600px) {
+  #video-wrapper.stargazer-player-wrapper .provider-top-row {column-gap:8px!important}
+  #video-wrapper.stargazer-player-wrapper .provider-source-group .next-provider {padding:0 10px;gap:6px;font-size:13px}
+  #video-wrapper.stargazer-player-wrapper .provider-switch-word {font-size:12px}
+}
+@media(prefers-reduced-motion:reduce) {
+  #video-container {transition:none!important}
+}
