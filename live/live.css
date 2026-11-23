@@ -477,3 +477,18 @@ body.sg-live-player-open { overflow: hidden !important; }
 @media(prefers-reduced-motion:reduce) {
   #video-container {transition:none!important}
 }
+
+/* Mobile: hide scrollbar tracks without disabling touch scrolling. */
+@media (max-width: 768px), (pointer: coarse) {
+  html, body, body *, body *::before, body *::after {
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+  }
+  html::-webkit-scrollbar, body::-webkit-scrollbar,
+  body *::-webkit-scrollbar {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+    background: transparent !important;
+  }
+}
