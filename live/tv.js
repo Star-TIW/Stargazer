@@ -63,12 +63,13 @@
   // TimStreams exposes non-event listings alongside the sports-event schedule.
   // Include them only when they are explicitly channel-style entries and have
   // public non-VIP iframe URLs on the same validated host used by its game feeds.
+  // /api/channels uses {channels:[{url,name,logo,genre,flag,vip,streams}]}.
   const timChannelsFrom=data=>{
-    const rows=Array.isArray(data?.events)?data.events:[];
+    if(!Array.isArray(data?.channels))throw Error("Invalid TimStreams channel catalog");
     const byName=new Map();
-    for(const row of rows){
-      if(row?.isevent===true||row.vip||!Array.isArray(row.streams))continue;
-      const name=String(row.name||row.title||row.channel_name||"").trim();
+    for(const row of data.channels){
+      if(!row||row.vip||typeof row.name!=="string"||!Array.isArray(row.streams))continue;
+      const name=row.name.trim();
       if(!name)continue;
       const sources=[];
       for(const stream of row.streams){
@@ -76,16 +77,17 @@
         try{
           const url=new URL(stream.url);
           if(url.origin!=="https://shoewiki.click"||url.username||url.password||url.pathname==="/")continue;
-          sources.push({url:url.href,name:"TimStreams"});
+          sources.push({url:url.href,name:"TimStreams"+(stream.name&&stream.name!=="TimStreams"?" · "+stream.name:"")});
         }catch{}
       }
       if(!sources.length)continue;
       const key=normalize(name);
-      const poster=[row.poster,row.image,row.logo,row.thumbnail].find(value=>typeof value==="string"&&/^https:\/\//.test(value))||null;
-      const saved=byName.get(key)||{name,poster,sources:[]};
-      if(!saved.poster)saved.poster=poster;
-      saved.sources.push(...sources);
-      byName.set(key,saved);
+      const logo=typeof row.logo==="string"&&/^https:\/\//.test(row.logo)?row.logo.replace(/&amp;/g,"&"):null;
+      const previous=byName.get(key);
+      if(previous){
+        previous.sources.push(...sources);
+        if(!previous.poster)previous.poster=logo;
+      }else byName.set(key,{name,poster:logo,sources});
     }
     return [...byName.values()];
   };
@@ -157,8 +159,8 @@
         const [damiResult,timResult]=await Promise.allSettled([
           fetch("https://ondemand.st/papi/api/streams",{credentials:"omit",signal:AbortSignal.timeout(9000),cache:"no-store"})
             .then(async response=>{if(!response.ok)throw Error("DAMITV unavailable");return channelsFrom(await response.json());}),
-          fetch("https://tim-streams.com/api/live-upcoming",{credentials:"omit",signal:AbortSignal.timeout(9000),cache:"no-store"})
-            .then(async response=>{if(!response.ok)throw Error("TimStreams unavailable");return timChannelsFrom(await response.json());})
+          fetch("https://tim-streams.com/api/channels",{credentials:"omit",signal:AbortSignal.timeout(9000),cache:"no-store"})
+            .then(async response=>{if(!response.ok)throw Error("TimStreams channels unavailable");return timChannelsFrom(await response.json());})
         ]);
         if(damiResult.status==="rejected"&&timResult.status==="rejected")throw Error("No TV providers reachable");
         channels=mergeChannels(
