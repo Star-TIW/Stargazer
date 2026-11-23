@@ -92,3 +92,10 @@
 }
 @media(orientation:portrait){.sg-mv-shell .mv-layout-4{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:repeat(2,minmax(0,1fr))}}
 @media(prefers-reduced-motion:reduce){.sg-mv-shell,.sg-mv-shell *{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+
+/* Keep the provider iframe mounted and loading beneath the branded animation. */
+.sg-mv-shell .mv-screen{position:relative;display:flex;flex:1;min-height:0;overflow:hidden;background:#000;isolation:isolate}
+.sg-mv-shell .mv-screen iframe{position:relative;display:block;width:100%;height:100%;flex:1;min-height:0;border:0}
+.sg-mv-shell .mv-screen .sg-live-loader{position:absolute;inset:0;z-index:3}
+.sg-mv-shell .mv-screen .sgl-scene{width:min(220px,52%,33dvh)}
+.sg-mv-shell .mv-screen .sgl-subtext{font-size:clamp(8px,1vw,12px);letter-spacing:.1em}
