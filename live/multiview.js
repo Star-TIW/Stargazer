@@ -8,6 +8,27 @@
   const start = $(".mv-start"), stop = $(".mv-stop"), layout = $(".mv-layout");
   const toggle = $(".mv-toggle"), panel = $(".mv-panel"), note = $(".mv-note");
   let games = [], selected = new Set(), tiles = [], focused = null;
+  let filter = "", viewMode = "side";
+  const overlay = document.createElement("div");
+  overlay.className = "sg-mv-overlay"; overlay.hidden = true;
+  overlay.setAttribute("role","dialog"); overlay.setAttribute("aria-modal","true");
+  overlay.setAttribute("aria-label",isTV ? "TV Multi-view player" : "Sports Multi-view player");
+  const shell = document.createElement("div"); shell.className = "sg-mv-shell";
+  const topbar = document.createElement("div"); topbar.className = "sg-mv-topbar";
+  const heading = document.createElement("strong"); heading.textContent = isTV ? "TV Multi-view" : "Sports Multi-view";
+  const view = document.createElement("button"); view.type = "button"; view.className = "sg-mv-switch"; view.textContent = "Stack views";
+  const fullscreen = document.createElement("button"); fullscreen.type = "button"; fullscreen.className = "sg-mv-fullscreen"; fullscreen.textContent = "Full screen";
+  const close = document.createElement("button"); close.type = "button"; close.className = "sg-mv-close"; close.textContent = "×"; close.setAttribute("aria-label","Close Multi-view");
+  topbar.append(heading,view,fullscreen,close);
+  shell.append(topbar); overlay.append(shell); document.body.append(overlay);
+  const setView = mode => { viewMode = mode; stage.classList.toggle("mv-stacked",mode === "stack"); view.textContent = mode === "stack" ? "Side by side" : "Stack views"; };
+  view.onclick = () => setView(viewMode === "side" ? "stack" : "side");
+  fullscreen.onclick = async () => { try { if(document.fullscreenElement === shell) await document.exitFullscreen(); else await shell.requestFullscreen(); } catch {} };
+  const closeOverlay = () => { stopAll(); if(document.fullscreenElement === shell) document.exitFullscreen().catch(()=>{}); overlay.hidden = true; panel.append(stage); };
+  close.onclick = closeOverlay;
+  overlay.addEventListener("click",e => { if(e.target === overlay)closeOverlay(); });
+  document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!overlay.hidden)closeOverlay()});
+  window.addEventListener("stargazer:stream-search",e=>{filter=String(e.detail?.query||"").toLowerCase();update()});
   const sourcesFor = stream => [
     ...(stream.embeds || []).map((url,i) => ({url,name:"StreamFree" + (i ? " "+(i+1):"")})),
     ...(stream.ppv?.embeds || []).map((url,i) => ({url,name:"PPV.ST" + (i ? " "+(i+1):"")})),
@@ -31,7 +52,7 @@
       picker.append(empty);
       return;
     }
-    for (const game of games) {
+    for (const game of games.filter(g => g.name.toLowerCase().includes(filter))) {
       const chosen = selected.has(game.id);
       const card = document.createElement("button");
       card.type = "button";
@@ -57,13 +78,15 @@
     stage.replaceChildren();
     stage.hidden = true;
     stop.disabled = true;
+    if(!overlay.hidden){overlay.hidden=true;panel.append(stage);}
   };
   const focus = id => {
     focused = id;
     tiles.forEach(t => {
       const active = t.id === id;
       t.element.classList.toggle("mv-focused",active);
-      t.focus.textContent = active ? "● Focused" : "Focus";
+      t.focus.textContent = active ? "● Selected" : "Select";
+      t.focus.setAttribute("aria-pressed",String(active));
     });
     note.textContent = "Focused: " + (games.find(g=>g.id===id)?.name || (isTV ? "Channel" : gameName(id)));
   };
@@ -92,6 +115,7 @@
       frame.allowFullscreen = true;
       frame.loading = "eager";
       const tile = {id:game.id,element,frame,focus:focusButton};
+      element.addEventListener("click",e=>{if(e.target===element)focus(game.id)});
       focusButton.onclick = () => focus(game.id);
       source.onclick = () => {
         sourceIndex = (sourceIndex + 1) % game.sources.length;
@@ -110,16 +134,18 @@
       stage.hidden = false;
       stop.disabled = false;
       focus(tiles[0].id);
-      stage.scrollIntoView({behavior:"smooth",block:"nearest"});
+      shell.append(stage);
+      overlay.hidden = false;
+      stage.scrollIntoView({behavior:"instant",block:"nearest"});
     }
   };
-  stop.onclick = stopAll;
+  stop.onclick = closeOverlay;
   toggle.onclick = () => {
     const open = panel.hidden;
     panel.hidden = !open;
     toggle.setAttribute("aria-expanded",String(open));
     toggle.textContent = open ? "Close Multi-view" : "Multi-view";
-    if (!open) stopAll();
+    if (!open) closeOverlay();
   };
   layout.onchange = () => {
     const max = Number(layout.value);
