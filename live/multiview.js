@@ -141,7 +141,9 @@
       frame.allow = "autoplay; fullscreen; encrypted-media; picture-in-picture";
       frame.allowFullscreen = true;
       frame.loading = "eager";
-      const tile = {id:game.id,name:game.name,element,frame,focus:focusButton,loader:null};
+      const screen = document.createElement("div");
+      screen.className = "mv-screen";
+      const tile = {id:game.id,name:game.name,element,screen,frame,focus:focusButton,loader:null};
       frame.addEventListener("load",()=>requestMute(frame,focused!==game.id));
       element.addEventListener("click",e=>{if(e.target===element)focus(game.id)});
       focusButton.onclick = () => focus(game.id);
@@ -150,17 +152,18 @@
         source.textContent = game.sources[sourceIndex].name + " ↻";
         frame.referrerPolicy = /^TimStreams(?:\s|$)/i.test(game.sources[sourceIndex].name) ? "strict-origin-when-cross-origin" : "no-referrer";
         tile.loader?.close();
-        tile.loader = window.StargazerLiveLoader?.create(element,"Loading "+game.name,frame);
+        tile.loader = window.StargazerLiveLoader?.create(screen,"Loading "+game.name,frame);
         frame.src = game.sources[sourceIndex].url;
       };
       toolbar.append(title,focusButton,source);
-      element.append(toolbar,frame);
+      screen.append(frame);
+      element.append(toolbar,screen);
       stage.append(element);
       tiles.push(tile);
     }
     // All navigations occur synchronously in the Start click, not in a timer.
     chosen.forEach((game,i) => {
-      tiles[i].loader = window.StargazerLiveLoader?.create(tiles[i].element,"Loading "+game.name,tiles[i].frame);
+      tiles[i].loader = window.StargazerLiveLoader?.create(tiles[i].screen,"Loading "+game.name,tiles[i].frame);
       tiles[i].frame.src = game.sources[0].url;
     });
     if (tiles.length) {
