@@ -151,6 +151,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const showEmbed = () => {
     const source = activeEmbeds[activeEmbedIndex];
+    if (!source || !videoIframe) return;
     // TimStreams requires the embedding origin; other providers retain the original privacy setting.
     videoIframe.referrerPolicy = /^(?:TimStreams)(?:\s|$)/i.test(source.name) ? "strict-origin-when-cross-origin" : "no-referrer";
     videoIframe.removeAttribute("sandbox");
@@ -183,13 +184,12 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!activeEmbeds.length) return;
     activeEmbedIndex = 0;
     showEmbed();
+    document.body.classList.add("sg-live-player-open");
+    videoContainer.classList.add("is-open");
     videoContainer.style.display = "flex";
-    setTimeout(() => {
-      videoContainer.style.opacity = 1;
-      videoContainer.querySelector("#video-wrapper").style.transform = "scale(1)";
-      try { videoIframe.contentWindow?.focus(); } catch { }
-      videoIframe.scrollIntoView({ behavior: "smooth", block: "center" });
-    }, 50);
+    videoContainer.style.opacity = "1";
+    videoContainer.querySelector("#video-wrapper").style.transform = "scale(1)";
+    closeVideoX.focus({preventScroll:true});
   };
 
   const toolbar = document.createElement("div");
@@ -202,51 +202,51 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   const setupVideoOverlay = () => {
+    // Use the same edge-to-edge player shell and top control row as movies.
     if (!videoContainer) {
       videoContainer = document.createElement("div");
       videoContainer.id = "video-container";
-      Object.assign(videoContainer.style, {
-        position: "fixed", top: 0, left: 0, width: "100%", height: "100%",
-        background: "rgba(0,0,0,0.85)", display: "none", justifyContent: "center",
-        alignItems: "center", zIndex: 1000, opacity: 0, transition: "opacity 0.4s ease"
-      });
-
-      const videoWrapper = document.createElement("div");
-      videoWrapper.id = "video-wrapper";
-      Object.assign(videoWrapper.style, {
-        position: "relative", width: "75vw", height: "75vh",
-        maxWidth: "1200px", maxHeight: "800px", background: "#000",
-        borderRadius: "12px", boxShadow: "0 4px 20px rgba(239,239,136,0.3)",
-        overflow: "hidden", transform: "scale(0.8)", transition: "transform 0.4s ease"
-      });
-
-      closeVideoX = document.createElement("button");
-      closeVideoX.setAttribute("aria-label", "Close player");
-      closeVideoX.id = "close-video-x";
-      closeVideoX.innerHTML = "&times;";
-      Object.assign(closeVideoX.style, {
-        position: "absolute", top: "10px", right: "15px",
-        color: "#efef88", fontSize: "32px", fontWeight: "bold",
-        cursor: "pointer", zIndex: 250, transition: "color 0.3s ease"
-      });
-
+      videoContainer.style.display = "none";
+      const wrapper = document.createElement("div");
+      wrapper.id = "video-wrapper";
       videoIframe = document.createElement("iframe");
       videoIframe.id = "video-iframe";
-      videoIframe.setAttribute("frameborder", "0");
-      videoIframe.setAttribute("allow", "autoplay; fullscreen; encrypted-media; picture-in-picture");
-      videoIframe.setAttribute("allowfullscreen", "");
-      Object.assign(videoIframe.style, { width: "100%", height: "100%", border: "none", display: "block" });
-
-      videoWrapper.append(closeVideoX, videoIframe);
-      videoContainer.appendChild(videoWrapper);
-      document.body.appendChild(videoContainer);
-    } else {
-      videoIframe = document.getElementById("video-iframe");
-      closeVideoX = document.getElementById("close-video-x");
+      wrapper.append(videoIframe);
+      videoContainer.append(wrapper);
+      document.body.append(videoContainer);
     }
+    let wrapper = videoContainer.querySelector("#video-wrapper");
+    if (!wrapper) {
+      wrapper = document.createElement("div");
+      wrapper.id = "video-wrapper";
+      videoContainer.append(wrapper);
+    }
+    videoIframe = wrapper.querySelector("#video-iframe") || document.createElement("iframe");
+    videoIframe.id = "video-iframe";
+    videoIframe.title = "Live stream player";
+    videoIframe.setAttribute("allow", "autoplay; fullscreen; encrypted-media; picture-in-picture");
+    videoIframe.setAttribute("allowfullscreen", "");
+    videoIframe.setAttribute("frameborder", "0");
+    videoIframe.removeAttribute("sandbox");
+    if (!videoIframe.parentElement) wrapper.append(videoIframe);
 
-    videoIframe.title = "Live game player";
-    videoContainer.querySelector("#video-wrapper").appendChild(toolbar);
+    closeVideoX = wrapper.querySelector("#close-video-x") || document.createElement("button");
+    closeVideoX.type = "button";
+    closeVideoX.id = "close-video-x";
+    closeVideoX.className = "provider-close-pill";
+    closeVideoX.setAttribute("aria-label", "Close player");
+    closeVideoX.textContent = "×";
+
+    sourceLabel.className = "provider-source-label";
+    toolbar.className = "provider-toolbar";
+    const topRow = document.createElement("div");
+    topRow.className = "provider-top-row";
+    const sourceGroup = document.createElement("div");
+    sourceGroup.className = "provider-source-group";
+    sourceGroup.append(nextSource);
+    topRow.append(sourceGroup, closeVideoX);
+    toolbar.replaceChildren(topRow);
+    wrapper.append(toolbar);
 
     const hideOverlay = () => {
       clearTimeout(hideVideoTimer);
@@ -254,16 +254,25 @@ document.addEventListener("DOMContentLoaded", () => {
       liveOpeningLoader = null;
       playerRequest++;
       activeEmbeds = [];
+      activeStreamTitle = "";
       nextSource.hidden = true;
       videoIframe.src = "about:blank";
       videoContainer.style.opacity = "0";
-      videoContainer.querySelector("#video-wrapper").style.transform = "scale(0.8)";
-      hideVideoTimer = setTimeout(() => videoContainer.style.display = "none", 400);
+      wrapper.style.transform = "scale(.985)";
+      document.body.classList.remove("sg-live-player-open");
+      hideVideoTimer = setTimeout(() => {
+        videoContainer.style.display = "none";
+        videoContainer.classList.remove("is-open");
+        wrapper.style.transform = "";
+      }, 220);
     };
 
     window.StargazerLiveClosePlayer = hideOverlay;
     closeVideoX.onclick = hideOverlay;
-    videoContainer.onclick = (e) => { if (e.target === videoContainer) hideOverlay(); };
+    videoContainer.onclick = e => { if (e.target === videoContainer) hideOverlay(); };
+    window.addEventListener("keydown", e => {
+      if (e.key === "Escape" && videoContainer.classList.contains("is-open")) hideOverlay();
+    });
   };
   setupVideoOverlay();
   // Reuse the sports player for live TV so its source switcher, overlay and sizing stay identical.
