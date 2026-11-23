@@ -132,6 +132,7 @@ document.addEventListener("DOMContentLoaded", () => {
   let activeEmbeds = [];
   let activeEmbedIndex = 0;
   let hideVideoTimer;
+  let liveOpeningLoader = null;
 
   const nextSource = document.createElement("button");
   nextSource.type = "button";
@@ -152,6 +153,12 @@ document.addEventListener("DOMContentLoaded", () => {
     // TimStreams requires the embedding origin; other providers retain the original privacy setting.
     videoIframe.referrerPolicy = /^(?:TimStreams)(?:\s|$)/i.test(source.name) ? "strict-origin-when-cross-origin" : "no-referrer";
     videoIframe.removeAttribute("sandbox");
+    liveOpeningLoader?.close();
+    liveOpeningLoader = window.StargazerLiveLoader?.create(
+      videoContainer.querySelector("#video-wrapper"),
+      "Loading " + source.name,
+      videoIframe
+    );
     videoIframe.src = source.url;
     sourceLabel.textContent = source.name;
     nextSource.hidden = false;
@@ -241,6 +248,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const hideOverlay = () => {
       clearTimeout(hideVideoTimer);
+      liveOpeningLoader?.close();
+      liveOpeningLoader = null;
       playerRequest++;
       activeEmbeds = [];
       nextSource.hidden = true;
