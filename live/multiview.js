@@ -9,6 +9,7 @@
   const toggle = $(".mv-toggle"), panel = $(".mv-panel"), note = $(".mv-note");
   let games = [], selected = new Set(), tiles = [], focused = null;
   let filter = "", viewMode = "side";
+  const audioOwner = root.id;
   const overlay = document.createElement("div");
   overlay.className = "sg-mv-overlay"; overlay.hidden = true;
   overlay.setAttribute("role","dialog"); overlay.setAttribute("aria-modal","true");
@@ -16,10 +17,11 @@
   const shell = document.createElement("div"); shell.className = "sg-mv-shell";
   const topbar = document.createElement("div"); topbar.className = "sg-mv-topbar";
   const heading = document.createElement("strong"); heading.textContent = isTV ? "TV Multi-view" : "Sports Multi-view";
+  const audioHint = document.createElement("span"); audioHint.className = "sg-mv-audio-hint"; audioHint.textContent = "Audio focus";
   const view = document.createElement("button"); view.type = "button"; view.className = "sg-mv-switch"; view.textContent = "Stack views";
   const fullscreen = document.createElement("button"); fullscreen.type = "button"; fullscreen.className = "sg-mv-fullscreen"; fullscreen.textContent = "Full screen";
   const close = document.createElement("button"); close.type = "button"; close.className = "sg-mv-close"; close.textContent = "×"; close.setAttribute("aria-label","Close Multi-view");
-  topbar.append(heading,view,fullscreen,close);
+  topbar.append(heading,audioHint,view,fullscreen,close);
   shell.append(topbar); overlay.append(shell); document.body.append(overlay);
   const setView = mode => { viewMode = mode; stage.classList.toggle("mv-stacked",mode === "stack"); view.textContent = mode === "stack" ? "Side by side" : "Stack views"; };
   view.onclick = () => setView(viewMode === "side" ? "stack" : "side");
@@ -86,6 +88,21 @@
     stop.disabled = true;
     if(!overlay.hidden){overlay.hidden=true;panel.append(stage);}
   };
+  // Keep all streams playing behind the loading animation. Ask cooperative
+  // embedded players to mute; cross-origin providers may ignore these commands.
+  const requestMute = (frame, muted) => {
+    try {
+      const target = new URL(frame.src).origin;
+      if (target === "null") return;
+      for (const message of [
+        {event:"command",func:muted?"mute":"unMute",args:[]},
+        {type:muted?"mute":"unmute"},
+        {method:"setMuted",muted},
+        {command:muted?"mute":"unmute"},
+        {type:"setVolume",volume:muted?0:1}
+      ]) frame.contentWindow?.postMessage(message,target);
+    } catch {}
+  };
   const focus = id => {
     focused = id;
     tiles.forEach(t => {
@@ -93,8 +110,12 @@
       t.element.classList.toggle("mv-focused",active);
       t.focus.textContent = active ? "● Selected" : "Select";
       t.focus.setAttribute("aria-pressed",String(active));
+      t.focus.setAttribute("aria-label",(active?"Audio focused on ":"Focus audio on ")+t.name);
+      requestMute(t.frame,!active);
     });
-    note.textContent = "Focused: " + (games.find(g=>g.id===id)?.name || (isTV ? "Channel" : gameName(id)));
+    const activeName = tiles.find(t=>t.id===id)?.name || "Stream";
+    audioHint.textContent = "Audio: "+activeName;
+    note.textContent = "Audio focus: "+activeName+". Some external players may require manual muting.";
   };
   start.onclick = () => {
     stopAll();
@@ -120,7 +141,8 @@
       frame.allow = "autoplay; fullscreen; encrypted-media; picture-in-picture";
       frame.allowFullscreen = true;
       frame.loading = "eager";
-      const tile = {id:game.id,element,frame,focus:focusButton,loader:null};
+      const tile = {id:game.id,name:game.name,element,frame,focus:focusButton,loader:null};
+      frame.addEventListener("load",()=>requestMute(frame,focused!==game.id));
       element.addEventListener("click",e=>{if(e.target===element)focus(game.id)});
       focusButton.onclick = () => focus(game.id);
       source.onclick = () => {
@@ -128,7 +150,7 @@
         source.textContent = game.sources[sourceIndex].name + " ↻";
         frame.referrerPolicy = /^TimStreams(?:\s|$)/i.test(game.sources[sourceIndex].name) ? "strict-origin-when-cross-origin" : "no-referrer";
         tile.loader?.close();
-        tile.loader = window.StargazerLiveLoader?.create(element,"Loading "+game.sources[sourceIndex].name,frame);
+        tile.loader = window.StargazerLiveLoader?.create(element,"Loading "+game.name,frame);
         frame.src = game.sources[sourceIndex].url;
       };
       toolbar.append(title,focusButton,source);
@@ -138,7 +160,7 @@
     }
     // All navigations occur synchronously in the Start click, not in a timer.
     chosen.forEach((game,i) => {
-      tiles[i].loader = window.StargazerLiveLoader?.create(tiles[i].element,"Loading "+game.sources[0].name,tiles[i].frame);
+      tiles[i].loader = window.StargazerLiveLoader?.create(tiles[i].element,"Loading "+game.name,tiles[i].frame);
       tiles[i].frame.src = game.sources[0].url;
     });
     if (tiles.length) {
