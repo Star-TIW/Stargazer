@@ -121,6 +121,7 @@
   }
   function render(){
     list.replaceChildren();
+    window.dispatchEvent(new CustomEvent("stargazer:tv-channels",{detail:{channels}}));
     if(!channels.length){status("No TV channels are currently listed.");return}
     for(const channel of channels){
       const card=document.createElement("div");
@@ -188,6 +189,7 @@
     sports.hidden=value;
     tvButton.classList.toggle("active",value);
     tvButton.setAttribute("aria-pressed",String(value));
+    try{localStorage.setItem("selectedSport",value?"tv":(document.querySelector(".sport-btn[data-sport].active")?.dataset.sport||"nfl"))}catch{}
     if(value){
       document.querySelectorAll(".sport-btn[data-sport]").forEach(button=>{
         button.classList.remove("active");
@@ -197,6 +199,7 @@
     }else closePlayer();
   };
   tvButton.onclick=()=>switchTV(section.hidden);
+  try{if(localStorage.getItem("selectedSport")==="tv")switchTV(true)}catch{}
   document.querySelectorAll(".sport-btn[data-sport]").forEach(button=>{
     button.addEventListener("click",()=>switchTV(false));
   });
