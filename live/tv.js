@@ -198,6 +198,7 @@
       if(Date.now()-loadedAt>60000)refresh();
     }else closePlayer();
   };
+  window.addEventListener("stargazer:tv-reload",()=>{loadedAt=0;refresh()});
   tvButton.onclick=()=>switchTV(section.hidden);
   try{if(localStorage.getItem("selectedSport")==="tv")switchTV(true)}catch{}
   document.querySelectorAll(".sport-btn[data-sport]").forEach(button=>{
