@@ -5,7 +5,7 @@
 #sg-tv-live-list{min-width:0}
 #sg-tv-live-list .game-card{min-width:0}
 #sg-tv .games-header:focus-visible{outline:2px solid #efef88;outline-offset:2px}
-#sg-tv-live-list.collapsible.closed{max-height:0!important;min-height:0!important;overflow:hidden!important;padding-top:0!important;padding-bottom:0!important;opacity:0!important}
+#sg-tv-live-list.collapsible.closed{min-height:0!important;overflow:hidden!important}
 #sg-tv-live-list.collapsible.open{overflow:hidden}
 #sg-tv-live-list .sg-tv-card{
  position:relative;isolation:isolate;overflow:hidden;
