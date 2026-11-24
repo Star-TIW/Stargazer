@@ -700,7 +700,7 @@
     const native=Boolean(track.audioId);mediaControls(track);
     $('#now-art').hidden=false;$('#mount').hidden=native;$('#dock').hidden=false;
     if(!matchMedia('(prefers-reduced-motion:reduce)').matches){
-      for(const id of ['#visual','#now-title','#now-artist']) $(id).animate([{transform:'translateX(12px)'},{transform:'translateX(0)'}],{duration:260,easing:'ease-out'});
+      for(const id of ['#now-title','#now-artist']) $(id).animate([{transform:'translateX(12px)'},{transform:'translateX(0)'}],{duration:260,easing:'ease-out'});
     }
     $('#playing').textContent=track.title+' · '+track.artist;
     $('#previous').disabled=!i;$('#next').disabled=i===queue.length-1;
