@@ -30,7 +30,7 @@
   let playlists=readList(playlistKey).filter(p=>typeof p?.name==='string' && Array.isArray(p.tracks) && p.tracks.every(validSong));
   let mix=[], mixRequest, currentList=null, listenTimer;
   function pool() {
-    const items=[...history.map(e=>e.track),...saved,...releases];
+    const items=[...audioLibrary,...history.map(e=>e.track),...saved,...releases];
     return [...new Map(items.map(t=>[t.id,t])).values()];
   }
   function localSearch(term){
