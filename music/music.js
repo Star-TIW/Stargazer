@@ -82,13 +82,6 @@
     return audioCatalog;
   }
   loadAudioLibrary().catch(()=>{});
-  $('#browse-audio').onclick=async()=>{
-    $('#audio-dialog').close();view='audio';query='';$('#search').value='';render();
-    try {
-      await loadAudioLibrary();
-      if(view==='audio')render();
-    }catch {if(view==='audio')catalog.textContent='Couldn’t load album-art tracks. Reopen them in playback settings to retry.';}
-  };
   $('#audio-settings').onclick=async()=>{
     $('#audio-dialog').showModal();
     const state=await StargazerDJ.availability();
@@ -239,7 +232,6 @@
     catalog.replaceChildren();
     $('#dj-card').hidden=(view!=='dj') || !releases.length;
     mixControls(); renderPlaylists();
-    if(view==='audio'){show(shelf('Album-art tracks'),audioLibrary,'Loading tracks…');return;}
     if(view==='dj' || view==='playlist') {
       const tracks=view==='dj' ? mix : currentList.tracks;
       show(shelf(view==='dj' ? 'Your DJ mix' : currentList.name),tracks,'Building your mix…');return;
