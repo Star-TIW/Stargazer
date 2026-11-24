@@ -126,3 +126,18 @@ body:has(.music-hero) > .header { position:sticky; top:0; }
 @media(max-width:768px) {
   .header .navbar:not(.active) { right:0; transform:translateX(100%); display:none; }
 }
+
+body:has(.music-hero) > .header { z-index:150; background:#242424; backdrop-filter:none; -webkit-backdrop-filter:none; }
+.studio { isolation:isolate; position:relative; z-index:0; }
+#conversation { display:grid; gap:8px; margin:16px 0; max-height:240px; overflow:auto; }
+#conversation p { width:fit-content; max-width:90%; padding:9px 13px; border-radius:13px; background:#292923; line-height:1.45; }
+#conversation .listener { justify-self:end; background:#44412d; }
+#dj-chat label { display:block; font-size:.85rem; margin-bottom:6px; }
+#dj-chat div { display:flex; gap:8px; }
+#dj-prompt { flex:1; min-width:0; font-size:16px; color:white; background:#151515; border:1px solid #efef8855; border-radius:20px; padding:10px 14px; }
+#dj-prompt::placeholder { color:#aaa; font:inherit; }
+#dj-chat button,#audio-dialog button { padding:9px 16px; border:0; border-radius:18px; background:#efef88; color:#171717; cursor:pointer; }
+#dj-progress,#model-status { color:#dedeb7; font-size:.85rem; margin:8px 0; }
+#audio-dialog { margin:auto; padding:24px; width:min(92vw,390px); color:#f7f6eb; background:#191919; border:1px solid #efef8844; border-radius:18px; }
+#audio-dialog::backdrop { background:#000a; }
+#audio-dialog label { display:flex; align-items:center; justify-content:space-between; margin:20px 0; }

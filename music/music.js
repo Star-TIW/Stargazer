@@ -47,6 +47,78 @@
     },10000);
   }
   let counted=false;
+  const greeting="Yo, let’s vibe to the stars. What are we cooking up today?";
+  let djVoice=true, fade=0, previousPlan=null, greeted=false, lastGain=-1;
+  try {
+    const settings=JSON.parse(localStorage.getItem('stargazer.music.audio-options'));
+    if([0,2,4,8].includes(settings?.fade)) fade=settings.fade;
+    djVoice=settings?.voice!==false;
+  } catch { /* Use defaults. */ }
+  function say(line) {
+    if(!djVoice || !window.speechSynthesis) return;
+    speechSynthesis.cancel();
+    const utterance=new SpeechSynthesisUtterance(line); utterance.lang='en-US';
+    speechSynthesis.speak(utterance);
+  }
+  function message(line,user=false) {
+    const log=$('#conversation');
+    log.append(element('p',user?'listener':'dj-reply',line));
+    log.scrollTop=log.scrollHeight;
+  }
+  function openBooth() {
+    view='dj'; query=''; $('#search').value='';
+    if(!greeted){message(greeting);greeted=true;say(greeting);}
+    render(); $('#dj-card').scrollIntoView({block:'center'});
+  }
+  function saveOptions() { persist('stargazer.music.audio-options',{fade,voice:djVoice}); }
+  $('#voice-on').checked=djVoice;
+  $('#voice-on').onchange=e=>{djVoice=e.target.checked;saveOptions();if(!djVoice)window.speechSynthesis?.cancel();};
+  $('#fade').value=String(fade);
+  $('#fade').onchange=e=>{fade=Number(e.target.value);saveOptions();applyGain();};
+  $('#audio-settings').onclick=async()=>{
+    $('#audio-dialog').showModal();
+    const state=await StargazerDJ.availability();
+    $('#enable-model').hidden=state!=='downloadable' && state!=='downloading';
+    $('#model-status').textContent=state==='available'?'On-device AI is ready.':state==='unavailable'?'Genre and artist requests are available on this device.':'On-device AI is optional. Downloading uses device storage.';
+  };
+  $('#enable-model').onclick=async()=>{
+    const button=$('#enable-model'); button.disabled=true; $('#model-status').textContent='Preparing on-device AI…';
+    try {const model=await window.LanguageModel.create(StargazerDJ.options); model.destroy();button.hidden=true;$('#model-status').textContent='On-device AI is ready.';}
+    catch {$('#model-status').textContent='Model unavailable. You can still request a genre or artist.';}
+    finally {button.disabled=false;}
+  };
+  $('#dj-chat').onsubmit=async event=>{
+    event.preventDefault();
+    const input=$('#dj-prompt'), text=input.value.trim(); if(!text)return;
+    input.value='';message(text,true);
+    mixRequest?.abort();
+    const controller=new AbortController();mixRequest=controller;
+    $('#dj-progress').textContent='Finding official recordings…';
+    try {
+      const plan=await StargazerDJ.plan(text,previousPlan,AbortSignal.any([controller.signal,AbortSignal.timeout(12000)]));
+      if(controller.signal.aborted)return;
+      const groups=await Promise.all(plan.artists.map(async artist=>{
+        const normal=s=>s.toLowerCase().replace(/[^\p{L}\p{N}]+/gu,' ').trim();
+        const matches=t=>normal(t.artist)===normal(artist) || t.artist.split(',').some(a=>normal(a)===normal(artist));
+        const local=pool().filter(matches);
+        try {
+          const r=await fetch('/api/music-search?q='+encodeURIComponent(artist),{signal:AbortSignal.any([controller.signal,AbortSignal.timeout(8500)])});
+          if(r.ok)return [...(await r.json()).filter(t=>validSong(t)&&matches(t)),...local].slice(0,10);
+        } catch { /* Use matching catalog songs. */ }
+        return local;
+      }));
+      if(controller.signal.aborted)return;
+      const ordered=[];
+      for(let i=0;i<Math.max(0,...groups.map(g=>g.length));i++) for(const group of groups) if(group[i])ordered.push(group[i]);
+      const songs=StargazerMixes.mix(ordered,true);
+      if(!songs.length){const line='I couldn’t find a matching release. Give me an artist or a genre like rock, hip-hop, or country.';message(line);if(view==='dj')say(line);return;}
+      previousPlan=plan;mix=songs;
+      playlists=[{name:plan.name,tracks:mix.slice()},...playlists];persist(playlistKey,playlists);
+      const line='Your '+plan.name+' is ready. '+mix.length+' songs, starting with '+mix[0].title+' by '+mix[0].artist+'.';
+      message(line);if(view==='dj'){render();say(line);}
+    } catch {if(!controller.signal.aborted)message('That request didn’t finish. Try another artist or genre.');}
+    finally {if(mixRequest===controller)$('#dj-progress').textContent='';}
+  };
   function mixControls() {
     $('#dj-play').disabled=!mix.length;
     $('#dj-new').disabled=!releases.length;
@@ -55,7 +127,7 @@
     $('#dj-description').textContent=history.length ? 'Inspired by your listening, including '+history[0].track.artist+'.' : 'Start with familiar hits and discover a few new favorites.';
   }
   async function generateMix() {
-    mixRequest?.abort();
+    mixRequest?.abort(); $('#dj-progress').textContent='';
     const controller=new AbortController(); mixRequest=controller;
     const seed=history[0]?.track || saved[0];
     let extra=[];
@@ -165,7 +237,7 @@
       songRow(personal ? 'For you' : 'Popular picks',picks);
       const dj=shelf('Made for you');
       const launch=element('button','dj-launch','♫   Stargazer DJ');
-      launch.onclick=()=>{view='dj';generateMix();render();};dj.append(launch);
+      launch.onclick=openBooth;dj.append(launch);
       if(personal) songRow('Popular picks',StargazerMixes.popular(releases));
       quickPicks();
       matches=matches.filter(t=>!picks.some(p=>p.id===t.id));
@@ -224,7 +296,8 @@
   $('#search-container').onsubmit=e=>{e.preventDefault();search($('#search').value)};
   $('#search').oninput=()=>{if (!$('#search').value && query) search('')};
   document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>{
-    query=''; $('#search').value=''; view=b.dataset.view; if(view==='dj' && history.length) generateMix(); render();
+    if(b.dataset.view==='dj'){openBooth();return;}
+    query=''; $('#search').value=''; view=b.dataset.view; render();
   });
 
   let player, ready=false, queue=[], index=0, repeat=false, volume=80, muted=false, failed=false;
@@ -244,10 +317,17 @@
     }));
   }
   function status(text) { $('#audio-status').textContent=text; }
+  function applyGain() {
+    if(!ready) return;
+    const position=player.getCurrentTime() || 0, duration=player.getDuration() || 0;
+    const gain=fade && duration ? Math.max(0,Math.min(1,position/fade,(duration-position)/fade)) : 1;
+    const target=Math.round(volume*gain);
+    if(target!==lastGain){player.setVolume(target);lastGain=target;}
+  }
   function levels() {
     $('#volume').value=volume; $('#percent').textContent=(muted?0:volume)+'%';
     $('#mute').textContent=muted?'Unmute':'Mute'; $('#mute').setAttribute('aria-pressed',String(muted));
-    if (ready) {player.setVolume(volume); if (muted) player.mute(); else player.unMute();}
+    if (ready) {applyGain(); if (muted) player.mute(); else player.unMute();}
   }
   function saveLevels() {
     levels();try{localStorage.setItem('stargazer.music.volume',JSON.stringify({level:volume/100,muted}));}catch{}
@@ -260,7 +340,7 @@
     $('#seek').max=end||0; $('#seek').value=pos||0; $('#seek').disabled=!end;
     $('#elapsed').textContent=time(pos); $('#duration').textContent=time(end);
   }
-  setInterval(()=>{if(ready) timeline()},500);
+  setInterval(()=>{if(ready) { timeline();applyGain(); }},500);
   $('#seek').oninput=e=>{if(ready) player.seekTo(Number(e.target.value),true)};
   function state(event) {
     if (event.target!==player) return;
@@ -276,7 +356,7 @@
     const iframe=$('#mount iframe');
     if (!iframe || !window.YT?.Player || player) return;
     player=new YT.Player(iframe,{events:{
-      onReady:e=>{if(e.target!==player)return;ready=true;levels();timeline();},
+      onReady:e=>{if(e.target!==player)return;ready=true;lastGain=-1;levels();timeline();},
       onStateChange:state,
       onAutoplayBlocked:()=>status('Press play in Now Playing to start.'),
       onError:()=>{failed=true;status('This song is unavailable in the embedded player. Choose another song or press Play to retry.');}
@@ -290,7 +370,7 @@
     f.referrerPolicy='strict-origin-when-cross-origin';
     f.allow='autoplay; encrypted-media; fullscreen; picture-in-picture';f.allowFullscreen=true;
     const url=new URL('https://www.youtube.com/embed/'+track.id);
-    url.search=new URLSearchParams({enablejsapi:'1',origin:location.origin,autoplay:'1',playsinline:'1',rel:'0'});
+    url.search=new URLSearchParams({enablejsapi:'1',origin:location.origin,autoplay:'1',playsinline:'1',rel:'0',controls:'0',disablekb:'1',fs:'0'});
     f.src=url.href;$('#mount').replaceChildren(f);
     if(!document.getElementById('yt-api') && !window.YT?.Player){
       const script=element('script');script.id='yt-api';script.src='https://www.youtube.com/iframe_api';
@@ -306,7 +386,7 @@
     $('#previous').disabled=!i;$('#next').disabled=i===queue.length-1;
     status('');$('#play').textContent='Play';
     if(matchMedia('(max-width:760px)').matches) $('#now').scrollIntoView({block:'start'});
-    if(ready) player.loadVideoById(track.id); else frame(track);
+    if(ready) {if(fade){player.setVolume(0);lastGain=0;} player.loadVideoById(track.id);} else frame(track);
   }
   function openPlayer(track,tracks){queue=tracks.slice();load(queue.indexOf(track));}
   $('#previous').onclick=()=>load(index-1);$('#next').onclick=()=>load(index+1);

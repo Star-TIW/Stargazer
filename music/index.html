@@ -16,7 +16,7 @@
     <div class="brand-group"><img class="logo-small" src="/stargazer-512.png" alt="Stargazer logo"><h1 class="brand">Stargazer</h1></div>
     <button type="button" class="menu-toggle" aria-label="Open navigation" aria-controls="navbar" aria-expanded="false"><span></span></button>
     <nav class="navbar" id="navbar">
-      <a href="/" class="nav-button">Main</a><a href="/live/" class="nav-button">Live</a><a aria-current="page" href="/music/" class="nav-button">Music</a>
+      <a href="/" class="nav-button">Main</a><a href="/live/" class="nav-button">Live</a>
       <button class="nav-button" id="settings-btn">Settings</button>
     </nav>
   </header>
@@ -32,11 +32,15 @@
         <button data-view="all" aria-label="Discover music" title="Discover music" aria-pressed="true">♫</button>
         <button data-view="saved" aria-label="Liked songs" title="Liked songs" aria-pressed="false">♥</button>
         <button data-view="dj" aria-label="Stargazer DJ" title="Stargazer DJ" aria-pressed="false">DJ</button>
+        <button id="audio-settings" aria-label="Playback settings" title="Playback settings">⚙</button>
         <div id="shortcuts"></div>
       </nav>
       <section class="browse" aria-label="Browse music">
         <section id="dj-card" hidden>
-          <div><p class="eyebrow">Stargazer DJ</p><h2>Your personal mix</h2><p id="dj-description"></p></div>
+          <div><p class="eyebrow">Stargazer DJ</p><h2>DJ booth</h2><p id="dj-description"></p></div>
+          <div id="conversation" role="log" aria-label="DJ conversation"></div>
+          <form id="dj-chat"><label for="dj-prompt">Request a playlist</label><div><input id="dj-prompt" maxlength="240" placeholder="Cook up a rock playlist…" required><button>Send</button></div></form>
+          <p id="dj-progress" role="status"></p>
           <div class="dj-actions"><button id="dj-play" disabled>▶ Play mix</button><button id="dj-new" disabled>New mix</button><button id="dj-save" disabled>Save playlist</button></div>
         </section>
         <div id="playlists"></div>
@@ -45,6 +49,11 @@
       <aside id="now"><h2>Now playing</h2><div id="visual"><img id="now-art" alt=""><div id="mount" hidden></div></div><strong id="now-title"></strong><span id="now-artist"></span><h3>Up next</h3><div id="up-next"></div></aside>
     </div>
   </main>
+  <dialog id="audio-dialog" aria-labelledby="settings-title"><h2 id="settings-title">Playback settings</h2>
+    <label>Song fade <select id="fade"><option value="0">Off</option><option value="2">2 seconds</option><option value="4">4 seconds</option><option value="8">8 seconds</option></select></label>
+    <label>Spoken DJ replies <input type="checkbox" id="voice-on" checked></label>
+    <button id="enable-model" hidden>Download on-device DJ model</button><p id="model-status" role="status"></p>
+    <form method="dialog"><button>Done</button></form></dialog>
   <aside id="dock" aria-label="Music player" hidden>
     <div class="dock-head"><strong id="playing"></strong><button id="close" aria-label="Close player">×</button></div>
 
@@ -63,6 +72,7 @@
   <script src="/particles.min.js"></script>
   <script src="/particle-config.js"></script>
   <script src="/music/mixes.js"></script>
+  <script src="/music/dj.js"></script>
   <script src="/music/music.js"></script>
 </body>
 </html>
