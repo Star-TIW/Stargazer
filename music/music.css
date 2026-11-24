@@ -98,3 +98,23 @@ body:has(#dock:not([hidden])) .workspace { height:calc(100dvh - 246px); }
   #up-next,#now h3 { display:none; }
   .feature-play { padding:8px; }
 }
+
+/* The search and hero typography use the same components as the main page. */
+body:has(.music-hero) > .header { position:sticky; top:0; }
+.studio { width:min(1600px,94%); padding:0 0 24px; margin-inline:auto; }
+.music-hero { width:min(100%,680px); padding:clamp(32px,4vw,64px) 0 clamp(28px,3vw,46px); }
+.music-hero .search-shell { z-index:2 !important; }
+.workspace,body:has(#dock:not([hidden])) .workspace { height:auto; align-items:start; min-height:0; gap:clamp(10px,1.2vw,20px); }
+.rail,#now { position:sticky; top:var(--music-panel-top,96px); max-height:calc(100dvh - var(--music-panel-top,96px) - 120px); }
+.browse { min-width:0; padding:clamp(18px,2.2vw,36px); }
+#dj-card { border:1px solid #efef882c; border-radius:16px; padding:clamp(18px,3vw,36px); margin-bottom:24px; background:radial-gradient(at top right,#615a33,#20201b 72%); }
+#dj-card h2 { margin:8px 0; font-size:clamp(25px,3vw,42px); color:white; }
+#dj-description { color:#d3d3c4; line-height:1.5; }
+.dj-actions,.playlist-row { display:flex;flex-wrap:wrap;gap:8px;margin-top:16px; }
+.dj-actions button,.playlist-choice,.dj-launch { border-radius:24px;padding:11px 16px;background:#252520;border:1px solid #efef8855;color:#efefbb; }
+#dj-play,.dj-launch { background:linear-gradient(110deg,#b48441,#efef88,#ba8a4f);color:#141414;font-weight:700; }
+.dj-actions button:disabled { opacity:.6; }
+#playlists:not(:empty) { margin-bottom:24px; }
+@media(max-width:760px) { .studio {width:92%;padding-inline:0;} .rail,#now {position:static;max-height:none;} .browse {order:1;} .rail {order:-1;} }
+.song-row { display:grid; grid-auto-flow:column; grid-template-columns:none; grid-auto-columns:clamp(128px,13vw,178px); overflow-x:auto; scroll-snap-type:x proximity; padding:3px 2px 12px; }
+.song-row .tile { scroll-snap-align:start; }

@@ -7,6 +7,7 @@
   <title>Music · Stargazer</title>
   <link rel="icon" href="/stargazer-192.png">
   <link rel="stylesheet" href="/home.css">
+  <link rel="stylesheet" href="/movies.css">
   <link rel="stylesheet" href="/music/music.css">
 </head>
 <body>
@@ -20,15 +21,25 @@
     </nav>
   </header>
   <main class="studio">
-    <form id="find" role="search"><input type="search" id="query" maxlength="120" aria-label="Search official songs and artists" placeholder="What do you want to play?"><button>Search</button></form>
+    <section class="music-hero hero-content">
+      <p class="eyebrow">Stargazer Music</p>
+      <h2>Find your next favorite song.</h2>
+      <p class="hero-copy">Search official releases or let your DJ put a mix together.</p>
+      <form id="search-container" class="search-shell" role="search"><span class="search-icon" aria-hidden="true">⌕</span><input id="search" type="search" autocomplete="off" maxlength="120" aria-label="Search official songs and artists" placeholder="Search songs &amp; artists…"></form>
+    </section>
     <div class="workspace">
       <nav class="filters rail" aria-label="Your library">
         <button data-view="all" aria-label="Discover music" title="Discover music" aria-pressed="true">♫</button>
         <button data-view="saved" aria-label="Liked songs" title="Liked songs" aria-pressed="false">♥</button>
+        <button data-view="dj" aria-label="Stargazer DJ" title="Stargazer DJ" aria-pressed="false">DJ</button>
         <div id="shortcuts"></div>
       </nav>
       <section class="browse" aria-label="Browse music">
-        <button id="featured" hidden><img alt="" id="feature-art"><span class="feature-copy"><small>Featured release</small><strong id="feature-title"></strong><span id="feature-artist"></span></span><span class="feature-play" aria-hidden="true">▶</span></button>
+        <section id="dj-card" hidden>
+          <div><p class="eyebrow">Stargazer DJ</p><h2>Your personal mix</h2><p id="dj-description"></p></div>
+          <div class="dj-actions"><button id="dj-play" disabled>▶ Play mix</button><button id="dj-new" disabled>New mix</button><button id="dj-save" disabled>Save playlist</button></div>
+        </section>
+        <div id="playlists"></div>
         <div id="catalog" aria-live="polite"></div>
       </section>
       <aside id="now"><h2>Now playing</h2><div id="visual"><img id="now-art" alt=""><div id="mount" hidden></div></div><strong id="now-title"></strong><span id="now-artist"></span><h3>Up next</h3><div id="up-next"></div></aside>
@@ -51,6 +62,7 @@
   </aside>
   <script src="/particles.min.js"></script>
   <script src="/particle-config.js"></script>
+  <script src="/music/mixes.js"></script>
   <script src="/music/music.js"></script>
 </body>
 </html>
