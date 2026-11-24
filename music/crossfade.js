@@ -17,6 +17,7 @@ class CrossfadePlayer {
   bind() {
     const el=this.active;
     el.onplaying=()=>{if(this.started && this.incoming?.paused)this.incoming.play().catch(()=>this.clearNext());this.state(1);};
+    el.onloadedmetadata=()=>this.metadata?.();
     el.onpause=()=>{if(!el.ended){this.incoming?.pause();this.state(2);}};
     el.onerror=()=>this.error();
     el.onended=()=>{
@@ -35,7 +36,7 @@ class CrossfadePlayer {
   }
   release(el) {
     if(!el)return;
-    el.onended=el.onpause=el.onplaying=el.onerror=null;
+    el.onended=el.onpause=el.onplaying=el.onloadedmetadata=el.onerror=null;
     if(el.destroy){el.destroy();return;}
     el.pause();el.removeAttribute('src');el.load();
   }
@@ -60,7 +61,7 @@ class CrossfadePlayer {
     }
     if(this.incoming && (this.nextId!==next.id || (this.started && (!span || remaining>span))))this.clearNext();
     if(!this.incoming)this.blend=0;
-    if(!this.incoming && remaining<=span+8){
+    if(!this.incoming && remaining<=span+12){
       this.incoming=this.make(next);this.incoming.volume=0;this.incoming.muted=this.muted;this.nextId=next.id;
     }
     this.gains();
@@ -87,7 +88,7 @@ class CrossfadePlayer {
     }else{
       this.release(this.active);this.active=this.make(track,true,start);this.active.currentTime=start;
     }
-    this.track=track;this.bind();this.playVideo();
+    this.track=track;this.bind();this.metadata?.();this.playVideo();
   }
   getCurrentTime(){return this.active.currentTime;}
   getDuration(){return this.active.duration;}
@@ -102,7 +103,12 @@ class CrossfadePlayer {
     if(this.started && this.incoming)this.incoming.play().catch(()=>this.clearNext());
   }
   pauseVideo(){this.active.pause();this.incoming?.pause();}
-  seekTo(time){this.intro=false;this.introGain=1;this.clearNext();this.active.currentTime=time;}
+  seekTo(time,keepPlaying=true){
+    const playing=keepPlaying && !this.active.paused;
+    this.intro=false;this.introGain=1;this.clearNext();this.active.currentTime=time;
+    if(playing && this.active.paused)this.playVideo();
+    this.tick();
+  }
   destroy(){this.dead=true;this.release(this.active);this.release(this.incoming);}
 }
 if(typeof module!=='undefined') module.exports=CrossfadePlayer;
