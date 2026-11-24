@@ -32,13 +32,26 @@
       <button data-view="all" aria-pressed="true">Discover</button>
       <button data-view="audius" aria-pressed="false">Audius</button>
       <button data-view="archive" aria-pressed="false">Live Archive</button>
+      <button data-view="musopen" aria-pressed="false">Classical</button>
       <button data-view="saved" aria-pressed="false">♥ Saved</button>
     </nav>
     <div id="catalog"></div>
   </main>
   <aside id="dock" aria-label="Music player" hidden>
-    <div class="dock-head"><strong id="playing"></strong><a id="original" target="_blank" rel="noopener">Open on source ↗</a><button id="close" aria-label="Close player">×</button></div>
-    <div id="player"></div>
+    <div class="dock-head"><strong id="playing"></strong><button id="close" aria-label="Close player">×</button></div>
+    <audio id="audio" preload="metadata"></audio>
+    <select id="setlist" aria-label="Concert track" hidden></select>
+    <div class="transport">
+      <div class="buttons">
+        <button id="previous" aria-label="Previous track" title="Previous track">◀◀</button>
+        <button id="play">Play</button>
+        <button id="next" aria-label="Next track" title="Next track">▶▶</button>
+        <button id="repeat" aria-label="Repeat track" aria-pressed="false">Repeat</button>
+      </div>
+      <label class="timeline"><span id="elapsed">0:00</span><input id="seek" type="range" min="0" max="0" step="1" value="0" aria-label="Playback position" disabled><span id="duration">0:00</span></label>
+      <div class="loudness"><button id="mute" aria-pressed="false">Mute</button><input id="volume" aria-label="Volume" type="range" min="0" max="100" value="80"><output for="volume" id="percent">80%</output></div>
+    </div>
+    <p id="audio-status" role="status"></p>
   </aside>
   <script src="/particles.min.js"></script>
   <script src="/particle-config.js"></script>
