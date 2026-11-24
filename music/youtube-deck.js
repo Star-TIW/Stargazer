@@ -22,10 +22,11 @@ class YouTubeDeck {
           this.connected=true;this.configure();
           if(immediate && this.track.id===track.id && this.matches() && this.api.getPlayerState()===1)this.pendingLoad=false;
           this.command();
+          this.onloadedmetadata?.();
         },
         onStateChange:e=>{
           if(this.dead || !this.matches())return;
-          if(e.data===1)this.onplaying?.();
+          if(e.data===1){this.onplaying?.();this.onloadedmetadata?.();}
           if(e.data===2)this.onpause?.();
           if(e.data===0)this.onended?.();
         },
@@ -50,7 +51,8 @@ class YouTubeDeck {
       this.mount.animate([{transform:'translateX(0)',opacity:1},{transform:'translateX(-5px)',opacity:.85,offset:.48},
         {transform:'translateX(5px)',opacity:.85,offset:.5},{transform:'translateX(0)',opacity:1}],{duration:350,easing:'ease-out'});
     }
-    this.track=track;this.start=start;this.wanted=false;this.pendingLoad=true;this.exiting=false;
+    const keepPlaying=this.track ? this.wanted : false;
+    this.track=track;this.start=start;this.wanted=keepPlaying;this.pendingLoad=true;this.exiting=false;
     if(this.mount.firstChild)this.mount.firstChild.title=track.title+' by '+track.artist;
   }
   configure(){this.api.setVolume(Math.round(this.level*100));this.silent?this.api.mute():this.api.unMute();}
@@ -60,6 +62,7 @@ class YouTubeDeck {
       const request={videoId:this.track.id,startSeconds:this.start};
       if(this.wanted)this.api.loadVideoById(request);else this.api.cueVideoById(request);
       this.pendingLoad=false;
+      this.onloadedmetadata?.();
     }else if(this.wanted)this.api.playVideo();else this.api.pauseVideo();
   }
   exitSoon(){
@@ -72,7 +75,10 @@ class YouTubeDeck {
   get ended(){return this.matches() && this.api.getPlayerState()===0;}
   get duration(){return this.matches()?this.api.getDuration():0;}
   get currentTime(){return this.matches()?this.api.getCurrentTime():this.start;}
-  set currentTime(t){this.exiting=false;this.exitAnimation?.cancel();this.start=t;if(this.matches() && !this.pendingLoad)this.api.seekTo(t,true);}
+  set currentTime(t){
+    this.exiting=false;this.exitAnimation?.cancel();this.start=t;
+    if(this.matches() && !this.pendingLoad){this.api.seekTo(t,true);if(this.wanted)this.api.playVideo();}
+  }
   set volume(v){if(v!==this.level){this.level=v;if(this.connected)this.api.setVolume(Math.round(v*100));}}
   set muted(v){if(v!==this.silent){this.silent=v;if(this.connected)this.configure();}}
   play(){this.wanted=true;this.command();return Promise.resolve();}
