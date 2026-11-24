@@ -57,11 +57,17 @@ class CrossfadePlayer {
     const sequential=!this.track.audioId && !next.audioId;
     if(sequential){
       if(this.incoming)this.clearNext();
-      this.blend=span ? Math.max(0,1-remaining/span) : 0;this.gains();return;
+      this.blend=span ? Math.max(0,1-remaining/span) : 0;this.gains();
+      // The same YouTube iframe cannot play two videos. Start the next ID
+      // just before the natural end, after silencing the faded-out video.
+      if(span && remaining<=.35 && !this.active.paused && !this.sequentialJumping){
+        this.sequentialJumping=true;this.active.volume=0;this.state(0);
+      }
+      return;
     }
     if(this.incoming && (this.nextId!==next.id || (this.started && (!span || remaining>span))))this.clearNext();
     if(!this.incoming)this.blend=0;
-    if(!this.incoming && remaining<=span+12){
+    if(!this.incoming && remaining<=span+25){
       this.incoming=this.make(next);this.incoming.volume=0;this.incoming.muted=this.muted;this.nextId=next.id;
     }
     this.gains();
@@ -88,7 +94,7 @@ class CrossfadePlayer {
     }else{
       this.release(this.active);this.active=this.make(track,true,start);this.active.currentTime=start;
     }
-    this.track=track;this.bind();this.metadata?.();this.playVideo();
+    this.track=track;this.sequentialJumping=false;this.bind();this.metadata?.();this.playVideo();
   }
   getCurrentTime(){return this.active.currentTime;}
   getDuration(){return this.active.duration;}
