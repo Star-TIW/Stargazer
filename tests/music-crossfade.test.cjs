@@ -91,3 +91,39 @@ test('Play before iframe readiness is delivered and stale ended events cannot ad
   let ended=0;deck.onended=()=>ended++;api.id='first';events.onStateChange({data:0});
   assert.equal(ended,0);api.id='second';events.onStateChange({data:0});assert.equal(ended,1);deck.destroy();
 });
+
+test('a late seek resumes a direct audio deck that momentarily pauses during seeking',()=>{
+  const t={id:'direct',audioId:'audio-direct'};
+  const audio=()=>({
+    duration:100,_position:0,readyState:4,paused:true,
+    get currentTime(){return this._position;},
+    set currentTime(value){this._position=value;this.paused=true;},
+    play(){this.paused=false;return Promise.resolve();},
+    pause(){this.paused=true;},removeAttribute(){},load(){}
+  });
+  const p=new Player({track:t,start:0,next:()=>null,seconds:()=>12,level:.8,muted:false,state(){},advance(){},error:assert.fail,audio});
+  p.playVideo();assert.equal(p.getPlayerState(),1);
+  p.seekTo(97,true);
+  assert.equal(p.getCurrentTime(),97);
+  assert.equal(p.getPlayerState(),1);
+  p.destroy();
+});
+test('two YouTube songs load the next video at the silent tail, before ended',()=>{
+  const {p,videos}=fixture(['video','video']);
+  p.active.currentTime=99.75;p.tick();
+  assert.equal(videos.length,1,'reuse the existing iframe');
+  assert.equal(p.track.id,'1','next track selected before the ended event');
+  assert.equal(p.active.volume,0,'start next YouTube video at silence');
+  p.destroy();
+});
+test('mixed playback queues the incoming recording well before fade begins',()=>{
+  const {p}=fixture(['video','audio'],8);
+  p.active.currentTime=70;p.tick();
+  assert.equal(p.incoming,undefined);
+  p.active.currentTime=71;p.tick();
+  assert.ok(p.incoming,'audio deck should prebuffer before fade starts');
+  assert.equal(p.incoming.paused,true);
+  p.active.currentTime=92;p.tick();
+  assert.equal(p.incoming.paused,false);
+  p.destroy();
+});
