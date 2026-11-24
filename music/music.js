@@ -640,8 +640,9 @@
     queue.push(...additions);
     preview(track,queue.slice(index+1));$('#next').disabled=index===queue.length-1;checkpoint();
   }
-  async function startStation(track) {
-    try{await loadAudioLibrary();}catch{}
+  function startStation(track) {
+    // Keep the user activation that allows the first YouTube/audio Play press.
+    // The direct-audio catalog loads on page startup, without delaying this click.
     track=resolveAudio(track);
     if(track.audioId && audioLibrary.length){
       const rest=audioLibrary.filter(t=>t.id!==track.id);
