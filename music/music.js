@@ -92,16 +92,16 @@
   $('#fade').oninput=e=>{fade=Number(e.target.value);fadeLabel();saveOptions();player?.tick();};
   let audioLibrary=[];
   let audioCatalog;
-  const audioById=new Map();
-  const resolveAudio=track=>audioById.get(track?.id) || track;
+  let resolvePreferred=StargazerSources.resolver([]);
+  const resolveAudio=track=>resolvePreferred(track);
   function loadAudioLibrary(){
     if(!audioCatalog) audioCatalog=fetch('/music/audio-releases.json').then(r=>{
       if(!r.ok)throw Error();
       return r.json();
     }).then(rows=>{
       audioLibrary=rows.filter(t=>validSong(t) && /^[a-zA-Z0-9]+$/.test(t.audioId));
-      audioLibrary.forEach(t=>audioById.set(t.id,t));
-      queue=queue.map(resolveAudio);
+      resolvePreferred=StargazerSources.resolver(audioLibrary);
+      queue=queue.map((t,i)=>ready && i===index ? t : resolveAudio(t));
       mix=mix.map(resolveAudio);
       if(currentTrack && !ready){currentTrack=resolveAudio(currentTrack);preview(currentTrack,queue.slice(index+1));}
     }).catch(error=>{audioCatalog=null;throw error;});
@@ -630,8 +630,14 @@
     } catch { /* Fall back to familiar artists already in the library. */ }
     if(job.signal.aborted || !station || queue[index]?.id!==track.id)return;
     if(!candidates.length)candidates=pool().filter(t=>t.artist===track.artist || history.some(e=>e.track.artist===t.artist));
-    const existing=new Set(queue.map(t=>t.id));
-    queue.push(...StargazerMixes.rank(candidates,history,saved).filter(t=>!existing.has(t.id)).slice(0,12).map(resolveAudio));
+    const existing=new Set(queue.map(t=>t.id)), additions=[];
+    for(const suggestion of StargazerMixes.rank(candidates,history,saved)){
+      const track=resolveAudio(suggestion);
+      if(existing.has(track.id))continue;
+      existing.add(track.id);additions.push(track);
+      if(additions.length===12)break;
+    }
+    queue.push(...additions);
     preview(track,queue.slice(index+1));$('#next').disabled=index===queue.length-1;checkpoint();
   }
   async function startStation(track) {
