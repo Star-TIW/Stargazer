@@ -49,8 +49,8 @@ class YouTubeDeck {
   matches(){return this.connected && this.api.getVideoData()?.video_id===this.track.id;}
   select(track,start){
     if(this.track && this.track.id!==track.id && !matchMedia('(prefers-reduced-motion:reduce)').matches){
-      this.mount.animate([{transform:'translateX(0)',opacity:1},{transform:'translateX(-5px)',opacity:.85,offset:.48},
-        {transform:'translateX(5px)',opacity:.85,offset:.5},{transform:'translateX(0)',opacity:1}],{duration:350,easing:'ease-out'});
+      this.mount.animate([{transform:'translateX(24px)',opacity:.6},{transform:'translateX(0)',opacity:1}],
+        {duration:400,easing:'cubic-bezier(.22,.68,.22,1)'});
     }
     const keepPlaying=this.track ? this.wanted : false;
     this.track=track;this.start=start;this.wanted=keepPlaying;this.pendingLoad=true;this.exiting=false;
