@@ -107,3 +107,5 @@
 #sg-multiview .mv-category{flex:1;min-width:170px;max-width:320px;min-height:42px;padding:9px 12px;border:1px solid #777753;border-radius:10px;background:#303127;color:#fff}
 #sg-multiview .mv-category:focus-visible{outline:2px solid #efef88;outline-offset:2px}
 #sg-multiview .mv-picker .mv-empty{grid-column:1/-1;color:#c3c3af;font-size:.88rem}
+
+#sg-multiview .mv-sport-heading{grid-column:1/-1;margin:9px 0 0;padding:10px 2px 6px;color:#efef88;border-bottom:1px solid #67673f;font-size:1rem;font-weight:800}

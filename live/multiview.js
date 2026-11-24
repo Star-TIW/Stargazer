@@ -8,7 +8,7 @@
   const start = $(".mv-start"), layout = $(".mv-layout");
   const toggle = $(".mv-toggle"), panel = $(".mv-panel"), note = $(".mv-note");
   let games = [], selected = new Set(), tiles = [], focused = null;
-  let filter = "", viewMode = "side", category = "all";
+  let filter = "", viewMode = "side", category = "all", loading = false;
   const categoryPicker = !isTV ? $(".mv-category") : null;
   const sports = [["all","All sports"],["nfl","NFL"],["nba","NBA"],["mlb","MLB"],["nhl","NHL"],["mls","MLS"],["cfb","College Football"]];
   if (categoryPicker) {
@@ -64,7 +64,7 @@
     if (!games.length) {
       const empty = document.createElement("p");
       empty.className = "mv-empty";
-      empty.textContent = "No matching live streams yet. Games appear here when a feed becomes available.";
+      empty.textContent = !isTV && loading ? "Finding live games across all sports…" : "No matching live streams yet. Games appear here when a feed becomes available.";
       picker.append(empty);
       return;
     }
@@ -74,7 +74,15 @@
       const empty=document.createElement("p"); empty.className="mv-empty";
       empty.textContent="No live games match this sport or search.";picker.append(empty);
     }
-    for (const game of visible) {
+    let previousSport = null;
+    for (const game of (isTV ? visible : [...visible].sort((a,b) => sports.findIndex(s => s[0] === a.sport) - sports.findIndex(s => s[0] === b.sport) || a.name.localeCompare(b.name)))) {
+      if (!isTV && game.sport !== previousSport) {
+        previousSport = game.sport;
+        const heading = document.createElement("h3");
+        heading.className = "mv-sport-heading";
+        heading.textContent = sports.find(([key]) => key === game.sport)?.[1] || game.category;
+        picker.append(heading);
+      }
       const chosen = selected.has(game.id);
       const card = document.createElement("button");
       card.type = "button";
@@ -203,6 +211,7 @@
     selected = new Set([...selected].slice(0,max));
     update();
   };
+  if (!isTV) window.addEventListener("stargazer:multiview-loading", () => { loading = true; update(); });
   window.addEventListener(isTV ? "stargazer:tv-channels" : "stargazer:multiview-games", event => {
     if(isTV){
       games=(event.detail?.channels||[]).map((channel,i)=>({id:"tv:"+channel.name.toLowerCase(),name:channel.name,sources:channel.sources||[]})).filter(g=>g.sources.length);
@@ -211,6 +220,7 @@
       update();
       return;
     }
+    loading = false;
     games = (event.detail?.games || []).filter(g => Array.isArray(g.sources) && g.sources.length);
     const valid = new Set(games.map(g => g.id));
     selected = new Set([...selected].filter(id => valid.has(id)));

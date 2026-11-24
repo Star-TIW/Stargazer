@@ -485,3 +485,28 @@ test("MLS full-time matches have no Watch button, while the second half and extr
   assert.ok(live.includes('${gameFinished(ev) ? "" : `<div'));
   assert.ok(live.includes("events.filter(ev => !gameFinished(ev)"));
 });
+
+
+test("sports multiview filter belongs only to sports and picker groups categories", () => {
+  const html = read("live/index.html");
+  const tv = html.slice(html.indexOf('<section id="sg-tv-multiview"'), html.indexOf('<section id="sg-multiview"'));
+  const sport = html.slice(html.indexOf('<section id="sg-multiview"'));
+  assert.doesNotMatch(tv, /mv-category-row|mv-category/);
+  assert.match(sport, /mv-category-row[\\s\\S]*?mv-category/);
+  const js = read("live/multiview.js");
+  assert.match(js, /mv-sport-heading/);
+  assert.match(js, /category === "all" \\|\\| g\\.sport === category/);
+  assert.match(js, /stargazer:multiview-games/);
+  assert.match(js, /selected = new Set\\(\\[\\.\\.\\.selected\\]\\.filter\\(id => valid\\.has\\(id\\)\\)\\)/);
+});
+
+test("all-sports collector includes pre-status NFL with sources and isolates provider failures", () => {
+  const source = read("live/live.js");
+  const collector = source.slice(source.indexOf("  const safeMultiviewLookup"), source.indexOf("  const fetchGamesWindow"));
+  assert.match(collector, /safeMultiviewLookup\\(\\(\\) => PpvSports\\.listings\\(\\), \\[\\]\\)/);
+  assert.match(collector, /safeMultiviewLookup\\(\\(\\) => TimStreams\\.listings\\(\\), new Map\\(\\)\\)/);
+  assert.doesNotMatch(collector, /gameStatus\\(ev\\)\\.state !== "pre"/);
+  assert.match(collector, /!gameFinished\\(ev\\)/);
+  assert.match(collector, /id:sport\\+"\\:"\\+ev\\.id/);
+  assert.match(source, /stargazer:multiview-request", \\(\\) => \\{ publishMultiview\\(\\); fetchMultiviewGames\\(\\); \\}/);
+});

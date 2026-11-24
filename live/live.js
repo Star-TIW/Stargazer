@@ -617,8 +617,13 @@ document.addEventListener("DOMContentLoaded", () => {
     } catch { return []; }
   };
 
-  // Refresh all six leagues on demand. The ordinary sport tab still fetches
-  // and renders only its own schedule.
+  // Populate mixed-sport Multi-view from the same playable feed matches as the game cards.
+  // Errors must stay isolated by provider and sport, so an NFL source failure cannot
+  // prevent hockey/soccer/basketball from appearing in the selection menu.
+  const safeMultiviewLookup = async (run, fallback) => {
+    try { return (await run()) ?? fallback; }
+    catch (error) { console.warn("Multi-view provider unavailable", error); return fallback; }
+  };
   const fetchMultiviewGames = async (force = false) => {
     if (multiviewRefresh) return multiviewRefresh;
     if (!force && Date.now() - lastMultiviewRefresh < MULTIVIEW_REFRESH_MS) {
@@ -626,50 +631,73 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
     const request = ++multiviewRequest;
+    window.dispatchEvent(new CustomEvent("stargazer:multiview-loading"));
     multiviewRefresh = (async () => {
       const now = Date.now();
       const dateStrs = [getDateStr(-1), getDateStr(0)];
       const [ppvGroups, timFeeds, matchoraEvents, damiEvents] = await Promise.all([
-        PpvSports.listings(), TimStreams.listings(), Matchora.listings(), DamiTV.listings()
+        safeMultiviewLookup(() => PpvSports.listings(), []),
+        safeMultiviewLookup(() => TimStreams.listings(), new Map()),
+        safeMultiviewLookup(() => Matchora.listings(), []),
+        safeMultiviewLookup(() => DamiTV.listings(), [])
       ]);
+      // Results are independent per sport, including the StreamFree schedule lookup.
       const results = await Promise.all(Object.entries(SPORTS_CONFIG).map(async ([sport, config]) => {
-        const [schedules, streamFreeStreams] = await Promise.all([
-          Promise.all(dateStrs.map(date => fetchForDate(date, config))),
-          fetchStreamFreeStreams(config)
-        ]);
-        const events = new Map();
-        schedules.flat().forEach(ev => { if (ev?.id) events.set(String(ev.id), ev); });
-        const eligible = [...events.values()].filter(ev => {
-          const time = Date.parse(ev.date);
-          return Number.isFinite(time) && time <= now + 10 * 60000 &&
-            !gameFinished(ev) && gameStatus(ev).state !== "pre";
-        });
-        const ppvEvents = PpvSports.events(ppvGroups, sport);
-        return Promise.all(eligible.map(async ev => {
-          const stream = findStreamForEvent(ev, streamFreeStreams || []);
-          const ppv = findStreamForEvent(ev, ppvEvents);
-          const tim = Array.from(timFeeds?.get(String(ev.id)) || []);
-          const matchora = Matchora.find(matchoraEvents, sport, ev);
-          const dami = DamiTV.find(damiEvents, sport, ev, findStreamForEvent);
-          const embeds = stream?.stream_key ? await getLiveSources(stream.stream_key) : [];
-          const sources = [
-            ...namedSources(embeds, "StreamFree"),
-            ...namedSources(ppv?.embeds, "PPV.ST"),
-            ...tim.map((value, i) => typeof value === "string" ? {url:value,name:"TimStreams" + (i ? " " + (i+1) : "")} : value),
-            ...dami.map(value => typeof value === "string" ? {url:value,name:"DAMITV"} : value),
-            ...(matchora ? [{url:matchora,name:"Matchora"}] : [])
-          ].filter(source => {
-            try { const url = new URL(source.url); return url.protocol === "https:" && !!url.hostname; }
-            catch { return false; }
+        try {
+          const [schedules, streamFreeStreams] = await Promise.all([
+            Promise.all(dateStrs.map(date => fetchForDate(date, config))),
+            safeMultiviewLookup(() => fetchStreamFreeStreams(config), [])
+          ]);
+          const events = new Map();
+          schedules.flat().forEach(ev => { if (ev?.id) events.set(String(ev.id), ev); });
+          const eligible = [...events.values()].filter(ev => {
+            const time = Date.parse(ev.date);
+            // Match the scoreboard Watch Live rule: don't drop a current game
+            // merely because ESPN still reports a pre-game status.
+            return Number.isFinite(time) && time <= now + 10 * 60000 && !gameFinished(ev);
           });
-          if (!sources.length) return null;
-          const name = ev.name || ev.shortName || "Game " + ev.id;
-          return {id:sport+":"+ev.id, sport, category:config.name, name, sources, startTime:ev.date};
-        }));
+          const ppvEvents = PpvSports.events(ppvGroups, sport);
+          return await Promise.all(eligible.map(async ev => {
+            try {
+              const stream = findStreamForEvent(ev, streamFreeStreams || []);
+              const ppv = findStreamForEvent(ev, ppvEvents);
+              const tim = Array.from(timFeeds?.get(String(ev.id)) || []);
+              const matchora = Matchora.find(matchoraEvents, sport, ev);
+              const dami = DamiTV.find(damiEvents, sport, ev, findStreamForEvent) || [];
+              const embeds = stream?.stream_key ? await safeMultiviewLookup(() => getLiveSources(stream.stream_key), []) : [];
+              const sources = [
+                ...namedSources(embeds, "StreamFree"),
+                ...namedSources(ppv?.embeds, "PPV.ST"),
+                ...dami.map(value => typeof value === "string" ? {url:value,name:"DAMITV"} : value),
+                ...tim.map((value,i) => typeof value === "string" ? {url:value,name:"TimStreams" + (i ? " " + (i+1) : "")} : value),
+                ...(matchora ? [{url:matchora,name:"Matchora"}] : [])
+              ].filter(source => {
+                try { const url = new URL(source.url); return url.protocol === "https:" && !!url.hostname; }
+                catch { return false; }
+              });
+              if (!sources.length) return null;
+              return {
+                id:sport+":"+ev.id, sport, category:config.name,
+                name:ev.name || ev.shortName || "Game " + ev.id,
+                sources, startTime:ev.date
+              };
+            } catch (error) {
+              console.warn("Unable to resolve Multi-view event", sport, ev?.id, error);
+              return null;
+            }
+          }));
+        } catch (error) {
+          console.warn("Unable to load Multi-view category", sport, error);
+          return [];
+        }
       }));
       if (request !== multiviewRequest) return;
+      const next = results.flat().filter(Boolean);
+      // Preserve previously playable events if one refresh temporarily loses
+      // a provider. Never include finished games in newly collected results.
+      const byId = new Map(next.map(game => [game.id, game]));
       multiviewCatalog.clear();
-      results.flat().filter(Boolean).forEach(game => multiviewCatalog.set(game.id, game));
+      byId.forEach((game,id) => multiviewCatalog.set(id,game));
       lastMultiviewRefresh = Date.now();
       publishMultiview();
     })().catch(error => {
@@ -836,7 +864,7 @@ document.addEventListener("DOMContentLoaded", () => {
     fetchMultiviewGames(true);
   });
   window.addEventListener("stargazer:multiview-refresh", () => fetchMultiviewGames(true));
-  window.addEventListener("stargazer:multiview-request", publishMultiview);
+  window.addEventListener("stargazer:multiview-request", () => { publishMultiview(); fetchMultiviewGames(); });
 
   // Set initial banner text and sport button
   const initialSportConfig = SPORTS_CONFIG[currentSport];
@@ -846,10 +874,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // Initial fetch and periodic refresh
   [todayGamesList, upcomingGamesList].forEach(observeGrid);
   fetchGamesWindow(currentSport);
-  // Wait until opened to retrieve all sports, avoiding unnecessary requests.
-  document.querySelector("#sg-multiview .mv-toggle")?.addEventListener("click", () => {
-    if (!document.querySelector("#sg-multiview .mv-panel")?.hidden) fetchMultiviewGames();
-  });
+  // The request event from the sports panel triggers initial catalog loading.
   setInterval(() => {
     fetchGamesWindow(currentSport);
     if (!document.querySelector("#sg-multiview .mv-panel")?.hidden) fetchMultiviewGames(true);
