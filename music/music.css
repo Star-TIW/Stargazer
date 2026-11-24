@@ -184,3 +184,7 @@ body:has(#dock:not([hidden])) .workspace { height:calc(100dvh - 246px); }
 .result-track span {min-width:0;}
 .result-track small,.result-track strong {display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .result-track small {color:#bdbeb2;margin-top:3px;}
+.primary-play {background:#efef88;color:#16170f;font-weight:700;}
+#mount:not([hidden]) + #now-art {display:block;width:clamp(64px,8vw,96px);margin-top:12px;border-radius:8px;}
+.review-track {display:grid;gap:6px;margin:14px 0;}
+.review-track select {width:100%;min-width:0;padding:10px;border:1px solid #75765b;border-radius:8px;background:#171814;color:#faf9ed;}

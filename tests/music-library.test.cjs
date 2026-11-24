@@ -20,3 +20,19 @@ test('public embed import reads the requested playlist in original order',async(
   assert.deepEqual(parseSpotifyPlaylist(html,'abc').tracks.map(t=>t.title),['B','A']);
   assert.throws(()=>parseSpotifyPlaylist(html,'xyz'));
 });
+
+test('import rejects partial artist names, ambiguous editions and duration mismatches',()=>{
+  const target={title:'Stay',artist:'The Band',duration:200};
+  const song={...target,id:'one'};
+  assert.equal(matchTrack(target,[{...song,artist:'Band'}]),undefined);
+  assert.equal(matchTrack(target,[{...song,duration:215}]),undefined);
+  assert.equal(matchTrack(target,[song,{...song,id:'two'}]),undefined);
+  assert.equal(matchTrack(target,[{...song,duration:204},song]),song);
+});
+test('shuffle preserves saved order and every entry; exact searches rank first',()=>{
+  const {shuffle,searchOrder}=require('../music/library.js');
+  const tracks=[{title:'Stay Here',artist:'Example'},{title:'Stay',artist:'Example'}];
+  assert.deepEqual(shuffle(tracks).sort((a,b)=>b.title.length-a.title.length),tracks);
+  assert.equal(searchOrder('Example Stay',tracks)[0],tracks[1]);
+  assert.equal(tracks[0].title,'Stay Here');
+});
