@@ -23,13 +23,13 @@
   </header>
   <main class="studio">
     <div class="music-toolbar">
-      <form id="search-container" class="search-shell" role="search"><span class="search-icon" aria-hidden="true">⌕</span><input id="search" type="search" autocomplete="off" maxlength="120" aria-label="Search official songs and artists" placeholder="Search songs &amp; artists…"></form>
+      <form id="search-container" class="search-shell" role="search"><button class="search-icon" type="submit" aria-label="Search">⌕</button><input id="search" enterkeyhint="search" autocapitalize="none" type="search" autocomplete="off" maxlength="120" aria-label="Search official songs and artists" placeholder="Search songs &amp; artists…"><div id="completions" aria-label="Search suggestions" hidden></div></form>
         <button id="audio-settings" aria-label="Playback settings" title="Playback settings">⚙</button>
     </div>
     <div class="workspace">
       <nav class="filters rail" aria-label="Your library">
         <button data-view="all" aria-label="Discover music" title="Discover music" aria-pressed="true">♫</button>
-        <button data-view="saved" aria-label="Liked songs" title="Liked songs" aria-pressed="false">♥</button>
+        <button data-view="library" aria-label="Your library" title="Your library" aria-pressed="false">▤</button>
         <button data-view="dj" aria-label="Stargazer DJ" title="Stargazer DJ" aria-pressed="false">DJ</button>
         <div id="shortcuts"></div>
       </nav>
@@ -47,6 +47,7 @@
       <aside id="now"><h2>Now playing</h2><p id="idle">Choose a song to start your station.</p><div id="visual"><img id="now-art" alt="" hidden><div id="mount" hidden></div></div><strong id="now-title"></strong><span id="now-artist"></span><h3>Up next</h3><div id="up-next"></div></aside>
     </div>
   </main>
+  <dialog id="library-dialog" aria-labelledby="library-dialog-title"><header><h2 id="library-dialog-title"></h2><button id="library-close" aria-label="Close">×</button></header><div id="library-dialog-body"></div></dialog>
   <dialog id="audio-dialog" aria-labelledby="settings-title"><h2 id="settings-title">Playback settings</h2>
     <section class="transition-settings"><label for="fade">Song transition <output id="fade-value" for="fade"></output></label>
       <input type="range" id="fade" min="0" max="12" step="1" value="0">
@@ -75,6 +76,7 @@
   <script src="/music/mixes.js"></script>
   <script src="/music/dj.js"></script>
   <script src="/music/crossfade.js"></script>
+  <script src="/music/library.js"></script>
   <script src="/music/music.js"></script>
 </body>
 </html>

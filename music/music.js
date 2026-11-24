@@ -1,5 +1,12 @@
 (() => {
   const $ = selector => document.querySelector(selector);
+  function deadline(ms,parent){
+    const controller=new AbortController(),abort=()=>controller.abort();
+    const timer=setTimeout(abort,ms);
+    if(parent?.aborted)abort();else parent?.addEventListener('abort',abort,{once:true});
+    controller.signal.addEventListener('abort',()=>{clearTimeout(timer);parent?.removeEventListener('abort',abort);},{once:true});
+    return controller.signal;
+  }
   const catalog = $('#catalog');
   const storageKey = 'stargazer.music.saved.v1';
   let view = 'all';
@@ -20,7 +27,7 @@
   function persist(key,value) { try { localStorage.setItem(key,JSON.stringify(value)); } catch { /* Session state remains available. */ } }
   const historyKey='stargazer.music.listens.v1', playlistKey='stargazer.music.playlists.v1';
   let history=readList(historyKey).filter(e=>validSong(e?.track) && Number.isFinite(e.plays) && Number.isFinite(e.last)).slice(0,100);
-  let playlists=readList(playlistKey).filter(p=>typeof p?.name==='string' && Array.isArray(p.tracks) && p.tracks.length && p.tracks.every(validSong));
+  let playlists=readList(playlistKey).filter(p=>typeof p?.name==='string' && Array.isArray(p.tracks) && p.tracks.every(validSong));
   let mix=[], mixRequest, currentList=null, listenTimer;
   function pool() {
     const items=[...history.map(e=>e.track),...saved,...releases];
@@ -61,7 +68,7 @@
   function openBooth() {
     view='dj'; query=''; $('#search').value='';
     if(!greeted){message(greeting);greeted=true;}
-    render(); $('#dj-card').scrollIntoView({block:'center'});
+    dismissSuggestions(); render(); pageTop();
   }
   function saveOptions() { persist('stargazer.music.audio-options',{fade}); }
   $('#fade').value=String(fade);
@@ -102,14 +109,14 @@
     const controller=new AbortController();mixRequest=controller;
     $('#dj-progress').textContent='Finding official recordings…';
     try {
-      const plan=await StargazerDJ.plan(text,previousPlan,AbortSignal.any([controller.signal,AbortSignal.timeout(12000)]));
+      const plan=await StargazerDJ.plan(text,previousPlan,deadline(12000,controller.signal));
       if(controller.signal.aborted)return;
       const groups=await Promise.all(plan.artists.map(async artist=>{
         const normal=s=>s.toLowerCase().replace(/[^\p{L}\p{N}]+/gu,' ').trim();
         const matches=t=>normal(t.artist)===normal(artist) || t.artist.split(',').some(a=>normal(a)===normal(artist));
         const local=pool().filter(matches);
         try {
-          const r=await fetch('/api/music-search?q='+encodeURIComponent(artist),{signal:AbortSignal.any([controller.signal,AbortSignal.timeout(8500)])});
+          const r=await fetch('/api/music-search?q='+encodeURIComponent(artist),{signal:deadline(12000,controller.signal)});
           if(r.ok)return [...(await r.json()).filter(t=>validSong(t)&&matches(t)),...local].slice(0,10);
         } catch { /* Use matching catalog songs. */ }
         return local;
@@ -141,7 +148,7 @@
     if (seed) {
       $('#dj-description').textContent='Finding songs for your mix…';
       try {
-        const response=await fetch('/api/music-search?q='+encodeURIComponent(seed.artist),{signal:AbortSignal.any([controller.signal,AbortSignal.timeout(4500)])});
+        const response=await fetch('/api/music-search?q='+encodeURIComponent(seed.artist),{signal:deadline(12000,controller.signal)});
         if(response.ok) extra=(await response.json()).filter(validSong);
       } catch { /* Build from the local catalog when live search is unavailable. */ }
     }
@@ -207,7 +214,8 @@
       if (view === 'saved' || home()) render();
       else refresh();
     };
-    tile.append(pick,save);
+    const add=button('＋',()=>manageSong(track),'save add-track');add.setAttribute('aria-label','Manage playlists for '+track.title);
+    tile.append(pick,save,add);
     return tile;
   }
   function shelf(title) {
@@ -224,17 +232,207 @@
     body.replaceChildren(...tracks.map(track => card(track, tracks)));
     if (!tracks.length) body.textContent = empty;
   }
+  const dialog=$('#library-dialog'), dialogBody=$('#library-dialog-body');
+  const suggestions=$('#completions');
+  let completionTimer, completionJob, profile;
+  const followsKey='stargazer.music.artists.v1';
+  let followed=readList(followsKey).filter(a=>typeof a?.name==='string');
+  function button(label,action,style='library-action') {
+    const b=element('button',style,label); b.type='button'; b.onclick=action; return b;
+  }
+  function saveLibrary(){persist(playlistKey,playlists);}
+  function pageTop(){ $('.browse').scrollTop=0; document.documentElement.scrollTop=0; document.body.scrollTop=0; }
+  function dismissSuggestions(){
+    clearTimeout(completionTimer); completionJob?.abort(); suggestions.hidden=true; suggestions.replaceChildren();
+  }
+  function navigate(next){
+    dismissSuggestions(); view=next; query=''; $('#search').value=''; render(); pageTop();
+  }
+  function openDialog(title){
+    $('#library-dialog-title').textContent=title; dialogBody.replaceChildren();
+    if(!dialog.open)dialog.showModal();
+  }
+  $('#library-close').onclick=()=>dialog.close();
+  function nameForm(initial,accept,label){
+    const form=element('form','library-form'), input=element('input');
+    input.placeholder='Playlist name';input.setAttribute('aria-label','Playlist name');
+    input.required=true;input.maxLength=100;input.value=initial;
+    form.append(input,element('button','library-action',label));
+    form.onsubmit=e=>{e.preventDefault();if(input.value.trim())accept(input.value.trim());};
+    dialogBody.append(form);
+  }
+  function newList(name,tracks){
+    const list={name,tracks};playlists.unshift(list);saveLibrary();return list;
+  }
+  function selectList(list){currentList=list;navigate('playlist');}
+  function manageSong(track){
+    openDialog(track.title);
+    if(view==='playlist'){
+      const list=currentList, from=list.tracks.indexOf(track);
+      for(const [label,to] of [['Move earlier',from-1],['Move later',from+1]]){
+        if(from<0 || to<0 || to>=list.tracks.length)continue;
+        dialogBody.append(button(label,()=>{list.tracks.splice(from,1);list.tracks.splice(to,0,track);saveLibrary();dialog.close();render();}));
+      }
+    }
+    for(const list of playlists){
+      const exists=list.tracks.some(t=>t.id===track.id);
+      dialogBody.append(button((exists?'Remove from ':'Add to ')+list.name,()=>{
+        if(exists)list.tracks=list.tracks.filter(t=>t.id!==track.id);else list.tracks.push(track);
+        saveLibrary();dialog.close();if(view==='playlist')render();
+      }));
+    }
+    nameForm('',name=>{newList(name,[track]);dialog.close();},'Create and add');
+  }
+  function shareList(list){
+    const file=new File([JSON.stringify({version:1,name:list.name,tracks:list.tracks.map(({id,title,artist,source,art})=>({id,title,artist,source,art}))})],
+      'stargazer-playlist.json',{type:'application/json'});
+    if(navigator.canShare?.({files:[file]})){
+      navigator.share({files:[file],title:list.name}).catch(e=>{if(e.name!=='AbortError')download();});
+    }else download();
+    function download(){const a=element('a');a.href=URL.createObjectURL(file);a.download=file.name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),5000);}
+  }
+  function libraryView(){
+    const actions=shelf('Your library'); actions.className='library-actions';
+    actions.append(button('＋ New playlist',()=>{
+      openDialog('New playlist');nameForm('',name=>{dialog.close();selectList(newList(name,[]));},'Create');
+    }),button('Import playlist',importDialog),button('♥ Liked songs · '+saved.length,()=>navigate('saved')));
+    const lists=shelf('Playlists'); lists.className='list-choices';
+    playlists.forEach(list=>lists.append(button(list.name+' · '+list.tracks.length,()=>selectList(list))));
+    if(!playlists.length)lists.textContent='Create a playlist or import one to get started.';
+    if(followed.length){const artists=shelf('Following');followed.forEach(a=>artists.append(button(a.name,()=>openArtist(a,[]))));}
+  }
+  function playlistTools(){
+    const tools=element('div','library-actions');catalog.append(tools);
+    tools.append(button('‹ Library',()=>navigate('library')),button('Add songs',()=>{navigate('all');$('#search').focus();}),
+      button('Rename',()=>{openDialog('Rename playlist');nameForm(currentList.name,name=>{currentList.name=name;saveLibrary();dialog.close();render();},'Save');}),
+      button('Share',()=>shareList(currentList)),button('Delete',()=>{
+        openDialog('Delete '+currentList.name+'?');dialogBody.append(button('Delete playlist',()=>{
+          playlists=playlists.filter(p=>p!==currentList);saveLibrary();dialog.close();navigate('library');
+        }));
+      }));
+  }
+  async function lookup(term,signal){
+    const r=await fetch('/api/music-search?q='+encodeURIComponent(term.slice(0,120)),{signal:deadline(12000,signal)});
+    if(!r.ok)throw Error('Search unavailable');return (await r.json()).filter(validSong);
+  }
+  function importDialog(){
+    openDialog('Import playlist');
+    const form=element('form','library-form'), input=element('input'), submit=element('button','library-action','Find tracks');
+    input.type='url';input.required=true;input.placeholder='Paste a public Spotify playlist link';input.setAttribute('aria-label',input.placeholder);
+    form.append(input,submit);
+    const file=element('input');file.type='file';file.accept='.json,application/json';
+    const label=element('label','file-label','Or open a shared Stargazer playlist');label.append(file);
+    const status=element('p','notice');status.setAttribute('role','status');dialogBody.append(form,label,status);
+    file.onchange=async()=>{
+      try {const selected=file.files[0];if(!selected)return;if(selected.size>3000000)throw Error();
+        const data=JSON.parse(await selected.text());
+        if(data.version!==1 || typeof data.name!=='string' || !Array.isArray(data.tracks) || !data.tracks.every(validSong))throw Error();
+        if(!dialog.open)return;
+        dialog.close();selectList(newList(data.name.slice(0,100),data.tracks.map(({source,id,title,artist,art})=>({source,id,title,artist,art}))));
+      }catch{status.textContent='Choose a valid Stargazer playlist file.';}
+    };
+    form.onsubmit=async e=>{
+      e.preventDefault();const id=MusicLibrary.spotifyId(input.value.trim());
+      if(!id){status.textContent='Paste an open.spotify.com playlist link.';return;}
+      const controller=new AbortController(), cancel=()=>controller.abort();
+      dialog.addEventListener('close',cancel,{once:true});submit.disabled=true;file.disabled=true;
+      try {
+        status.textContent='Reading playlist…';
+        const r=await fetch('/api/music-search?spotify='+id,{signal:deadline(12000,controller.signal)});
+        const data=await r.json();if(!r.ok)throw Error(data.error);
+        const tracks=data.tracks, matched=new Array(tracks.length);let cursor=0,done=0;
+        async function worker(){
+          while(cursor<tracks.length && !controller.signal.aborted){
+            const i=cursor++, t=tracks[i];
+            for(const term of [t.title+' '+t.artist,t.title]){
+              if(matched[i] || controller.signal.aborted)break;
+              try{matched[i]=MusicLibrary.matchTrack(t,await lookup(term,controller.signal));}catch{}
+            }
+            status.textContent='Checking '+(++done)+' of '+tracks.length+' tracks…';
+          }
+        }
+        await Promise.all([worker(),worker(),worker()]);if(controller.signal.aborted)return;
+        const found=matched.filter(Boolean),missing=tracks.filter((_,i)=>!matched[i]);
+        status.textContent='Matched '+found.length+' of '+tracks.length+' tracks exposed by Spotify. Larger playlists may be partial.';
+        if(missing.length){const details=element('details');details.append(element('summary','','Unmatched tracks ('+missing.length+')'));
+          missing.forEach(t=>details.append(element('p','',t.title+' · '+t.artist)));dialogBody.append(details);}
+        if(found.length){form.hidden=true;dialogBody.append(button('Save '+data.name,()=>{dialog.close();selectList(newList(data.name,found));}));}
+      }catch(err){if(!controller.signal.aborted)status.textContent=err.message || 'Import unavailable. Try again.';}
+      finally{dialog.removeEventListener('close',cancel);submit.disabled=false;file.disabled=false;}
+    };
+  }
+  function credits(tracks,term){
+    const map=new Map();
+    tracks.forEach(t=>(t.artists || [{name:t.artist}]).forEach(a=>{
+      if(a.name.toLowerCase().includes(term.toLowerCase()) && !map.has(a.name))map.set(a.name,a);
+    }));return [...map.values()].sort((a,b)=>a.name.length-b.name.length);
+  }
+  function openArtist(artist,tracks){
+    profile={...artist,tracks:tracks.filter(t=>(t.artists || [{name:t.artist}]).some(a=>a.name===artist.name))};
+    navigate('artist');
+  }
+  async function artistView(signal){
+    const active=profile;
+    const hero=element('section','artist-hero'),copy=element('div');
+    const title=element('h2','',active.name), follow=button('',()=>{
+      followed=followed.some(a=>a.name===active.name)?followed.filter(a=>a.name!==active.name):[...followed,{id:active.id,name:active.name}];
+      persist(followsKey,followed);refresh();
+    });
+    function refresh(){follow.textContent=followed.some(a=>a.name===active.name)?'Following ✓':'Follow';}
+    refresh();copy.append(element('small','eyebrow','Artist'),title,follow);hero.append(copy);catalog.append(hero);
+    const body=shelf('Songs');show(body,active.tracks,'Loading songs…');
+    try{
+      let tracks=active.tracks;
+      if(!tracks.length || !active.id){
+        const live=await lookup(active.name,signal);if(signal.aborted)return;
+        const credit=credits(live,active.name).find(a=>a.name.toLowerCase()===active.name.toLowerCase());
+        active.id=credit?.id || active.id;tracks=live.filter(t=>(t.artists || [{name:t.artist}]).some(a=>a.name===active.name));
+      }
+      if(tracks.length)show(body,tracks,'');
+      if(active.id){
+        const r=await fetch('/api/music-search?artist='+encodeURIComponent(active.id),{signal});
+        if(r.ok){const data=await r.json();if(signal.aborted)return;
+          if(data.art){const img=element('img');img.alt='';img.src=data.art;hero.prepend(img);}
+          if(data.description){const d=element('details');d.append(element('summary','','About '+active.name),element('p','',data.description));copy.append(d);}
+          tracks=[...new Map([...(data.tracks || []).filter(validSong),...tracks].map(t=>[t.id,t])).values()];
+        }
+      }
+      if(!signal.aborted)show(body,tracks,'No official recordings found.');
+    }catch{if(!signal.aborted && !body.querySelector('.tile'))body.textContent='Artist songs are unavailable. Try searching again.';}
+  }
+  function suggest(){
+    dismissSuggestions();const term=$('#search').value.trim();
+    if(!term){if(query)search('');return;}
+    const controller=new AbortController();completionJob=controller;
+    function draw(tracks){
+      suggestions.replaceChildren(button('⌕  '+term,()=>search(term),'completion'));
+      credits(tracks,term).slice(0,3).forEach(a=>suggestions.append(button(a.name+' · Artist',()=>openArtist(a,tracks),'completion')));
+      tracks.slice(0,4).forEach(t=>{
+        const row=button('',()=>{dismissSuggestions();$('#search').blur();startStation(t);},'completion result-track');
+        if(t.art?.startsWith('https://')){const img=element('img');img.alt='';img.src=t.art;row.append(img);}
+        const copy=element('span');copy.append(element('strong','',t.title),element('small','','Song · '+t.artist));row.append(copy);suggestions.append(row);
+      });
+      suggestions.hidden=false;
+    }
+    draw(pool().filter(t=>(t.title+' '+t.artist).toLowerCase().includes(term.toLowerCase())));
+    completionTimer=setTimeout(async()=>{try{const songs=await lookup(term,controller.signal);if(!controller.signal.aborted)draw(songs);}catch{}},260);
+  }
+
   async function render() {
     searchRequest?.abort();
     const controller = new AbortController();
     searchRequest = controller;
     document.querySelectorAll('[data-view]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.view === view)));
     catalog.replaceChildren();
-    $('#dj-card').hidden=(view!=='dj') || !releases.length;
+    document.body.dataset.musicView=query?'search':view;
+    $('#dj-card').hidden=view!=='dj';
     mixControls(); renderPlaylists();
+    if(view==='library'){libraryView();return;}
+    if(view==='artist'){await artistView(controller.signal);return;}
+    if(view==='playlist')playlistTools();
     if(view==='dj' || view==='playlist') {
       const tracks=view==='dj' ? mix : currentList.tracks;
-      show(shelf(view==='dj' ? 'Your DJ mix' : currentList.name),tracks,'Building your mix…');return;
+      show(shelf(view==='dj' ? 'Your DJ mix' : currentList.name),tracks,view==='playlist'?'Find a song and tap ＋ to add it.':'Request a mix to get started.');return;
     }
     const words = query.toLowerCase().split(/\s+/).filter(Boolean);
     let matches = (view === 'saved' ? saved : releases).filter(t => words.every(w => (t.title+' '+t.artist).toLowerCase().includes(w)));
@@ -253,7 +451,7 @@
     if (query && view === 'all') {
       body.textContent = 'Searching official songs…';
       try {
-        const response = await fetch('/api/music-search?q='+encodeURIComponent(query),{signal:AbortSignal.any([controller.signal,AbortSignal.timeout(12000)])});
+        const response = await fetch('/api/music-search?q='+encodeURIComponent(query),{signal:deadline(12000,controller.signal)});
         if (!response.ok) throw Error('Search unavailable');
         const live = (await response.json()).filter(validSong);
         matches = [...new Map([...live,...matches].map(t => [t.id,t])).values()];
@@ -263,10 +461,13 @@
       }
     }
     if (controller.signal.aborted) return;
+    if(query){const artists=credits(matches,query).slice(0,4);
+      if(artists.length){const section=element('div','artist-results');artists.forEach(a=>section.append(button(a.name+' · Artist',()=>openArtist(a,matches))));body.before(section);}
+    }
     show(body,matches,query ? 'No official songs found.' : 'Tap a heart to add songs to your library.');
   }
   function search(term) {
-    view = 'all'; query = term.trim(); $('#search').value = query;
+    dismissSuggestions();$('#search').blur();pageTop();view = 'all'; query = term.trim(); $('#search').value = query;
     render(); $('.browse').scrollTop = 0;
   }
   function shortcut(t,compact) {
@@ -276,7 +477,7 @@
     button.append(img);
     if (!compact) button.append(element('strong','',t.artist));
     else button.setAttribute('aria-label',button.title);
-    button.onclick = () => search(t.artist);
+    button.onclick = () => openArtist({name:t.artist},[t]);
     return button;
   }
   function artists() { return releases.filter((t,i,a) => a.findIndex(v => v.artist === t.artist) === i).slice(0,6); }
@@ -288,7 +489,7 @@
     try {
       let chart;
       try {
-        const r=await fetch('/api/music-search?feed=chart',{signal:AbortSignal.timeout(14000)});
+        const r=await fetch('/api/music-search?feed=chart',{signal:deadline(14000)});
         if(!r.ok) throw Error();
         chart=await r.json();
         if(!chart.tracks?.some(validSong)) throw Error();
@@ -310,10 +511,13 @@
     }
   }
   $('#search-container').onsubmit=e=>{e.preventDefault();search($('#search').value)};
-  $('#search').oninput=()=>{if (!$('#search').value && query) search('')};
+  $('#search').oninput=suggest;
+  $('#search').onkeydown=e=>{if(e.key==='Escape')dismissSuggestions();if(e.key==='ArrowDown' && !suggestions.hidden){e.preventDefault();suggestions.firstChild.focus();}};
+  document.addEventListener('pointerdown',e=>{if(!e.target.closest('#search-container'))dismissSuggestions();});
+  $('#search-container').addEventListener('focusout',e=>{if(e.relatedTarget && !e.currentTarget.contains(e.relatedTarget))dismissSuggestions();});
   document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>{
     if(b.dataset.view==='dj'){openBooth();return;}
-    query=''; $('#search').value=''; view=b.dataset.view; render();
+    navigate(b.dataset.view);
   });
 
   let player, ready=false, queue=[], index=0, repeat=false, volume=80, muted=false, failed=false;
@@ -347,7 +551,7 @@
     radioJob?.abort(); const job=new AbortController();radioJob=job;
     let candidates=[];
     try {
-      const r=await fetch('/api/music-search?feed=radio&id='+encodeURIComponent(track.id),{signal:AbortSignal.any([job.signal,AbortSignal.timeout(10000)])});
+      const r=await fetch('/api/music-search?feed=radio&id='+encodeURIComponent(track.id),{signal:deadline(10000,job.signal)});
       if(r.ok)candidates=(await r.json()).tracks.filter(validSong);
     } catch { /* Fall back to familiar artists already in the library. */ }
     if(job.signal.aborted || !station || queue[index]?.id!==track.id)return;
