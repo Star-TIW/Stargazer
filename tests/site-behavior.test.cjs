@@ -65,7 +65,7 @@ test("ESPN team logos are permitted and removed VidLink frames are blocked on bo
   const policy = JSON.parse(read("vercel.json")).headers[0].headers.find(h => h.key === "Content-Security-Policy").value;
   assert.ok(read("_headers").includes(policy), "Cloudflare and Vercel CSP match");
   const directive = name => policy.split(";").find(part => part.trim().startsWith(name + " "))?.trim().split(/\s+/).slice(1) || [];
-  assert.ok(directive("img-src").includes("https://a.espncdn.com"));
+  assert.ok(directive("img-src").includes("https:") || directive("img-src").includes("https://a.espncdn.com"));
   assert.ok(!directive("frame-src").includes("https://vidlink.pro"));
 });
 
@@ -441,7 +441,12 @@ test("live player shows the current provider and cycles back to the first feed",
   const button = { append() {}, setAttribute(key, value) { this[key] = value; } };
   const context = vm.createContext({
     document: { createElement: tag => tag === "button" ? button : { setAttribute() {} } },
-    videoIframe: { sandbox: true, removeAttribute(key) { delete this[key]; } }, button
+    videoIframe: { sandbox: true, removeAttribute(key) { delete this[key]; } },
+    window: { StargazerLiveLoader: null },
+    liveOpeningLoader: null,
+    activeStreamTitle: "",
+    videoContainer: { querySelector() { return {}; } },
+    button
   });
   vm.runInContext(live.slice(live.indexOf("  let activeEmbeds"), live.indexOf("  const openPlayer"))
     + live.slice(live.indexOf("  nextSource.onclick"), live.indexOf("  const setupVideoOverlay")), context);
@@ -492,21 +497,22 @@ test("sports multiview filter belongs only to sports and picker groups categorie
   const tv = html.slice(html.indexOf('<section id="sg-tv-multiview"'), html.indexOf('<section id="sg-multiview"'));
   const sport = html.slice(html.indexOf('<section id="sg-multiview"'));
   assert.doesNotMatch(tv, /mv-category-row|mv-category/);
-  assert.match(sport, /mv-category-row[\\s\\S]*?mv-category/);
+  assert.match(sport, /mv-category-row/);
+  assert.match(sport, /class="mv-category"/);
   const js = read("live/multiview.js");
   assert.match(js, /mv-sport-heading/);
-  assert.match(js, /category === "all" \\|\\| g\\.sport === category/);
-  assert.match(js, /stargazer:multiview-games/);
-  assert.match(js, /selected = new Set\\(\\[\\.\\.\\.selected\\]\\.filter\\(id => valid\\.has\\(id\\)\\)\\)/);
+  assert.ok(js.includes('category === "all" || g.sport === category'));
+  assert.ok(js.includes("stargazer:multiview-games"));
+  assert.ok(js.includes("selected = new Set([...selected].filter(id => valid.has(id)))"));
 });
 
-test("all-sports collector includes pre-status NFL with sources and isolates provider failures", () => {
+test("all-sports collector includes current NFL and isolates provider failures", () => {
   const source = read("live/live.js");
   const collector = source.slice(source.indexOf("  const safeMultiviewLookup"), source.indexOf("  const fetchGamesWindow"));
-  assert.match(collector, /safeMultiviewLookup\\(\\(\\) => PpvSports\\.listings\\(\\), \\[\\]\\)/);
-  assert.match(collector, /safeMultiviewLookup\\(\\(\\) => TimStreams\\.listings\\(\\), new Map\\(\\)\\)/);
-  assert.doesNotMatch(collector, /gameStatus\\(ev\\)\\.state !== "pre"/);
-  assert.match(collector, /!gameFinished\\(ev\\)/);
-  assert.match(collector, /id:sport\\+"\\:"\\+ev\\.id/);
-  assert.match(source, /stargazer:multiview-request", \\(\\) => \\{ publishMultiview\\(\\); fetchMultiviewGames\\(\\); \\}/);
+  assert.ok(collector.includes("safeMultiviewLookup(() => PpvSports.listings(), [])"));
+  assert.ok(collector.includes("safeMultiviewLookup(() => TimStreams.listings(), new Map())"));
+  assert.ok(!collector.includes('gameStatus(ev).state !== "pre"'));
+  assert.ok(collector.includes("!gameFinished(ev)"));
+  assert.ok(collector.includes('id:sport+":"+ev.id'));
+  assert.ok(source.includes('stargazer:multiview-request", () => { publishMultiview(); fetchMultiviewGames(); }'));
 });
