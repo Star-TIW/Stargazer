@@ -100,7 +100,6 @@ body:has(#dock:not([hidden])) .workspace { height:calc(100dvh - 246px); }
 }
 
 /* The search and hero typography use the same components as the main page. */
-body:has(.music-hero) > .header { position:sticky; top:0; }
 .studio { width:min(1600px,94%); padding:0 0 24px; margin-inline:auto; }
 .music-hero { width:min(100%,680px); padding:clamp(32px,4vw,64px) 0 clamp(28px,3vw,46px); }
 .music-hero .search-shell { z-index:2 !important; }
@@ -127,7 +126,6 @@ body:has(.music-hero) > .header { position:sticky; top:0; }
   .header .navbar:not(.active) { right:0; transform:translateX(100%); display:none; }
 }
 
-body:has(.music-hero) > .header { z-index:150; background:#242424; backdrop-filter:none; -webkit-backdrop-filter:none; }
 .studio { isolation:isolate; position:relative; z-index:0; }
 #conversation { display:grid; gap:8px; margin:16px 0; max-height:240px; overflow:auto; }
 #conversation p { width:fit-content; max-width:90%; padding:9px 13px; border-radius:13px; background:#292923; line-height:1.45; }
@@ -141,3 +139,11 @@ body:has(.music-hero) > .header { z-index:150; background:#242424; backdrop-filt
 #audio-dialog { margin:auto; padding:24px; width:min(92vw,390px); color:#f7f6eb; background:#191919; border:1px solid #efef8844; border-radius:18px; }
 #audio-dialog::backdrop { background:#000a; }
 #audio-dialog label { display:flex; align-items:center; justify-content:space-between; margin:20px 0; }
+.studio { padding-top:var(--music-panel-top,102px); }
+.music-toolbar { display:flex; align-items:center; gap:12px; padding:12px 0 20px; }
+.music-toolbar #search-container.search-shell { flex:1; min-width:0; width:auto; max-width:none; margin:0; z-index:1 !important; }
+#audio-settings { height:52px;width:52px;flex:none;border-radius:50%;background:#232323;border:1px solid #efef8850;color:#efef88;font-size:24px; }
+#idle { color:#bbb; margin:12px 0; }
+.icon-defs { position:absolute; width:0; height:0; overflow:hidden; }
+.control-icon { display:block; width:20px; height:20px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+.transport button { display:grid; place-items:center; min-width:38px; min-height:38px; padding:7px; }

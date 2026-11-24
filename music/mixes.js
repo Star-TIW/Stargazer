@@ -1,9 +1,5 @@
 // Keep the cold-start shelf recognizable and give recent listening more weight.
 const StargazerMixes = (() => {
-  const hits = ['Blinding Lights','Billie Jean','Espresso','Numb','Cruel Summer','HUMBLE.','Let Her Go','Saturn','One More Time','Yellow','Locked out of Heaven','Rise'];
-  function popular(releases) {
-    return hits.map(title => releases.find(t => t.title === title)).filter(Boolean);
-  }
   function artistNames(track) {
     return track.artist.toLowerCase().split(/,\s*/);
   }
@@ -31,6 +27,6 @@ const StargazerMixes = (() => {
     }
     return result;
   }
-  return {popular,rank,mix};
+  return {rank,mix};
 })();
 if (typeof module !== 'undefined') module.exports=StargazerMixes;

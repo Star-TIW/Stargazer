@@ -11,6 +11,7 @@
   <link rel="stylesheet" href="/music/music.css">
 </head>
 <body>
+  <svg class="icon-defs" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><symbol id="icon-play" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></symbol><symbol id="icon-pause" viewBox="0 0 24 24"><path d="M8 5v14M16 5v14"/></symbol><symbol id="icon-previous" viewBox="0 0 24 24"><path d="M6 5v14m12-14v14L8 12z"/></symbol><symbol id="icon-next" viewBox="0 0 24 24"><path d="M18 5v14M6 5v14l10-7z"/></symbol><symbol id="icon-repeat" viewBox="0 0 24 24"><path d="M3 10a5 5 0 0 1 5-5h11m-3-3 3 3-3 3M21 14a5 5 0 0 1-5 5H5m3-3-3 3 3 3"/></symbol><symbol id="icon-sound" viewBox="0 0 24 24"><path d="M3 9h4l5-4v14l-5-4H3z M16 8q4 4 0 8 M19 5q7 7 0 14"/></symbol><symbol id="icon-silent" viewBox="0 0 24 24"><path d="M3 9h4l5-4v14l-5-4H3z M16 9l6 6m0-6-6 6"/></symbol></svg>
   <div id="shapes"></div><div id="stars"></div><div id="bubbles"></div><div id="snow"></div><div id="particles-js"></div>
   <header class="header">
     <div class="brand-group"><img class="logo-small" src="/stargazer-512.png" alt="Stargazer logo"><h1 class="brand">Stargazer</h1></div>
@@ -21,18 +22,15 @@
     </nav>
   </header>
   <main class="studio">
-    <section class="music-hero hero-content">
-      <p class="eyebrow">Stargazer Music</p>
-      <h2>Find your next favorite song.</h2>
-      <p class="hero-copy">Search official releases or let your DJ put a mix together.</p>
+    <div class="music-toolbar">
       <form id="search-container" class="search-shell" role="search"><span class="search-icon" aria-hidden="true">⌕</span><input id="search" type="search" autocomplete="off" maxlength="120" aria-label="Search official songs and artists" placeholder="Search songs &amp; artists…"></form>
-    </section>
+        <button id="audio-settings" aria-label="Playback settings" title="Playback settings">⚙</button>
+    </div>
     <div class="workspace">
       <nav class="filters rail" aria-label="Your library">
         <button data-view="all" aria-label="Discover music" title="Discover music" aria-pressed="true">♫</button>
         <button data-view="saved" aria-label="Liked songs" title="Liked songs" aria-pressed="false">♥</button>
         <button data-view="dj" aria-label="Stargazer DJ" title="Stargazer DJ" aria-pressed="false">DJ</button>
-        <button id="audio-settings" aria-label="Playback settings" title="Playback settings">⚙</button>
         <div id="shortcuts"></div>
       </nav>
       <section class="browse" aria-label="Browse music">
@@ -46,12 +44,11 @@
         <div id="playlists"></div>
         <div id="catalog" aria-live="polite"></div>
       </section>
-      <aside id="now"><h2>Now playing</h2><div id="visual"><img id="now-art" alt=""><div id="mount" hidden></div></div><strong id="now-title"></strong><span id="now-artist"></span><h3>Up next</h3><div id="up-next"></div></aside>
+      <aside id="now"><h2>Now playing</h2><p id="idle">Choose a song to start your station.</p><div id="visual"><img id="now-art" alt="" hidden><div id="mount" hidden></div></div><strong id="now-title"></strong><span id="now-artist"></span><h3>Up next</h3><div id="up-next"></div></aside>
     </div>
   </main>
   <dialog id="audio-dialog" aria-labelledby="settings-title"><h2 id="settings-title">Playback settings</h2>
-    <label>Song fade <select id="fade"><option value="0">Off</option><option value="2">2 seconds</option><option value="4">4 seconds</option><option value="8">8 seconds</option></select></label>
-    <label>Spoken DJ replies <input type="checkbox" id="voice-on" checked></label>
+    <label>Fade in / out <select id="fade"><option value="0">Off</option><option value="2">2 seconds</option><option value="4">4 seconds</option><option value="8">8 seconds</option></select></label>
     <button id="enable-model" hidden>Download on-device DJ model</button><p id="model-status" role="status"></p>
     <form method="dialog"><button>Done</button></form></dialog>
   <aside id="dock" aria-label="Music player" hidden>
@@ -59,13 +56,13 @@
 
     <div class="transport">
       <div class="buttons">
-        <button id="previous" aria-label="Previous track" title="Previous track">◀◀</button>
-        <button id="play">Play</button>
-        <button id="next" aria-label="Next track" title="Next track">▶▶</button>
-        <button id="repeat" aria-label="Repeat track" aria-pressed="false">Repeat</button>
+        <button id="previous" aria-label="Previous track" title="Previous track"><svg class="control-icon" aria-hidden="true"><use href="#icon-previous"/></svg></button>
+        <button id="play" aria-label="Play" title="Play"><svg class="control-icon" aria-hidden="true"><use href="#icon-play"/></svg></button>
+        <button id="next" aria-label="Next track" title="Next track"><svg class="control-icon" aria-hidden="true"><use href="#icon-next"/></svg></button>
+        <button id="repeat" aria-label="Repeat track" aria-pressed="false" title="Repeat track"><svg class="control-icon" aria-hidden="true"><use href="#icon-repeat"/></svg></button>
       </div>
       <label class="timeline"><span id="elapsed">0:00</span><input id="seek" type="range" min="0" max="0" step="1" value="0" aria-label="Playback position" disabled><span id="duration">0:00</span></label>
-      <div class="loudness"><button id="mute" aria-pressed="false">Mute</button><input id="volume" aria-label="Volume" type="range" min="0" max="100" value="80"><output for="volume" id="percent">80%</output></div>
+      <div class="loudness"><button id="mute" aria-pressed="false" aria-label="Mute" title="Mute"><svg class="control-icon" aria-hidden="true"><use href="#icon-sound"/></svg></button><input id="volume" aria-label="Volume" type="range" min="0" max="100" value="80"><output for="volume" id="percent">80%</output></div>
     </div>
     <p id="audio-status" role="status"></p>
   </aside>
