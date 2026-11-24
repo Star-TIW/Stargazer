@@ -1,0 +1,20 @@
+const {test}=require('node:test');
+const assert=require('node:assert/strict');
+const Player=require('../music/crossfade.js');
+test('8-second overlap starts at zero, scales both decks and promotes without restarting',()=>{
+  const tracks=[{id:'one',audioId:'a'},{id:'two',audioId:'b'}];
+  const audio=()=>({duration:100,currentTime:0,readyState:4,paused:true,play(){this.paused=false;return Promise.resolve();},pause(){this.paused=true;},removeAttribute(){},load(){}});
+  let promoted=0;
+  const p=new Player({track:tracks[0],start:0,next:()=>tracks[1],seconds:()=>8,level:.8,muted:false,state(){},advance(){promoted++;},error:assert.fail,audio});
+  p.playVideo();p.active.currentTime=91;p.tick();assert.ok(p.incoming.paused);
+  p.active.currentTime=92;p.tick();assert.equal(p.incoming.paused,false);assert.equal(p.incoming.currentTime,0);
+  assert.equal(p.active.volume,.8);assert.equal(p.incoming.volume,0);
+  p.active.currentTime=96;p.incoming.currentTime=4;p.tick();
+  assert.equal(p.active.volume,.4);assert.equal(p.incoming.volume,.4);
+  p.pauseVideo();assert.ok(p.incoming.paused);p.playVideo();
+  p.setVolume(50);assert.equal(p.incoming.volume,.25);
+  p.active.currentTime=100;p.incoming.currentTime=8;p.tick();
+  assert.equal(p.active.volume,0);assert.equal(p.incoming.volume,.5);
+  const incoming=p.incoming;p.active.onended();assert.equal(p.active,incoming);assert.equal(p.active.currentTime,8);assert.equal(promoted,1);
+  p.destroy();
+});

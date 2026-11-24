@@ -48,7 +48,12 @@
     </div>
   </main>
   <dialog id="audio-dialog" aria-labelledby="settings-title"><h2 id="settings-title">Playback settings</h2>
-    <label>Fade in / out <select id="fade"><option value="0">Off</option><option value="2">2 seconds</option><option value="4">4 seconds</option><option value="8">8 seconds</option></select></label>
+    <section class="transition-settings"><label for="fade">Song transition <output id="fade-value" for="fade"></output></label>
+      <input type="range" id="fade" min="0" max="12" step="1" value="0">
+      <div class="range-limits"><span>Off</span><span>12 seconds</span></div>
+      <p>Album-art tracks overlap for the selected duration. YouTube videos fade out, then in.</p>
+      <button type="button" id="browse-audio">Browse album-art tracks</button>
+    </section>
     <button id="enable-model" hidden>Download on-device DJ model</button><p id="model-status" role="status"></p>
     <form method="dialog"><button>Done</button></form></dialog>
   <aside id="dock" aria-label="Music player" hidden>
@@ -70,6 +75,7 @@
   <script src="/particle-config.js"></script>
   <script src="/music/mixes.js"></script>
   <script src="/music/dj.js"></script>
+  <script src="/music/crossfade.js"></script>
   <script src="/music/music.js"></script>
 </body>
 </html>
