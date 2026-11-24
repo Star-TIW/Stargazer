@@ -100,3 +100,10 @@
 .sg-mv-shell .mv-screen .sgl-scene{width:min(220px,52%,33dvh)}
 .sg-mv-shell .mv-screen .sgl-subtext{font-size:clamp(8px,1vw,12px);letter-spacing:.1em}
 
+
+/* Sports-only category filter. TV Multi-view keeps its original interface. */
+#sg-multiview .mv-category-row{display:flex;align-items:center;gap:12px;margin-top:14px;flex-wrap:wrap}
+#sg-multiview .mv-category-row label{font-size:.88rem;color:#e2dda1;font-weight:700}
+#sg-multiview .mv-category{flex:1;min-width:170px;max-width:320px;min-height:42px;padding:9px 12px;border:1px solid #777753;border-radius:10px;background:#303127;color:#fff}
+#sg-multiview .mv-category:focus-visible{outline:2px solid #efef88;outline-offset:2px}
+#sg-multiview .mv-picker .mv-empty{grid-column:1/-1;color:#c3c3af;font-size:.88rem}

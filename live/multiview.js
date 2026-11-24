@@ -8,7 +8,15 @@
   const start = $(".mv-start"), layout = $(".mv-layout");
   const toggle = $(".mv-toggle"), panel = $(".mv-panel"), note = $(".mv-note");
   let games = [], selected = new Set(), tiles = [], focused = null;
-  let filter = "", viewMode = "side";
+  let filter = "", viewMode = "side", category = "all";
+  const categoryPicker = !isTV ? $(".mv-category") : null;
+  const sports = [["all","All sports"],["nfl","NFL"],["nba","NBA"],["mlb","MLB"],["nhl","NHL"],["mls","MLS"],["cfb","College Football"]];
+  if (categoryPicker) {
+    categoryPicker.replaceChildren(...sports.map(([value,label]) => {
+      const option=document.createElement("option");option.value=value;option.textContent=label;return option;
+    }));
+    categoryPicker.addEventListener("change",()=>{category=categoryPicker.value;update();});
+  }
   const audioOwner = root.id;
   const overlay = document.createElement("div");
   overlay.className = "sg-mv-overlay"; overlay.hidden = true;
@@ -35,7 +43,7 @@
   reload.addEventListener("click",()=>{
     reload.classList.remove("mv-reloading");void reload.offsetWidth;
     reload.classList.add("mv-reloading");
-    window.dispatchEvent(new Event(isTV ? "stargazer:tv-reload" : "stargazer:sports-reload"));
+    window.dispatchEvent(new Event(isTV ? "stargazer:tv-reload" : "stargazer:multiview-refresh"));
   });
   const sourcesFor = stream => [
     ...(stream.embeds || []).map((url,i) => ({url,name:"StreamFree" + (i ? " "+(i+1):"")})),
@@ -60,7 +68,13 @@
       picker.append(empty);
       return;
     }
-    for (const game of games.filter(g => g.name.toLowerCase().includes(filter))) {
+    const visible = games.filter(g => (isTV || category === "all" || g.sport === category) &&
+      (g.name.toLowerCase().includes(filter) || (!isTV && g.category.toLowerCase().includes(filter))));
+    if (!visible.length) {
+      const empty=document.createElement("p"); empty.className="mv-empty";
+      empty.textContent="No live games match this sport or search.";picker.append(empty);
+    }
+    for (const game of visible) {
       const chosen = selected.has(game.id);
       const card = document.createElement("button");
       card.type = "button";
@@ -69,7 +83,7 @@
       const name = document.createElement("strong");
       name.textContent = game.name;
       const meta = document.createElement("span");
-      meta.textContent = chosen ? "✓ Selected" : game.sources.length + " available source" + (game.sources.length === 1 ? "" : "s");
+      meta.textContent = (isTV ? "" : game.category + " · ") + (chosen ? "✓ Selected" : game.sources.length + " available source" + (game.sources.length === 1 ? "" : "s"));
       card.append(name,meta);
       card.onclick = () => {
         if (chosen) selected.delete(game.id);
@@ -124,7 +138,7 @@
   };
   start.onclick = () => {
     stopAll();
-    const chosen = games.filter(g => selected.has(g.id)).slice(0,Number(layout.value));
+    const chosen = [...selected].map(id => games.find(g=>g.id===id)).filter(Boolean).slice(0,Number(layout.value));
     stage.className = "mv-stage mv-layout-" + layout.value;
     for (const game of chosen) {
       const element = document.createElement("article");
@@ -178,6 +192,7 @@
   };
   toggle.onclick = () => {
     const open = panel.hidden;
+    if(open && !isTV) window.dispatchEvent(new Event("stargazer:multiview-request"));
     panel.hidden = !open;
     toggle.setAttribute("aria-expanded",String(open));
     toggle.textContent = open ? "Close Multi-view" : "Multi-view";
@@ -188,7 +203,7 @@
     selected = new Set([...selected].slice(0,max));
     update();
   };
-  window.addEventListener(isTV ? "stargazer:tv-channels" : "stargazer:live-games", event => {
+  window.addEventListener(isTV ? "stargazer:tv-channels" : "stargazer:multiview-games", event => {
     if(isTV){
       games=(event.detail?.channels||[]).map((channel,i)=>({id:"tv:"+channel.name.toLowerCase(),name:channel.name,sources:channel.sources||[]})).filter(g=>g.sources.length);
       const valid=new Set(games.map(g=>g.id));
@@ -196,10 +211,7 @@
       update();
       return;
     }
-    const streams = event.detail?.streams || {};
-    games = Object.entries(streams).map(([id,stream]) => ({
-      id, name:gameName(id), sources:sourcesFor(stream)
-    })).filter(g => g.sources.length);
+    games = (event.detail?.games || []).filter(g => Array.isArray(g.sources) && g.sources.length);
     const valid = new Set(games.map(g => g.id));
     selected = new Set([...selected].filter(id => valid.has(id)));
     update();
