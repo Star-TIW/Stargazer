@@ -203,9 +203,23 @@ body:has(#dock:not([hidden])) .workspace { height:calc(100dvh - 246px); }
 .file-label input {position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;}
 .file-label:has(input:disabled),#library-dialog .import-submit:disabled {opacity:.55;}
 #library-dialog .notice:empty {margin:0;height:0;}
-#visual:has(#mount iframe) {overflow:visible;border-radius:0;}
-#visual:has(#mount iframe) > img {display:none;}
+/* Keep the video frame exactly 16:9 and hide square art only once playback begins. */
+#visual:has(#mount:not(.is-preloading) iframe) {aspect-ratio:16/9;overflow:hidden;border-radius:9px;}
+#visual:has(#mount:not(.is-preloading) iframe) > img {display:none;}
+#visual:has(#mount.is-preloading iframe) #mount {position:absolute;inset:0;opacity:0;pointer-events:none;}
+#mount:not(.is-preloading) {position:relative;z-index:1;}
+#mount iframe {display:block;width:100%;height:auto;aspect-ratio:16/9;min-width:0;min-height:0;}
+#visual .outgoing-cover {pointer-events:none;}
+#shuffle {display:grid;visibility:visible;flex-shrink:0;}
+.buttons {flex-wrap:nowrap;flex-shrink:0;}
+.queue-actions {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px;margin-top:8px;}
+.queue-action {min-width:0;min-height:34px;border:1px solid #efef8850;border-radius:9px;background:#292a23;color:#f4f3dc;font-size:12px;cursor:pointer;padding:6px 5px;}
+.queue-action:hover,.queue-action:focus-visible {background:#464735;outline-color:#efef88;}
+.completion-choice {display:grid;grid-template-columns:minmax(0,1fr) auto auto;align-items:center;gap:5px;}
+.completion-choice .completion {min-width:0;}
+.completion-choice .queue-action {padding-inline:9px;}
+@media(max-width:440px){.completion-choice .queue-action {font-size:11px;padding-inline:6px;}}
 @media(prefers-reduced-motion:no-preference){
-  #mount iframe {animation:video-arrive .35s ease-out;}
-  @keyframes video-arrive {from{transform:translateX(6px);opacity:.85}to{transform:none;opacity:1}}
+  #mount iframe {animation:video-arrive .4s ease-out;}
+  @keyframes video-arrive {from{transform:translateX(20px);opacity:.75}to{transform:none;opacity:1}}
 }
