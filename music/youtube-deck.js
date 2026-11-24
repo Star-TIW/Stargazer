@@ -7,6 +7,7 @@ class YouTubeDeck {
     this.silent=false;
     this.select(track,start);
     mount.hidden=false;
+    mount.classList?.toggle('is-preloading',!immediate);
     const frame=document.createElement('iframe');
     frame.title=track.title+' by '+track.artist;
     frame.allow='autoplay; encrypted-media; fullscreen; picture-in-picture';
@@ -53,6 +54,7 @@ class YouTubeDeck {
     }
     const keepPlaying=this.track ? this.wanted : false;
     this.track=track;this.start=start;this.wanted=keepPlaying;this.pendingLoad=true;this.exiting=false;
+    if(keepPlaying)this.mount.classList?.remove('is-preloading');
     if(this.mount.firstChild)this.mount.firstChild.title=track.title+' by '+track.artist;
   }
   configure(){this.api.setVolume(Math.round(this.level*100));this.silent?this.api.mute():this.api.unMute();}
@@ -81,7 +83,7 @@ class YouTubeDeck {
   }
   set volume(v){if(v!==this.level){this.level=v;if(this.connected)this.api.setVolume(Math.round(v*100));}}
   set muted(v){if(v!==this.silent){this.silent=v;if(this.connected)this.configure();}}
-  play(){this.wanted=true;this.command();return Promise.resolve();}
+  play(){this.wanted=true;this.mount.classList?.remove('is-preloading');this.command();return Promise.resolve();}
   pause(){this.wanted=false;if(this.connected)this.api.pauseVideo();}
-  destroy(){this.dead=true;this.api?.destroy();this.mount.replaceChildren();this.mount.hidden=true;}
+  destroy(){this.dead=true;this.api?.destroy();this.mount.replaceChildren();this.mount.classList?.remove('is-preloading');this.mount.hidden=true;}
 }
