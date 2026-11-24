@@ -33,6 +33,11 @@
     const items=[...history.map(e=>e.track),...saved,...releases];
     return [...new Map(items.map(t=>[t.id,t])).values()];
   }
+  function localSearch(term){
+    const words=term.trim().toLowerCase().split(/\s+/);
+    return [...new Map([...playlists.flatMap(list=>list.tracks),...pool()].filter(t=>
+      words.every(word=>(t.title+' '+t.artist).toLowerCase().includes(word))).map(t=>[t.id,t])).values()];
+  }
   function ranked() { return StargazerMixes.rank(pool(),history,saved); }
   function songRow(title,tracks) {
     const row=shelf(title); show(row,tracks,''); row.classList.add('song-row');
@@ -450,8 +455,8 @@
       });
       suggestions.hidden=false;
     }
-    draw(pool().filter(t=>(t.title+' '+t.artist).toLowerCase().includes(term.toLowerCase())));
-    completionTimer=setTimeout(async()=>{try{const songs=await lookup(term,controller.signal);if(!controller.signal.aborted)draw(songs);}catch{}},260);
+    const local=localSearch(term);draw(MusicLibrary.searchOrder(term,local));
+    completionTimer=setTimeout(async()=>{try{const songs=await lookup(term,controller.signal);if(!controller.signal.aborted)draw(MusicLibrary.searchOrder(term,[...new Map([...local,...songs].map(t=>[t.id,t])).values()]));}catch{}},260);
   }
 
   async function render() {
@@ -471,7 +476,7 @@
       show(shelf(view==='dj' ? 'Your DJ mix' : currentList.name),tracks,view==='playlist'?'Find a song and tap ＋ to add it.':'Request a mix to get started.');return;
     }
     const words = query.toLowerCase().split(/\s+/).filter(Boolean);
-    let matches = (view === 'saved' ? saved : releases).filter(t => words.every(w => (t.title+' '+t.artist).toLowerCase().includes(w)));
+    let matches = query && view==='all' ? localSearch(query) : (view === 'saved' ? saved : releases).filter(t => words.every(w => (t.title+' '+t.artist).toLowerCase().includes(w)));
     if(home() && releases.length) {
       const personal=history.length || saved.length;
       const picks=personal ? ranked().slice(0,10) : releases;

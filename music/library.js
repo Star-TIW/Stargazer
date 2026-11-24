@@ -13,7 +13,13 @@ const MusicLibrary = (() => {
       return recording.title===target.title && recording.credits===target.credits &&
         (!request.duration || !song.duration || Math.abs(song.duration-request.duration)<=4);
     });
+    const audio=candidates.filter(song=>!song.officialVideo);
+    if(audio.length===1)return audio[0];
     if(candidates.length===1)return candidates[0];
+    if(!audio.length && request.duration){
+      const exact=candidates.filter(song=>song.duration===Math.round(request.duration));
+      if(exact.length===1)return exact[0];
+    }
     if(request.duration && candidates.every(song=>song.duration)){
       const nearest=candidates.slice().sort((a,b)=>Math.abs(a.duration-request.duration)-Math.abs(b.duration-request.duration));
       if(nearest.length>1 && Math.abs(nearest[1].duration-request.duration)-Math.abs(nearest[0].duration-request.duration)>=2)return nearest[0];

@@ -37,3 +37,20 @@ test('radio and trending accept official music only and deduplicate recordings',
   assert.equal(recordings([row('MUSIC_VIDEO_TYPE_OMV'),row('MUSIC_VIDEO_TYPE_ATV')],true).length,1);
   assert.equal((await discovery(new URLSearchParams('feed=radio&id=bad'))).status,400);
 });
+
+test('official-video lookup recovers the artist missing from the song results',async()=>{
+  const {parseSongs}=await import('../lib/music-search.mjs');
+  const {matchTrack,searchOrder}=require('../music/library.js');
+  const title='Animal I Have Become',artist='Three Days Grace';
+  function row(id,type,time){
+    const watchEndpoint={videoId:id,watchEndpointMusicSupportedConfigs:{watchEndpointMusicConfig:{musicVideoType:type}}};
+    const columns=[[{text:title}],[{text:artist,navigationEndpoint:{browseEndpoint:{browseId:'UCexample'}}},{text:time}]];
+    return {musicResponsiveListItemRenderer:{overlay:{musicItemThumbnailOverlayRenderer:{content:{musicPlayButtonRenderer:{playNavigationEndpoint:{watchEndpoint}}}}},
+      flexColumns:columns.map(runs=>({musicResponsiveListItemFlexColumnRenderer:{text:{runs}}}))}};
+  }
+  const rows=[row('xqds0B_meys','MUSIC_VIDEO_TYPE_OMV','3:51'),row('n9h7hU6_VI4','MUSIC_VIDEO_TYPE_OMV','3:52'),row('0123456789A','MUSIC_VIDEO_TYPE_UGC','3:51')];
+  const songs=parseSongs({contents:{tabbedSearchResultsRenderer:{tabs:[{tabRenderer:{content:{sectionListRenderer:{contents:[{musicShelfRenderer:{contents:rows}}]}}}}]}}});
+  assert.equal(songs.length,2);
+  assert.equal(matchTrack({title,artist,duration:231.4},songs).id,'xqds0B_meys');
+  assert.equal(searchOrder(title,[...songs,{title,artist:'Cover Artist'}])[0].artist,artist);
+});
