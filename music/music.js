@@ -705,7 +705,6 @@
     $('#playing').textContent=track.title+' · '+track.artist;
     $('#previous').disabled=!i;$('#next').disabled=i===queue.length-1;
     status('');control('#play','play','Play');
-    if(matchMedia('(max-width:760px)').matches) $('#now').scrollIntoView({block:'start'});
     if(native && !promoted){
       player?.destroy();$('#mount').replaceChildren();
       const decks=new CrossfadePlayer({track,start,next:()=>repeat?null:(audioById.get(queue[index+1]?.id) || queue[index+1]),seconds:()=>fade,level:volume/100,muted,
