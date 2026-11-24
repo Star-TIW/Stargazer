@@ -93,6 +93,7 @@
   let audioLibrary=[];
   let audioCatalog;
   const audioById=new Map();
+  const resolveAudio=track=>audioById.get(track?.id) || track;
   function loadAudioLibrary(){
     if(!audioCatalog) audioCatalog=fetch('/music/audio-releases.json').then(r=>{
       if(!r.ok)throw Error();
@@ -100,6 +101,9 @@
     }).then(rows=>{
       audioLibrary=rows.filter(t=>validSong(t) && /^[a-zA-Z0-9]+$/.test(t.audioId));
       audioLibrary.forEach(t=>audioById.set(t.id,t));
+      queue=queue.map(resolveAudio);
+      mix=mix.map(resolveAudio);
+      if(currentTrack && !ready){currentTrack=resolveAudio(currentTrack);preview(currentTrack,queue.slice(index+1));}
     }).catch(error=>{audioCatalog=null;throw error;});
     return audioCatalog;
   }
@@ -231,7 +235,9 @@
       else refresh();
     };
     const add=button('＋',()=>manageSong(track),'save add-track');add.setAttribute('aria-label','Manage playlists for '+track.title);
-    tile.append(pick,save,add);
+    const actions=element('div','queue-actions');
+    actions.append(button('Add to queue',()=>enqueueTrack(track,false),'queue-action'),button('Play next',()=>enqueueTrack(track,true),'queue-action'));
+    tile.append(pick,save,add,actions);
     return tile;
   }
   function shelf(title) {
@@ -591,15 +597,15 @@
     try {
       const session=JSON.parse(localStorage.getItem(sessionKey));
       if(!Array.isArray(session?.queue)||!session.queue.every(validSong)||!Number.isInteger(session.index)||!session.queue[session.index])return;
-      queue=session.queue; index=session.index; station=session.station===true; repeat=session.repeat===true;
+      queue=session.queue.map(resolveAudio); index=session.index; station=session.station===true; repeat=session.repeat===true;
       resumeAt=Math.max(0,Number(session.position)||0);
-      const t=queue[index];currentTrack=t;savedDuration=Number(session.duration)||t.duration||0;
-      backStack=(session.backStack || queue.slice(0,index)).filter(validSong).slice(-100);
+      const t=queue[index];currentTrack=t;savedDuration=Number(t.duration)||0;
+      backStack=(session.backStack || queue.slice(0,index)).filter(validSong).map(resolveAudio).slice(-100);
       timeline();preview(t,queue.slice(index+1));
       $('#now-art').hidden=false;$('#dock').hidden=false;$('#playing').textContent=t.title+' · '+t.artist;
       $('#previous').disabled=!backStack.length && !index;$('#next').disabled=index===queue.length-1;
       $('#elapsed').textContent=time(resumeAt);$('#repeat').setAttribute('aria-pressed',String(repeat));
-      status('Ready to resume');
+      control('#play','play','Play');status('Ready to resume');
       if(!savedDuration){
         lookup(t.title+' '+t.artist).then(rows=>{
           const match=rows.find(row=>row.id===t.id);
@@ -618,10 +624,12 @@
     if(job.signal.aborted || !station || queue[index]?.id!==track.id)return;
     if(!candidates.length)candidates=pool().filter(t=>t.artist===track.artist || history.some(e=>e.track.artist===t.artist));
     const existing=new Set(queue.map(t=>t.id));
-    queue.push(...StargazerMixes.rank(candidates,history,saved).filter(t=>!existing.has(t.id)).slice(0,12));
+    queue.push(...StargazerMixes.rank(candidates,history,saved).filter(t=>!existing.has(t.id)).slice(0,12).map(resolveAudio));
     preview(track,queue.slice(index+1));$('#next').disabled=index===queue.length-1;checkpoint();
   }
-  function startStation(track) {
+  async function startStation(track) {
+    try{await loadAudioLibrary();}catch{}
+    track=resolveAudio(track);
     if(track.audioId && audioLibrary.length){
       const rest=audioLibrary.filter(t=>t.id!==track.id);
       const same=rest.filter(t=>t.artist===track.artist);
@@ -643,7 +651,7 @@
     const source=track.art?.startsWith('https://') ? track.art : '/stargazer-512.png';
     if(coverTrack?.id===track.id && coverTrack.source===source)return;
     clearCoverSlide();
-    const slide=coverTrack && !art.hidden && art.complete && art.naturalWidth &&
+    const slide=coverTrack && art.complete && art.naturalWidth &&
       !matchMedia('(prefers-reduced-motion:reduce)').matches;
     coverTrack={id:track.id,source};
     if(slide){
@@ -696,14 +704,17 @@
   $('#mute').onclick=()=>{muted=!muted;saveLevels()}; levels();
   function time(n) { const s=Math.floor(n||0);return Math.floor(s/60)+':'+String(s%60).padStart(2,'0'); }
   function timeline() {
-    const end=player?.getDuration() || savedDuration, pos=ready ? player.getCurrentTime() : resumeAt;
-    if(end>0)savedDuration=end;
+    const actual=ready ? player?.getDuration() : 0;
+    const end=actual>0 ? actual : savedDuration, pos=ready ? player.getCurrentTime() : resumeAt;
+    if(actual>0)savedDuration=actual;
     $('#seek').max=end||0; $('#seek').value=pos||0; $('#seek').disabled=!end;
     $('#elapsed').textContent=time(pos); $('#duration').textContent=time(end);
   }
   setInterval(()=>{if(ready && player instanceof CrossfadePlayer)player.tick();},30);
-  setInterval(()=>{if(ready && player.getPlayerState()===1) { timeline();applyGain();if(Date.now()-lastCheckpoint>4000)checkpoint(); }},150);
-  $('#seek').oninput=e=>{resumeAt=Number(e.target.value);if(ready)player.seekTo(resumeAt);timeline();checkpoint();};
+  setInterval(()=>{if(ready){timeline();applyGain();const playing=player.getPlayerState()===1;
+    if($('#play').getAttribute('aria-label')!==(playing?'Pause':'Play'))control('#play',playing?'pause':'play',playing?'Pause':'Play');
+    if(playing && Date.now()-lastCheckpoint>4000)checkpoint();}},150);
+  $('#seek').oninput=e=>{resumeAt=Number(e.target.value);if(ready)player.seekTo(resumeAt,true);timeline();checkpoint();};
   function mediaControls(track){
     const session=navigator.mediaSession;
     if(!session)return;
@@ -728,7 +739,7 @@
     }
   }
   function load(i,start=0,promoted=false,automatic=false,back=false) {
-    const track=audioById.get(queue[i]?.id) || queue[i];if(!track)return;queue[i]=track;
+    const track=resolveAudio(queue[i]);if(!track)return;queue[i]=track;
     const sequential=automatic && currentTrack && !currentTrack.audioId && !track.audioId;
     if(currentTrack?.id!==track.id){
       if(!back && currentTrack)backStack=[...backStack.slice(-99),currentTrack];
@@ -736,7 +747,7 @@
     }
     currentTrack=track;
     resumeAt=start;clearTimeout(listenTimer);counted=false;
-    const direction=i<index && queue[index]?.id===coverTrack?.id ? -1 : 1;
+    const direction=i<index ? -1 : 1;
     index=i;failed=false;preview(track,queue.slice(i+1),direction);
     mediaControls(track);
     $('#now-art').hidden=false;$('#dock').hidden=false;
@@ -745,14 +756,14 @@
     }
     $('#playing').textContent=track.title+' · '+track.artist;
     $('#previous').disabled=!backStack.length && !i;$('#next').disabled=i===queue.length-1;
-    status('');control('#play','play','Play');
+    status('');control('#play',ready && player?.getPlayerState()===1?'pause':'play',ready && player?.getPlayerState()===1?'Pause':'Play');
     if(!promoted){
       if(failedPlayer){player?.destroy();player=null;failedPlayer=false;}
       if(player)player.switchTrack(track,start,sequential);
       else{
-        const decks=new CrossfadePlayer({track,start,next:()=>repeat?null:(audioById.get(queue[index+1]?.id) || queue[index+1]),seconds:()=>fade,level:volume/100,muted,
+        const decks=new CrossfadePlayer({track,start,next:()=>repeat?null:resolveAudio(queue[index+1]),seconds:()=>fade,level:volume/100,muted,
           video:(t,immediate,offset)=>new YouTubeDeck(t,$('#mount'),playbackError,immediate,offset),
-          state:code=>state({target:decks,data:code}),advance:()=>load(index+1,0,true),error:()=>playbackError('Audio could not start. Press Play to retry.')});
+          state:code=>state({target:decks,data:code}),advance:()=>load(index+1,0,true),metadata:()=>timeline(),error:()=>playbackError('Audio could not start. Press Play to retry.')});
         player=decks;ready=true;decks.playVideo();
       }
     }
@@ -761,13 +772,24 @@
   }
   let failedPlayer=false;
   function playbackError(text,rebuild=true){failedPlayer=rebuild;failed=rebuild;status(text);control('#play','play','Retry playback');}
+  function enqueueTrack(track,next=false){
+    track=resolveAudio(track);
+    if(!queue.length){radioJob?.abort();station=false;queue=[track];load(0);return;}
+    const current=queue[index];
+    if(track.id===current?.id){status('Already playing '+track.title+'.');return;}
+    player?.clearNext();
+    const upcoming=queue.slice(index+1).filter(t=>t.id!==track.id);
+    queue=[...queue.slice(0,index+1),...(next?[track,...upcoming]:[...upcoming,track])];
+    preview(current,queue.slice(index+1));$('#next').disabled=false;checkpoint();
+    status(track.title+(next?' will play next.':' added to queue.'));
+  }
   function previousTrack(){
     const previous=backStack.pop();
     if(!previous){if(index)load(index-1,0,false,false,true);return;}
     if(queue[index-1]?.id===previous.id)load(index-1,0,false,false,true);
     else{queue=[previous,...queue.slice(index)];load(0,0,false,false,true);}
   }
-  function openPlayer(track,tracks){radioJob?.abort();station=false;queue=tracks.slice();load(queue.indexOf(track));}
+  function openPlayer(track,tracks){radioJob?.abort();station=false;queue=tracks.map(resolveAudio);load(Math.max(0,queue.findIndex(t=>t.id===track.id)));}
   $('#previous').onclick=previousTrack;$('#next').onclick=()=>load(index+1);
   $('#shuffle').onclick=()=>{
     const upcoming=queue.slice(index+1);
@@ -776,7 +798,7 @@
     preview(queue[index],queue.slice(index+1));checkpoint();status('Upcoming songs shuffled.');
   };
   $('#repeat').onclick=()=>{repeat=!repeat;$('#repeat').setAttribute('aria-pressed',String(repeat))};
-  $('#play').onclick=()=>{if(failed||!ready){load(index,resumeAt);return;}if(player.getPlayerState()===1)player.pauseVideo();else player.playVideo()};
+  $('#play').onclick=()=>{if(failed||!ready){load(index,resumeAt);return;}if(player.getPlayerState()===1)player.pauseVideo();else player.playVideo();control('#play',player.getPlayerState()===1?'pause':'play',player.getPlayerState()===1?'Pause':'Play');};
   $('#close').onclick=()=>{
     clearCoverSlide();coverTrack=null;
     clearTimeout(listenTimer);if(player)player.destroy();player=null;ready=false;queue=[];mediaControls(null);
