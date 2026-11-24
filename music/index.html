@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#10100e">
+  <title>Music · Stargazer</title>
+  <link rel="icon" href="/stargazer-192.png">
+  <link rel="stylesheet" href="/home.css">
+  <link rel="stylesheet" href="/music/music.css">
+</head>
+<body>
+  <div id="shapes"></div><div id="stars"></div><div id="bubbles"></div><div id="snow"></div><div id="particles-js"></div>
+  <header class="header">
+    <div class="brand-group"><img class="logo-small" src="/stargazer-512.png" alt="Stargazer logo"><h1 class="brand">Stargazer</h1></div>
+    <button type="button" class="menu-toggle" aria-label="Open navigation" aria-controls="navbar" aria-expanded="false"><span></span></button>
+    <nav class="navbar" id="navbar">
+      <a href="/" class="nav-button">Main</a><a href="/live/" class="nav-button">Live</a><a aria-current="page" href="/music/" class="nav-button">Music</a>
+      <button class="nav-button" id="settings-btn">Settings</button>
+    </nav>
+  </header>
+  <main class="studio">
+    <section class="mast">
+      <div class="record" aria-hidden="true"></div>
+      <h2>Music</h2>
+      <form id="find" role="search">
+        <input type="search" id="query" maxlength="120" aria-label="Search tracks, artists and concerts" placeholder="Search tracks, artists, concerts…">
+        <button type="submit">Search</button>
+      </form>
+    </section>
+    <nav class="filters" aria-label="Music collection">
+      <button data-view="all" aria-pressed="true">Discover</button>
+      <button data-view="audius" aria-pressed="false">Audius</button>
+      <button data-view="archive" aria-pressed="false">Live Archive</button>
+      <button data-view="saved" aria-pressed="false">♥ Saved</button>
+    </nav>
+    <div id="catalog"></div>
+  </main>
+  <aside id="dock" aria-label="Music player" hidden>
+    <div class="dock-head"><strong id="playing"></strong><a id="original" target="_blank" rel="noopener">Open on source ↗</a><button id="close" aria-label="Close player">×</button></div>
+    <div id="player"></div>
+  </aside>
+  <script src="/particles.min.js"></script>
+  <script src="/particle-config.js"></script>
+  <script src="/music/music.js"></script>
+</body>
+</html>
