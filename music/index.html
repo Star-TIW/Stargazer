@@ -20,25 +20,23 @@
     </nav>
   </header>
   <main class="studio">
-    <section class="mast">
-      <div class="mast-copy">
-      <h2>Music</h2>
-      <form id="find" role="search">
-        <input type="search" id="query" maxlength="120" aria-label="Search official songs and artists" placeholder="Search songs or artists…">
-        <button type="submit">Search</button>
-      </form>
-      </div>
-      <button type="button" id="featured" hidden><img alt="" id="feature-art"><span class="feature-copy"><small>Featured release</small><strong id="feature-title"></strong><span id="feature-artist"></span></span><span class="feature-play" aria-hidden="true">▶</span></button>
-    </section>
-    <nav class="filters" aria-label="Music collection">
-      <button data-view="all" aria-pressed="true">Discover</button>
-      <button data-view="saved" aria-pressed="false">♥ Saved</button>
-    </nav>
-    <div id="catalog"></div>
+    <form id="find" role="search"><input type="search" id="query" maxlength="120" aria-label="Search official songs and artists" placeholder="What do you want to play?"><button>Search</button></form>
+    <div class="workspace">
+      <nav class="filters rail" aria-label="Your library">
+        <button data-view="all" aria-label="Discover music" title="Discover music" aria-pressed="true">♫</button>
+        <button data-view="saved" aria-label="Liked songs" title="Liked songs" aria-pressed="false">♥</button>
+        <div id="shortcuts"></div>
+      </nav>
+      <section class="browse" aria-label="Browse music">
+        <button id="featured" hidden><img alt="" id="feature-art"><span class="feature-copy"><small>Featured release</small><strong id="feature-title"></strong><span id="feature-artist"></span></span><span class="feature-play" aria-hidden="true">▶</span></button>
+        <div id="catalog" aria-live="polite"></div>
+      </section>
+      <aside id="now"><h2>Now playing</h2><div id="visual"><img id="now-art" alt=""><div id="mount" hidden></div></div><strong id="now-title"></strong><span id="now-artist"></span><h3>Up next</h3><div id="up-next"></div></aside>
+    </div>
   </main>
   <aside id="dock" aria-label="Music player" hidden>
     <div class="dock-head"><strong id="playing"></strong><button id="close" aria-label="Close player">×</button></div>
-    <audio id="audio" preload="metadata"></audio>
+
     <div class="transport">
       <div class="buttons">
         <button id="previous" aria-label="Previous track" title="Previous track">◀◀</button>
