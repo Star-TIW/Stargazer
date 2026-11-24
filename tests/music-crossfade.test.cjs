@@ -118,9 +118,9 @@ test('two YouTube songs load the next video at the silent tail, before ended',()
 });
 test('mixed playback queues the incoming recording well before fade begins',()=>{
   const {p}=fixture(['video','audio'],8);
-  p.active.currentTime=70;p.tick();
+  p.active.currentTime=66;p.tick();
   assert.equal(p.incoming,undefined);
-  p.active.currentTime=71;p.tick();
+  p.active.currentTime=67;p.tick();
   assert.ok(p.incoming,'audio deck should prebuffer before fade starts');
   assert.equal(p.incoming.paused,true);
   p.active.currentTime=92;p.tick();
