@@ -325,10 +325,17 @@
   function importDialog(){
     openDialog('Import playlist');
     const form=element('form','library-form'), input=element('input'), submit=element('button','library-action','Find tracks');
-    input.type='url';input.required=true;input.placeholder='Paste a public Spotify playlist link';input.setAttribute('aria-label',input.placeholder);
-    form.append(input,submit);
+    input.type='url';input.id='spotify-playlist-url';input.required=true;
+    input.placeholder='open.spotify.com/playlist/…';input.autocapitalize='none';input.spellcheck=false;
+    const urlLabel=element('label','import-label','Public Spotify playlist link');urlLabel.htmlFor=input.id;
+    submit.classList.add('import-submit');
+    form.append(urlLabel,input,submit);
     const file=element('input');file.type='file';file.accept='.json,application/json';
-    const label=element('label','file-label','Or open a shared Stargazer playlist');label.append(file);
+    const label=element('label','file-label');
+    const copy=element('span','file-copy');
+    copy.append(element('strong','','Open playlist file'),element('small','','Stargazer playlist · .json'));
+    const arrow=element('span','file-arrow','↑');arrow.setAttribute('aria-hidden','true');
+    label.append(arrow,copy,file);
     const status=element('p','notice');status.setAttribute('role','status');dialogBody.append(form,label,status);
     file.onchange=async()=>{
       try {const selected=file.files[0];if(!selected)return;if(selected.size>3000000)throw Error();
@@ -336,7 +343,7 @@
         if(data.version!==1 || typeof data.name!=='string' || !Array.isArray(data.tracks) || !data.tracks.every(validSong))throw Error();
         if(!dialog.open)return;
         dialog.close();selectList(newList(data.name.slice(0,100),data.tracks.map(({source,id,title,artist,art})=>({source,id,title,artist,art}))));
-      }catch{status.textContent='Choose a valid Stargazer playlist file.';}
+      }catch{file.value='';status.textContent='Choose a valid Stargazer playlist file (.json).';}
     };
     form.onsubmit=async e=>{
       e.preventDefault();const id=MusicLibrary.spotifyId(input.value.trim());
