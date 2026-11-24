@@ -534,7 +534,7 @@ test("sports catalog resolves concurrent NFL, NHL and MLS games when PPV fails",
   const feeds = new Map([["100",new Set(["https://shoewiki.click/nfl/100"])],["300",new Set(["https://shoewiki.click/mls/300"])]]);
   const ctx = {
     Date, URL, Map, console,
-    CustomEvent: class { constructor(type, options) { this.type = type; this.detail = options.detail; } },
+    CustomEvent: class { constructor(type, options) { this.type = type; this.detail = options?.detail; } },
     window: {dispatchEvent: event => emitted.push(event)},
     SPORTS_CONFIG: {nfl: {name:"NFL",sport:"nfl"}, nhl:{name:"NHL",sport:"nhl"},mls:{name:"MLS",sport:"mls"}},
     getDateStr: () => "20261123",
