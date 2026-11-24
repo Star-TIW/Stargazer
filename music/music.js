@@ -466,9 +466,16 @@
       suggestions.replaceChildren(button('⌕  '+term,()=>search(term),'completion'));
       credits(tracks,term).slice(0,3).forEach(a=>suggestions.append(button(a.name+' · Artist',()=>openArtist(a,tracks),'completion')));
       tracks.slice(0,4).forEach(t=>{
+        const choice=element('div','completion-choice');
         const row=button('',()=>{dismissSuggestions();$('#search').blur();startStation(t);},'completion result-track');
         if(t.art?.startsWith('https://')){const img=element('img');img.alt='';img.src=t.art;row.append(img);}
-        const copy=element('span');copy.append(element('strong','',t.title),element('small','','Song · '+t.artist));row.append(copy);suggestions.append(row);
+        const copy=element('span');copy.append(element('strong','',t.title),element('small','','Song · '+t.artist));row.append(copy);
+        const add=button('Queue',()=>{enqueueTrack(t);dismissSuggestions();},'queue-action');
+        const next=button('Next',()=>{enqueueTrack(t,true);dismissSuggestions();},'queue-action');
+        add.title='Add '+t.title+' to queue';next.title='Play '+t.title+' next';
+        add.setAttribute('aria-label','Add '+t.title+' to queue');
+        next.setAttribute('aria-label','Play '+t.title+' next');
+        choice.append(row,add,next);suggestions.append(choice);
       });
       suggestions.hidden=false;
     }
