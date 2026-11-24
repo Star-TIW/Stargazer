@@ -516,3 +516,54 @@ test("all-sports collector includes current NFL and isolates provider failures",
   assert.ok(collector.includes('id:sport+":"+ev.id'));
   assert.ok(source.includes('stargazer:multiview-request", () => { publishMultiview(); fetchMultiviewGames(); }'));
 });
+
+test("sports catalog resolves concurrent NFL, NHL and MLS games when PPV fails", async () => {
+  const live = read("live/live.js");
+  const collector = live.slice(live.indexOf("  const safeMultiviewLookup"), live.indexOf("  const fetchGamesWindow"));
+  const emitted = [];
+  const now = Date.now();
+  const makeEvent = (id, name) => ({
+    id, name, date: new Date(now - 30000).toISOString(),
+    competitions: [{ status: { type: {state:"pre",completed:false} } }]
+  });
+  const fixtures = {
+    nfl: makeEvent("100", "Bengals at Commanders"),
+    nhl: makeEvent("200", "Kings at Ducks"),
+    mls: makeEvent("300", "LAFC at Galaxy"),
+  };
+  const feeds = new Map([["100",new Set(["https://shoewiki.click/nfl/100"])],["300",new Set(["https://shoewiki.click/mls/300"])]]);
+  const ctx = {
+    Date, URL, Map, console,
+    CustomEvent: class { constructor(type, options) { this.type = type; this.detail = options.detail; } },
+    window: {dispatchEvent: event => emitted.push(event)},
+    SPORTS_CONFIG: {nfl: {name:"NFL",sport:"nfl"}, nhl:{name:"NHL",sport:"nhl"},mls:{name:"MLS",sport:"mls"}},
+    getDateStr: () => "20261123",
+    fetchForDate: async (date, config) => [fixtures[config.sport]],
+    fetchStreamFreeStreams: async config => config.sport === "nhl" ? [{name:"Kings at Ducks",stream_key:"hockey-game"}] : [],
+    getLiveSources: async () => ["https://streamfree.top/embed/hockey/game"],
+    findStreamForEvent: (ev, rows) => rows.find(row => row.name === ev.name) || null,
+    namedSources: (urls, name) => (urls || []).map(url => ({url,name})),
+    gameFinished: ev => ev.competitions[0].status.type.completed,
+    PpvSports: {listings: async () => {throw Error("PPV unavailable");},events: () => []},
+    TimStreams: {listings: async () => feeds},
+    Matchora: {listings: async () => [],find:() => null},
+    DamiTV: {listings: async () => [],find:() => []},
+  };
+  const run = vm.runInNewContext(`(() => {
+    const multiviewCatalog = new Map();
+    let multiviewRefresh = null, lastMultiviewRefresh = 0, multiviewRequest = 0;
+    const MULTIVIEW_REFRESH_MS = 60000;
+    const publishMultiview = () => window.dispatchEvent(new CustomEvent("stargazer:multiview-games", {
+      detail: { games: [...multiviewCatalog.values()] }
+    }));
+    ${collector}
+    return fetchMultiviewGames;
+  })()`, ctx);
+  await run();
+  const games = emitted.filter(e=>e.type==="stargazer:multiview-games").at(-1).detail.games;
+  assert.deepEqual(Array.from(games.map(game=>game.sport)).sort(), ["mls","nfl","nhl"]);
+  assert.ok(games.find(game=>game.sport==="nfl").sources.some(source=>source.name==="TimStreams"));
+  assert.ok(games.find(game=>game.sport==="nhl").sources.some(source=>source.name==="StreamFree"));
+  assert.equal(games.some(game=>game.sport==="tv"),false);
+  assert.equal(games.length,3);
+});
