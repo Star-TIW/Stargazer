@@ -118,3 +118,11 @@ body:has(.music-hero) > .header { position:sticky; top:0; }
 @media(max-width:760px) { .studio {width:92%;padding-inline:0;} .rail,#now {position:static;max-height:none;} .browse {order:1;} .rail {order:-1;} }
 .song-row { display:grid; grid-auto-flow:column; grid-template-columns:none; grid-auto-columns:clamp(128px,13vw,178px); overflow-x:auto; scroll-snap-type:x proximity; padding:3px 2px 12px; }
 .song-row .tile { scroll-snap-align:start; }
+@media(max-width:760px) {
+  .workspace { align-items:stretch; }
+  .workspace > * { min-width:0; max-width:100%; }
+  .rail { align-items:center; }
+}
+@media(max-width:768px) {
+  .header .navbar:not(.active) { right:0; transform:translateX(100%); display:none; }
+}
