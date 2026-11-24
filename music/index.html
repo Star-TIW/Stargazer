@@ -21,18 +21,17 @@
   </header>
   <main class="studio">
     <section class="mast">
-      <div class="record" aria-hidden="true"></div>
+      <div class="mast-copy">
       <h2>Music</h2>
       <form id="find" role="search">
-        <input type="search" id="query" maxlength="120" aria-label="Search tracks, artists and concerts" placeholder="Search tracks, artists, concerts…">
+        <input type="search" id="query" maxlength="120" aria-label="Search official songs and artists" placeholder="Search songs or artists…">
         <button type="submit">Search</button>
       </form>
+      </div>
+      <button type="button" id="featured" hidden><img alt="" id="feature-art"><span class="feature-copy"><small>Featured release</small><strong id="feature-title"></strong><span id="feature-artist"></span></span><span class="feature-play" aria-hidden="true">▶</span></button>
     </section>
     <nav class="filters" aria-label="Music collection">
       <button data-view="all" aria-pressed="true">Discover</button>
-      <button data-view="audius" aria-pressed="false">Audius</button>
-      <button data-view="archive" aria-pressed="false">Live Archive</button>
-      <button data-view="musopen" aria-pressed="false">Classical</button>
       <button data-view="saved" aria-pressed="false">♥ Saved</button>
     </nav>
     <div id="catalog"></div>
@@ -40,7 +39,6 @@
   <aside id="dock" aria-label="Music player" hidden>
     <div class="dock-head"><strong id="playing"></strong><button id="close" aria-label="Close player">×</button></div>
     <audio id="audio" preload="metadata"></audio>
-    <select id="setlist" aria-label="Concert track" hidden></select>
     <div class="transport">
       <div class="buttons">
         <button id="previous" aria-label="Previous track" title="Previous track">◀◀</button>
