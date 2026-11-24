@@ -16,7 +16,12 @@ const StargazerMixes = (() => {
       .sort((a,b)=>b.score-a.score || a.i-b.i).map(row=>row.track);
   }
   function mix(tracks, familiar, random = Math.random) {
-    const pool=[...new Map(tracks.map(t=>[t.id,t])).values()];
+    const seen=new Set();
+    const pool=[...new Map(tracks.map(t=>[t.id,t])).values()].filter(track=>{
+      const key=[track.artist,track.title].map(s=>s.trim().toLowerCase().normalize('NFKC').replace(/\s+/g,' ')).join('\n');
+      if(seen.has(key))return false;
+      seen.add(key);return true;
+    });
     const result=[];
     while (pool.length && result.length<16) {
       const candidates=pool.filter(t=>t.artist!==result.at(-1)?.artist);

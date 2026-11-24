@@ -52,7 +52,7 @@
     <section class="transition-settings"><label for="fade">Song transition <output id="fade-value" for="fade"></output></label>
       <input type="range" id="fade" min="0" max="12" step="1" value="0">
       <div class="range-limits"><span>Off</span><span>12 seconds</span></div>
-      <p>Direct audio tracks can overlap. YouTube videos fade out, then in.</p>
+      <p>Songs overlap when either track uses direct audio. Two YouTube videos fade in sequence.</p>
     </section>
     <button id="enable-model" hidden>Download on-device DJ model</button><p id="model-status" role="status"></p>
     <form method="dialog"><button>Done</button></form></dialog>
@@ -61,6 +61,7 @@
 
     <div class="transport">
       <div class="buttons">
+        <button id="shuffle" aria-label="Shuffle upcoming songs" title="Shuffle upcoming songs">⤨</button>
         <button id="previous" aria-label="Previous track" title="Previous track"><svg class="control-icon" aria-hidden="true"><use href="#icon-previous"/></svg></button>
         <button id="play" aria-label="Play" title="Play"><svg class="control-icon" aria-hidden="true"><use href="#icon-play"/></svg></button>
         <button id="next" aria-label="Next track" title="Next track"><svg class="control-icon" aria-hidden="true"><use href="#icon-next"/></svg></button>
@@ -71,10 +72,12 @@
     </div>
     <p id="audio-status" role="status"></p>
   </aside>
+  <script src="/bootstrap.js"></script>
   <script src="/particles.min.js"></script>
   <script src="/particle-config.js"></script>
   <script src="/music/mixes.js"></script>
   <script src="/music/dj.js"></script>
+  <script src="/music/youtube-deck.js"></script>
   <script src="/music/crossfade.js"></script>
   <script src="/music/library.js"></script>
   <script src="/music/music.js"></script>

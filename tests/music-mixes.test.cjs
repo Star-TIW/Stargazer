@@ -20,3 +20,8 @@ test('DJ produces varied queues without duplicate recordings', () => {
   assert.notDeepEqual(a,b);
   assert.ok(a.every((t,i)=>!i || t.artist!==a[i-1].artist));
 });
+
+test('DJ merges studio recordings with the same artist and title under different IDs',()=>{
+  const songs=[{id:'a',artist:'ODESZA',title:'Sunset Lover'},{id:'b',artist:'Odesza',title:'Sunset Lover '}];
+  assert.equal(mix(songs,false).length,1);
+});
