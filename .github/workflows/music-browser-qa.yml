@@ -1,0 +1,41 @@
+name: Real browser music overlap QA
+on:
+  push:
+    branches: [st4rg4zer-test]
+    paths:
+      - 'music/**'
+      - 'tests/music-live-browser.cjs'
+      - '.github/workflows/music-browser-qa.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  live-chromium:
+    name: YouTube and Audius real Chromium playback
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install free Chromium/Playwright browser
+        run: |
+          npm install --no-save playwright@1.56.1
+          npx playwright install --with-deps chromium
+      - name: Wait for v39 music assets at preview deployment
+        run: |
+          for i in $(seq 1 30); do
+            if curl --max-time 10 -fsSL "https://stargazer-test.vercel.app/service-worker.js?qa=$i" | grep -q 'stargazer-cache-v39' \
+              && curl --max-time 10 -fsSL "https://stargazer-test.vercel.app/music/source-preference.js?qa=$i" | grep -q 'StargazerSources'; then
+              echo "v39 preview assets available"
+              exit 0
+            fi
+            sleep 3
+          done
+          echo "Preview deployment was not ready; live playback could not be verified."
+          exit 1
+      - name: Exercise real YouTube to Audius and Audius to YouTube overlaps
+        run: node tests/music-live-browser.cjs
