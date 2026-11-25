@@ -127,3 +127,15 @@ test('mixed playback queues the incoming recording well before fade begins',()=>
   assert.equal(p.incoming.paused,false);
   p.destroy();
 });
+
+test('near-end video seek starts overlap without immediately skipping queued track',()=>{
+ const {p}=fixture(['video','audio','audio'],12);
+ p.seekTo(100,true);
+ assert.equal(p.track.id,'0');
+ assert.ok(p.incoming);
+ assert.equal(p.incoming.paused,false);
+ const old=p.active, ended=old.onended;
+ ended();assert.equal(p.track.id,'1');
+ ended();assert.equal(p.track.id,'1');
+ p.destroy();
+});
