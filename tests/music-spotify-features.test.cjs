@@ -9,7 +9,7 @@ test('Part 3: shareable paths, playlist IDs and history navigation',()=>{
  assert.ok(js.includes("window.addEventListener('popstate'"));
  assert.ok(js.includes('function openLinkedTrack()'));
  assert.ok(js.includes("crypto.randomUUID()"));
- assert.ok(html.includes('id="copy-view-link"'));
+ assert.ok(!html.includes('id="copy-view-link"'));
 });
 test('Part 3: media session supports video and direct audio with lock-screen commands',()=>{
  for(const action of ['play:','pause:','nexttrack:','previoustrack:','seekto:','seekbackward:','seekforward:'])assert.ok(js.includes(action),action);
@@ -47,7 +47,7 @@ test('Part 3: sleep timer fades volume and can stop at song end',()=>{
  assert.ok(html.includes('id="sleep-timer"'));
  assert.ok(js.includes('sleepGain=remaining<6000'));
  assert.ok(js.includes('player?.setVolume(volume*sleepGain)'));
- assert.ok(js.includes("if(sleepAtEnd){stopSleep('Sleep timer ended');return;}"));
+ assert.ok(js.includes('if(sleepAtEnd||sleepExpired()){finishSleep();return;}'));
 });
 test('Part 3: playlists support edit, delete, covers and reordering',()=>{
  assert.ok(js.includes('function listCover(list,target)'));
