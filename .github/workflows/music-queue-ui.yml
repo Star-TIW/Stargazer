@@ -25,16 +25,22 @@ jobs:
         run: |
           npm install --no-save playwright@1.56.1
           npx playwright install --with-deps chromium
-      - name: Wait for v51 preview deployment
+      - name: Verify both preview hosts and nested music routes
         run: |
-          for i in $(seq 1 40); do
-            if curl --max-time 10 -fsSL "https://stargazer-test.vercel.app/service-worker.js?qa=$i" | grep -q 'stargazer-cache-v51'; then
-              exit 0
-            fi
-            sleep 3
+          failed=0
+          for host in https://stargazer-test.vercel.app https://st4rg4zer-test.st4rg4zer.pages.dev; do
+            ready=0
+            for i in $(seq 1 40); do
+              if curl --max-time 10 -fsSL "$host/service-worker.js?qa=$i" | grep -q 'stargazer-cache-v52'; then ready=1; break; fi
+              sleep 3
+            done
+            if [ "$ready" = 0 ]; then echo "$host v52 unavailable"; failed=1; continue; fi
+            for route in 'artist/rl-grime?track=xnfi1Jv8yK8' 'playlist/qa' library dj; do
+              curl -fsSL "$host/music/$route" | grep -q 'id="full-controls"' || failed=1
+            done
+            curl -fsSL "$host/music/music.css?v=52" | grep -q 'width:64px' || failed=1
           done
-          echo 'v51 test preview unavailable'
-          exit 1
+          exit "$failed"
       - name: Assert 400px artwork layout and nonplaying queue clicks
         run: |
           node tests/music-queue-browser.cjs
