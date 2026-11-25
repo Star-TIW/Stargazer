@@ -919,7 +919,8 @@
     session.playbackState=player?.getPlayerState()===1?'playing':'paused';
     const seekOffset=seconds=>{if(!player)return;player.seekTo(Math.max(0,Math.min(player.getDuration()||Infinity,player.getCurrentTime()+seconds)),true);timeline();checkpoint();};
     const actions={
-      play:()=>togglePlayback(),pause:()=>togglePlayback(),
+      play:()=>{if(player && player.getPlayerState()!==1)player.playVideo();},
+      pause:()=>{if(player && player.getPlayerState()===1)player.pauseVideo();},
       nexttrack:()=>{if(queue[index+1])load(index+1);},
       previoustrack:()=>previousTrack(),
       seekto:e=>{if(Number.isFinite(e.seekTime)){player?.seekTo(e.seekTime,true);timeline();checkpoint();}},
