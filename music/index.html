@@ -45,7 +45,7 @@
         <div id="playlists"></div>
         <div id="catalog" aria-live="polite"></div>
       </section>
-      <aside id="now"><h2>Now playing</h2><p id="idle">Choose a song to start your station.</p><div id="visual"><div id="mount" hidden></div><img id="now-art" alt="" hidden></div><div class="now-meta"><strong id="now-title"></strong><span id="now-artist"></span></div><div class="queue-heading"><h3>Up next</h3><button id="clear-queue" aria-label="Clear manually queued songs" hidden>Clear queue</button></div><div id="up-next"></div></aside>
+      <aside id="now"><div class="now-heading"><h2>Now playing</h2><button id="expand-now" aria-label="Expand Now playing" title="Expand Now playing">⤢</button></div><p id="idle">Choose a song to start your station.</p><div id="visual"><div id="mount" hidden></div><img id="now-art" alt="" hidden></div><div class="now-meta"><strong id="now-title"></strong><span id="now-artist"></span></div><section id="full-controls" hidden><div class="full-buttons"><button id="full-prev" aria-label="Previous track">⏮</button><button id="full-play" aria-label="Play or pause">▶</button><button id="full-next" aria-label="Next track">⏭</button></div><input id="full-seek" aria-label="Full-screen playback position" type="range" min="0" max="0" value="0"><div class="full-times"><span id="full-elapsed">0:00</span><span id="full-duration">0:00</span></div></section><div class="queue-heading"><h3>Up next</h3><button id="clear-queue" aria-label="Clear manually queued songs" hidden>Clear queue</button></div><div id="up-next"></div></aside>
     </div>
   </main>
   <dialog id="library-dialog" aria-labelledby="library-dialog-title"><header><h2 id="library-dialog-title"></h2><button id="library-close" aria-label="Close">×</button></header><div id="library-dialog-body"></div></dialog>
@@ -70,7 +70,7 @@
         <button id="repeat" aria-label="Repeat track" aria-pressed="false" title="Repeat track"><svg class="control-icon" aria-hidden="true"><use href="#icon-repeat"/></svg></button>
       </div>
       <label class="timeline"><span id="elapsed">0:00</span><input id="seek" type="range" min="0" max="0" step="1" value="0" aria-label="Playback position" disabled><span id="duration">0:00</span></label>
-      <div class="loudness"><button id="mute" aria-pressed="false" aria-label="Mute" title="Mute"><svg class="control-icon" aria-hidden="true"><use href="#icon-sound"/></svg></button><input id="volume" aria-label="Volume" type="range" min="0" max="100" value="80"><output for="volume" id="percent">80%</output></div>
+      <div class="loudness"><button id="mute" aria-pressed="false" aria-label="Mute" title="Mute"><svg class="control-icon" aria-hidden="true"><use href="#icon-sound"/></svg></button><input id="volume" aria-label="Volume" type="range" min="0" max="100" value="80"><output for="volume" id="percent">80%</output><select id="sleep-timer" aria-label="Sleep timer" title="Sleep timer"><option value="off">☾ Sleep</option><option value="15">15 min</option><option value="30">30 min</option><option value="45">45 min</option><option value="60">60 min</option><option value="end">End of track</option></select></div>
     </div>
     <p id="audio-status" role="status"></p>
   </aside>
