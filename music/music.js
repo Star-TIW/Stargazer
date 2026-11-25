@@ -108,7 +108,7 @@
     if(url.pathname+url.search===location.pathname+location.search)return;
     window.history[replace?'replaceState':'pushState']({stargazerMusic:true},'',url.pathname+url.search);
   }
-  function readMusicRoute(){
+  function readMusicRoute(initial=false){
     const parts=location.pathname.split('/').filter(Boolean),kind=parts[1];
     query='';$('#search').value='';
     if(kind==='artist'&&parts[2]){
@@ -119,7 +119,7 @@
       currentList=playlists.find(p=>p.id===decodeURIComponent(parts[2]))||null;
       view=currentList?'playlist':'library';
     }else if(['dj','library','saved'].includes(kind))view=kind;
-    else{view='all';query=new URL(location.href).searchParams.get('q')||'';$('#search').value=query;}
+    else{query=new URL(location.href).searchParams.get('q')||'';view=initial&&!query?view:'all';$('#search').value=query;}
     saveView();if(releases.length)render();
   }
   function openLinkedTrack(){
@@ -1058,5 +1058,5 @@
     else if(code==='Slash'){$('#search').focus();$('#search').select();}
   },true);
   new ResizeObserver(([entry]) => document.documentElement.style.setProperty('--music-panel-top', (entry.target.offsetHeight+12)+'px')).observe(document.querySelector('.header'));
-  readMusicRoute();YouTubeDeck.api().catch(()=>{});restore();loadCatalog();
+  readMusicRoute(true);YouTubeDeck.api().catch(()=>{});restore();loadCatalog();
 })();
