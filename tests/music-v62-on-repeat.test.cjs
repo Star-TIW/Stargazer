@@ -8,7 +8,7 @@ function extract(name,next){
 }
 test('On repeat orders by play count, recent listen breaks ties, and limits to 25',()=>{
  const src=extract('onRepeatTracks','remember');
- const history=Array.from({length:28},(_,i)=>({track:{id:String(i)},plays:i<2?20:i<26?26-i:0,last:i===1?200:100}));
+ const history=Array.from({length:28},(_,i)=>({track:{id:String(i)},plays:i<2?30:i<26?28-i:0,last:i===1?200:100}));
  const fn=vm.runInNewContext('('+src.trim()+')',{history});
  const songs=fn();
  assert.equal(songs.length,25);
