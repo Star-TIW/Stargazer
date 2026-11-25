@@ -37,7 +37,7 @@ test('queue buttons never start playback while no player exists',()=>{
   assert.ok(js.includes('function withHeldQueue(base,selectedIndex)'));
 });
 test('service worker version 48',()=>{
-  assert.match(fs.readFileSync(path.join(root,'service-worker.js'),'utf8'),/stargazer-cache-v54/);
+  assert.match(fs.readFileSync(path.join(root,'service-worker.js'),'utf8'),/stargazer-cache-v55/);
 });
 const vm=require('node:vm');
 const insert=vm.runInNewContext(js.slice(js.indexOf('  function insertUserQueue('),js.indexOf('  function enqueueTrack('))+'\ninsertUserQueue');
@@ -79,7 +79,7 @@ test('Now playing keeps square cover behind centered foreground video',()=>{
 test('Part 1: queue editing preserves active item and persisted state',()=>{
  assert.match(js,/function moveQueued\(from,to\)/);
  assert.match(js,/const before=queue\[index\+1\]\?\.id, item=queue\.splice\(from,1\)\[0\]/);
- assert.match(js,/checkpoint\(\);queueToast\(message\)/);
+ assert.match(js,/checkpoint\(\);syncQueueButtons\(\);queueToast\(message\)/);
  assert.match(js,/handle\.onpointerdown=/);
  assert.match(js,/handle\.ondragstart=/);
  assert.match(js,/queue=\[\.\.\.queue\.slice\(0,index\+1\),\.\.\.queue\.slice\(index\+1\)\.filter\(t=>!t\.userQueued\)\]/);
@@ -103,9 +103,9 @@ test('Part 1: search relevance, clear button, restored view and accessible toggl
  assert.match(js,/shuffleOn=!shuffleOn/);
  assert.match(js,/repeatMode=repeatMode==='off'\?'one'/);
 });
-test('Part 1: loading metadata, now playing sync and save Undo',()=>{
+test('Part 1: loading metadata and now playing sync without Undo popups',()=>{
  assert.match(js,/\$\('#loading'\)\.hidden=!loading/);
  assert.match(js,/\$\('#playing'\)\.textContent=track\.title/);
- assert.match(js,/queueToast\(adding\?'Saved to Liked songs'/);
- assert.match(js,/if\(typeof undo==='function'\)/);
+ assert.match(js,/animateToggle\(save\)/);
+ assert.ok(!js.includes("className='toast-undo'"));
 });
