@@ -31,6 +31,8 @@
   }
   function persist(key,value) { try { localStorage.setItem(key,JSON.stringify(value)); } catch { /* Session state remains available. */ } }
   const historyKey='stargazer.music.listens.v1', playlistKey='stargazer.music.playlists.v1';
+  const searchesKey='stargazer.music.recent-searches.v1';
+  let recentSearches=readList(searchesKey).filter(x=>typeof x==='string').slice(0,12),searchFilter='all';
   let history=readList(historyKey).filter(e=>validSong(e?.track) && Number.isFinite(e.plays) && Number.isFinite(e.last)).slice(0,100);
   const slugify=value=>String(value).normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
   let playlists=readList(playlistKey).filter(p=>typeof p?.name==='string' && Array.isArray(p.tracks) && p.tracks.every(validSong))
@@ -643,7 +645,26 @@
         }
       }
       if(!hero.querySelector('img')){const fallback=tracks[0]?.art;const image=element(fallback?'img':'div',fallback?'':'artist-fallback',fallback?'':active.name.split(/\s+/).map(x=>x[0]).slice(0,2).join('').toUpperCase());if(fallback)image.src=fallback;hero.prepend(image);}
-      if(!signal.aborted)show(body,tracks,'No official recordings found.');
+      if(!signal.aborted){
+        show(body,tracks,'No official recordings found.');
+        if(tracks.length){
+          const section=shelf('Popular'),list=element('ol','popular-songs');
+          tracks.slice(0,5).forEach((track,i)=>{
+            const plays=Number(track.playCount??track.plays);
+            const label=(i+1)+'.  '+track.title+' · '+track.artist+
+              (Number.isFinite(plays)&&plays>0?' · '+new Intl.NumberFormat().format(plays)+' plays':'');
+            list.append(button(label,()=>startStation(track),'popular-song'));
+          });
+          section.append(list);
+          const candidates=ranked().filter(t=>t.artist.toLowerCase()!==active.name.toLowerCase());
+          const similar=active.tracks[0]?.genre?candidates.filter(t=>t.genre===active.tracks[0].genre):candidates;
+          const unique=[...new Map(similar.map(t=>[t.artist.toLowerCase(),t])).values()].slice(0,6);
+          if(unique.length){
+            const others=shelf('Fans also like');others.className='related-artists';
+            unique.forEach(t=>others.append(shortcut(t,false)));
+          }
+        }
+      }
     }catch{if(!signal.aborted && !body.querySelector('.tile'))body.textContent='Artist songs are unavailable. Try searching again.';}
   }
   function suggest(){
@@ -691,6 +712,10 @@
       const picks=personal ? ranked().slice(0,10) : releases;
       songRow(personal ? 'For you' : chartHeading,picks);
       if(history.length)songRow('Recently played',history.slice(0,12).map(e=>e.track));
+      if(recentSearches.length){
+        const section=shelf('Recent searches');section.className='recent-searches';
+        recentSearches.slice(0,6).forEach(term=>section.append(button(term,()=>search(term),'recent-search')));
+      }
       const dj=shelf('Made for you');
       const launch=element('button','dj-launch','♫   Stargazer DJ');
       launch.onclick=openBooth;dj.append(launch,
@@ -700,6 +725,14 @@
       if(personal) songRow(chartHeading,releases);
       quickPicks();
       return;
+    }
+    if(query && view==='all'){
+      const filterbar=element('div','search-filters');filterbar.setAttribute('role','group');filterbar.setAttribute('aria-label','Search filters');
+      for(const [value,label] of [['all','All'],['songs','Songs'],['artists','Artists'],['playlists','Playlists']]){
+        const chip=button(label,()=>{searchFilter=value;render();},'search-filter');
+        chip.setAttribute('aria-pressed',String(searchFilter===value));filterbar.append(chip);
+      }
+      catalog.append(filterbar);
     }
     const body = shelf(view === 'saved' ? 'Liked songs' : query ? 'Search results' : 'Discover music');
     if (query && view === 'all') {
@@ -717,13 +750,35 @@
       }
     }
     if (controller.signal.aborted) return;
-    if(query){const artists=credits(matches.filter(allowedTrack),query).slice(0,4);
-      if(artists.length){const section=element('div','artist-results');artists.forEach(a=>section.append(button(a.name+' · Artist',()=>openArtist(a,matches))));body.before(section);}
+    if(query && view==='all'){
+      const artistMatches=credits(matches.filter(allowedTrack),query).slice(0,6);
+      const listMatches=playlists.filter(p=>p.name.toLowerCase().includes(query.toLowerCase()));
+      if(['all','artists'].includes(searchFilter)){
+        const section=element('div','artist-results');
+        artistMatches.forEach(a=>section.append(button(a.name+' · Artist',()=>openArtist(a,matches))));
+        if(artistMatches.length)body.before(section);
+      }
+      if(['all','playlists'].includes(searchFilter)&&listMatches.length){
+        const section=element('div','playlist-row');section.append(element('h3','','Playlists'));
+        listMatches.forEach(list=>section.append(button(list.name,()=>selectList(list),'playlist-choice')));
+        body.before(section);
+      }
+      if(searchFilter==='all'&&matches.length){
+        const top=element('div','top-result');top.append(element('h3','','Top result'),card(matches[0],matches,()=>startStation(matches[0])));body.before(top);
+      }
+      if(searchFilter==='artists'||searchFilter==='playlists'){
+        body.className='notice empty-state';body.replaceChildren();
+        const count=searchFilter==='artists'?artistMatches.length:listMatches.length;
+        if(!count)body.textContent='No '+searchFilter+' found for “'+query+'”. Try another search.';
+        else body.remove();
+        return;
+      }
     }
     show(body,matches,query ? 'No results for “'+query+'”. Try a different song title or artist.' : 'Tap a heart to add songs to your library.');
   }
   function search(term) {
     dismissSuggestions();$('#search').blur();pageTop();view = 'all';saveView(); query = term.trim(); $('#search').value = query;
+    if(query){searchFilter='all';recentSearches=[query,...recentSearches.filter(v=>v.toLowerCase()!==query.toLowerCase())].slice(0,12);persist(searchesKey,recentSearches);}
     setMusicRoute();render(); $('.browse').scrollTop = 0;
   }
   function shortcut(t,compact) {
