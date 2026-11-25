@@ -25,12 +25,12 @@ jobs:
         run: |
           npm install --no-save playwright@1.56.1
           npx playwright install --with-deps chromium
-      - name: Wait for v54 music assets at preview deployment
+      - name: Wait for v55 music assets at preview deployment
         run: |
           for i in $(seq 1 30); do
-            if curl --max-time 10 -fsSL "https://st4rg4zer-test.st4rg4zer.pages.dev/service-worker.js?qa=$i" | grep -q 'stargazer-cache-v54' \
+            if curl --max-time 10 -fsSL "https://st4rg4zer-test.st4rg4zer.pages.dev/service-worker.js?qa=$i" | grep -q 'stargazer-cache-v55' \
               && curl --max-time 10 -fsSL "https://st4rg4zer-test.st4rg4zer.pages.dev/music/source-preference.js?qa=$i" | grep -q 'StargazerSources'; then
-              echo "v54 preview assets available"
+              echo "v55 preview assets available"
               exit 0
             fi
             sleep 3
