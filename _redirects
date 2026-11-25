@@ -1,8 +1,8 @@
-/music/artist/* /music/index.html 200
-/music/playlist/* /music/index.html 200
-/music/library /music/index.html 200
-/music/library/ /music/index.html 200
-/music/dj /music/index.html 200
-/music/dj/ /music/index.html 200
-/music/saved /music/index.html 200
-/music/saved/ /music/index.html 200
+/music/artist/* /music/ 200
+/music/playlist/* /music/ 200
+/music/library /music/ 200
+/music/library/ /music/ 200
+/music/dj /music/ 200
+/music/dj/ /music/ 200
+/music/saved /music/ 200
+/music/saved/ /music/ 200
