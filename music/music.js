@@ -681,7 +681,7 @@
       if(!mix.length){mix=StargazerMixes.mix(ranked(),Boolean(history.length || saved.length));persist(mixKey,mix);}
       $('#shortcuts').replaceChildren(...artists().map(t=>shortcut(t,true)));
 
-      render();
+      render();openLinkedTrack();
     } catch {
       const retry=element('button','retry','Reload library'); retry.onclick=loadCatalog; catalog.replaceChildren(retry);
     }
