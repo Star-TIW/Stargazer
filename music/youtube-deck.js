@@ -49,8 +49,7 @@ class YouTubeDeck {
   matches(){return this.connected && this.api.getVideoData()?.video_id===this.track.id;}
   select(track,start){
     if(this.track && this.track.id!==track.id && !matchMedia('(prefers-reduced-motion:reduce)').matches){
-      this.mount.animate([{transform:'translateX(24px)',opacity:.6},{transform:'translateX(0)',opacity:1}],
-        {duration:400,easing:'cubic-bezier(.22,.68,.22,1)'});
+      this.mount.firstChild?.animate([{opacity:0},{opacity:1}],{duration:350,easing:'ease-out'});
     }
     const keepPlaying=this.track ? this.wanted : false;
     this.track=track;this.start=start;this.wanted=keepPlaying;this.pendingLoad=true;this.exiting=false;this.seekGuard=0;
@@ -70,7 +69,7 @@ class YouTubeDeck {
   exitSoon(){
     if(this.exiting || matchMedia('(prefers-reduced-motion:reduce)').matches)return;
     this.exiting=true;
-    this.exitAnimation=this.mount.animate([{transform:'translateX(0)',opacity:1},{transform:'translateX(-6px)',opacity:.85}],{duration:175,easing:'ease-out'});
+    this.exitAnimation=this.mount.firstChild?.animate([{transform:'translateX(0)',opacity:1},{transform:'translateX(-6px)',opacity:.85}],{duration:175,easing:'ease-out'});
   }
   get readyState(){return this.connected?4:0;}
   get paused(){return !this.matches() || this.api.getPlayerState()!==1;}
