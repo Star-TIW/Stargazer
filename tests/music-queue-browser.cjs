@@ -47,7 +47,32 @@ const {chromium}=require('playwright');
     await page.locator('.completion-card').first().waitFor({state:'visible',timeout:10000});
     if(await page.locator('.completion-card').first().locator('.art-actions > button').count()!==4)
       throw Error('Autocomplete did not use four cover buttons');
+    await page.evaluate(()=>{
+      localStorage.removeItem('stargazer.music.held.v1');
+      const make=(id,title)=>({source:'youtube',id,title,artist:'Stargazer QA'});
+      localStorage.setItem('stargazer.music.session.v1',JSON.stringify({
+        queue:[make('aaaaaaaaaaa','QA playing'),make('bbbbbbbbbbb','QA station song'),make('ccccccccccc','Hikari')],
+        index:0,position:1,duration:180,station:true,repeat:'off'
+      }));
+    });
+    await page.reload({waitUntil:'domcontentloaded'});
+    const hikari=page.locator('#up-next .queue-entry').filter({hasText:'Hikari'}).first();
+    await hikari.waitFor({state:'visible',timeout:20000});
+    if(await hikari.locator('.queue-next').getAttribute('aria-pressed')!=='false')
+      throw Error('Station song must not start with Play next selected');
+    await hikari.locator('.queue-next').click();
+    await page.waitForTimeout(350);
+    if(!((await page.locator('#up-next .queue-entry').first().innerText()).includes('Hikari')))
+      throw Error('Play next should move an existing station song to the first upcoming slot');
+    const promoted=page.locator('#up-next .queue-entry').first();
+    if(await promoted.locator('.queue-next').getAttribute('aria-pressed')!=='true')
+      throw Error('Promoted song should show its Play next gold state');
+    if(await promoted.locator('.queue-add').getAttribute('aria-pressed')!=='false')
+      throw Error('Promoted song must not show Add to queue checked');
+    await promoted.locator('.queue-next').click();
+    if(!((await page.locator('#up-next .queue-entry').first().innerText()).includes('Hikari')))
+      throw Error('Repeated Play next must not remove the first upcoming track');
     await page.screenshot({path:'music-queue-400px.png'});
-    console.log('PASS 400px corners, 40px touch targets, no overlaps, no accidental playback, independent button actions, autocomplete');
+    console.log('PASS 400px corners, independent queue buttons, and station-track Play next promotion');
   }finally{await context.close();await browser.close();}
 })().catch(e=>{console.error(e);process.exitCode=1;});
