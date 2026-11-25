@@ -8,7 +8,7 @@
   <link rel="icon" href="/stargazer-192.png">
   <link rel="stylesheet" href="/home.css">
   <link rel="stylesheet" href="/movies.css">
-  <link rel="stylesheet" href="/music/music.css?v=54">
+  <link rel="stylesheet" href="/music/music.css?v=55">
 </head>
 <body>
   <svg class="icon-defs" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><symbol id="icon-play" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></symbol><symbol id="icon-pause" viewBox="0 0 24 24"><path d="M8 5v14M16 5v14"/></symbol><symbol id="icon-previous" viewBox="0 0 24 24"><path d="M6 5v14m12-14v14L8 12z"/></symbol><symbol id="icon-next" viewBox="0 0 24 24"><path d="M18 5v14M6 5v14l10-7z"/></symbol><symbol id="icon-repeat" viewBox="0 0 24 24"><path d="M3 10a5 5 0 0 1 5-5h11m-3-3 3 3-3 3M21 14a5 5 0 0 1-5 5H5m3-3-3 3 3 3"/></symbol><symbol id="icon-sound" viewBox="0 0 24 24"><path d="M3 9h4l5-4v14l-5-4H3z M16 8q4 4 0 8 M19 5q7 7 0 14"/></symbol><symbol id="icon-silent" viewBox="0 0 24 24"><path d="M3 9h4l5-4v14l-5-4H3z M16 9l6 6m0-6-6 6"/></symbol></svg>
@@ -18,14 +18,14 @@
     <button type="button" class="menu-toggle" aria-label="Open navigation" aria-controls="navbar" aria-expanded="false"><span></span></button>
     <nav class="navbar" id="navbar">
       <a href="/" class="nav-button">Main</a><a href="/live/" class="nav-button">Live</a>
-      <button class="nav-button" id="music-menu-settings">Settings</button>
+      <button class="nav-button" id="settings-btn">Settings</button>
     </nav>
   </header>
   <main class="studio">
     <div id="search-scrim" hidden></div>
     <div class="music-toolbar">
-      <form id="search-container" class="search-shell" role="search"><button class="search-icon" type="submit" aria-label="Search">⌕</button><input id="search" enterkeyhint="search" autocapitalize="none" type="search" autocomplete="off" maxlength="120" aria-label="Search official songs and artists" placeholder="Search songs &amp; artists…"><button id="search-clear" type="button" aria-label="Clear search" title="Clear search" hidden>×</button><div id="completions" aria-label="Search suggestions" hidden></div></form>
-        <button id="copy-view-link" aria-label="Copy music link" title="Copy music link">⤴ Share</button><button id="audio-settings" aria-label="Playback settings" title="Playback settings">⚙</button>
+      <form id="search-container" class="search-shell" role="search"><button class="search-icon" type="submit" aria-label="Search">⌕</button><input id="search" enterkeyhint="search" autocapitalize="none" type="search" autocomplete="off" maxlength="120" aria-label="Search official songs and artists" placeholder="Search"><button id="search-clear" type="button" aria-label="Clear search" title="Clear search" hidden>×</button><div id="completions" aria-label="Search suggestions" hidden></div></form>
+<button id="audio-settings" aria-label="Playback settings" title="Playback settings">⚙</button>
     </div>
     <div class="workspace">
       <nav class="filters rail" aria-label="Your library">
@@ -45,7 +45,7 @@
         <div id="playlists"></div>
         <div id="catalog" aria-live="polite"></div>
       </section>
-      <aside id="now"><div class="now-heading"><h2>Now playing</h2><button id="expand-now" aria-label="Expand Now playing" title="Expand Now playing">⤢</button></div><p id="idle">Choose a song to start your station.</p><div id="visual"><div id="mount" hidden></div><img id="now-art" alt="" hidden></div><div class="now-meta"><strong id="now-title"></strong><span id="now-artist"></span><span id="source-badge"></span><button id="radio-now" class="library-action" hidden>Start song radio</button><span id="full-sleep-countdown"></span></div><section id="full-controls" hidden><div class="full-buttons"><button id="full-prev" aria-label="Previous track">⏮</button><button id="full-play" aria-label="Play or pause">▶</button><button id="full-next" aria-label="Next track">⏭</button></div><div class="full-extra"><button id="full-shuffle" aria-pressed="false">Shuffle</button><button id="full-repeat" aria-pressed="false">Repeat off</button><button id="full-mute" aria-pressed="false">Mute</button><input id="full-volume" type="range" min="0" max="100" aria-label="Fullscreen volume"></div><input id="full-seek" aria-label="Full-screen playback position" type="range" min="0" max="0" value="0"><div class="full-times"><span id="full-elapsed">0:00</span><span id="full-duration">0:00</span></div></section><div class="queue-heading"><h3>Up next</h3><button id="clear-queue" aria-label="Clear manually queued songs" hidden>Clear queue</button></div><div id="up-next"></div></aside>
+      <aside id="now"><div class="now-heading"><h2>Now playing</h2><button id="expand-now" aria-label="Expand Now playing" aria-expanded="false" title="Expand Now playing"><svg class="expand-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="2.5" width="19" height="19" rx="4"/><path d="M7 17 17 7M11.5 7H17v5.5M7 11.5V17h5.5"/></svg></button></div><p id="idle">Choose a song to start your station.</p><div id="visual"><div id="mount" hidden></div><img id="now-art" alt="" hidden></div><div class="now-meta"><strong id="now-title"></strong><span id="now-artist"></span><span id="source-badge"></span><button id="radio-now" class="library-action" hidden>Start song radio</button><span id="full-sleep-countdown"></span></div><section id="full-controls" hidden><div class="full-buttons"><button id="full-prev" aria-label="Previous track">⏮</button><button id="full-play" aria-label="Play or pause">▶</button><button id="full-next" aria-label="Next track">⏭</button></div><div class="full-extra"><button id="full-shuffle" aria-pressed="false">Shuffle</button><button id="full-repeat" aria-pressed="false">Repeat off</button><button id="full-mute" aria-pressed="false">Mute</button><input id="full-volume" type="range" min="0" max="100" aria-label="Fullscreen volume"></div><input id="full-seek" aria-label="Full-screen playback position" type="range" min="0" max="0" value="0"><div class="full-times"><span id="full-elapsed">0:00</span><span id="full-duration">0:00</span></div></section><div class="queue-heading"><h3>Up next</h3><button id="clear-queue" aria-label="Clear manually queued songs" hidden>Clear queue</button></div><div id="up-next"></div></aside>
     </div>
   </main>
   <dialog id="library-dialog" aria-labelledby="library-dialog-title"><header><h2 id="library-dialog-title"></h2><button id="library-close" aria-label="Close">×</button></header><div id="library-dialog-body"></div></dialog>
@@ -55,7 +55,7 @@
       <div class="range-limits"><span>Off</span><span>12 seconds</span></div>
       <p>Crossfade between songs when the next source is ready. YouTube-to-YouTube transitions use the same video player and cannot overlap.</p>
     </section>
-    <section class="music-preferences"><h3>Music preferences</h3><label><input id="explicit-filter" type="checkbox"> Hide songs marked explicit</label><label for="music-particles">Particle effects</label><select id="music-particles"><option value="keep">Keep current effect</option><option value="off">Off</option><option value="stars">Stars</option></select><p>Music volume is adjustable in the player. Loudness normalization across YouTube and direct audio is unavailable because source audio cannot always be measured.</p></section>
+    <section class="music-preferences"><h3>Music preferences</h3><label><input id="explicit-filter" type="checkbox"> Hide songs marked explicit</label><p>Music volume is adjustable in the player. Loudness normalization across YouTube and direct audio is unavailable because source audio cannot always be measured.</p></section>
     <button id="enable-model" hidden>Download on-device DJ model</button><p id="model-status" role="status"></p>
     <form method="dialog"><button>Done</button></form></dialog>
   <aside id="dock" aria-label="Music player" hidden>
@@ -63,7 +63,7 @@
 
     <div class="transport">
       <div class="buttons">
-        <button id="shuffle" aria-pressed="false" aria-label="Shuffle upcoming songs" title="Shuffle upcoming songs">⤨</button>
+        <button id="shuffle" aria-pressed="false" aria-label="Shuffle upcoming songs" title="Shuffle upcoming songs"><svg class="control-icon shuffle-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h3c6 0 6 12 12 12h3M17 14l4 4-4 4M3 18h3c2.8 0 4.4-2.6 5.8-5M14 7.6c1-1 2.3-1.6 4-1.6h3M17 2l4 4-4 4"/></svg></button>
         <button id="previous" aria-label="Previous track" title="Previous track"><svg class="control-icon" aria-hidden="true"><use href="#icon-previous"/></svg></button>
         <button id="play" aria-label="Play" title="Play"><svg class="control-icon" aria-hidden="true"><use href="#icon-play"/></svg></button>
         <button id="next" aria-label="Next track" title="Next track"><svg class="control-icon" aria-hidden="true"><use href="#icon-next"/></svg></button>
@@ -83,6 +83,6 @@
   <script src="/music/crossfade.js"></script>
   <script src="/music/library.js"></script>
   <script src="/music/source-preference.js"></script>
-  <script src="/music/music.js?v=54"></script>
+  <script src="/music/music.js?v=55"></script>
 </body>
 </html>
