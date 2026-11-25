@@ -464,7 +464,10 @@
     }),button('Import playlist',importDialog),button('♥ Liked songs · '+saved.length,()=>navigate('saved')));
     const lists=shelf('Playlists'); lists.className='list-choices';
     playlists.forEach(list=>lists.append(button(list.name+' · '+list.tracks.length,()=>selectList(list))));
-    if(!playlists.length)lists.textContent='Create a playlist or import one to get started.';
+    if(!playlists.length){
+      const empty=element('div','empty-state');empty.append(element('span','empty-icon','▤'),element('p','','Your library is ready for your first playlist.'));
+      empty.append(button('Create playlist',()=>{openDialog('New playlist');nameForm('',name=>{dialog.close();selectList(newList(name,[]));},'Create');},'library-action primary-play'));lists.append(empty);
+    }
     if(followed.length){const artists=shelf('Following');followed.forEach(a=>artists.append(button(a.name,()=>openArtist(a,[]))));}
   }
   function updatePlaylistButton(){
@@ -620,7 +623,8 @@
   async function artistView(signal){
     const active=profile;
     const hero=element('section','artist-hero'),copy=element('div');
-    copy.append(button('‹ Back',()=>window.history.length>1?window.history.back():navigate('all'),'library-action artist-back'));
+    const initialFallback=element('div','artist-fallback',active.name.split(/\s+/).map(word=>word[0]).slice(0,2).join('').toUpperCase());hero.prepend(initialFallback);
+    copy.append(button('‹ Back',()=>window.history.state?.stargazerMusic?window.history.back():navigate('all'),'library-action artist-back'));
     const title=element('h2','',active.name), follow=button('',()=>{
       followed=followed.some(a=>a.name===active.name)?followed.filter(a=>a.name!==active.name):[...followed,{id:active.id,name:active.name}];
       persist(followsKey,followed);refresh();
@@ -639,12 +643,12 @@
       if(active.id){
         const r=await fetch('/api/music-search?artist='+encodeURIComponent(active.id),{signal});
         if(r.ok){const data=await r.json();if(signal.aborted)return;
-          if(data.art){const img=element('img');img.alt='';img.src=data.art;hero.prepend(img);}
+          if(data.art){const img=element('img');img.alt='';img.src=data.art;hero.prepend(img);initialFallback.remove();}
           if(data.description){const d=element('details');d.append(element('summary','','About '+active.name),element('p','',data.description));copy.append(d);}
           tracks=[...new Map([...(data.tracks || []).filter(validSong),...tracks].map(t=>[t.id,t])).values()];
         }
       }
-      if(!hero.querySelector('img')){const fallback=tracks[0]?.art;const image=element(fallback?'img':'div',fallback?'':'artist-fallback',fallback?'':active.name.split(/\s+/).map(x=>x[0]).slice(0,2).join('').toUpperCase());if(fallback)image.src=fallback;hero.prepend(image);}
+      if(!hero.querySelector('img')&&tracks[0]?.art){const image=element('img');image.src=tracks[0].art;image.alt='';hero.prepend(image);initialFallback.remove();}
       if(!signal.aborted){
         show(body,tracks,'No official recordings found.');
         if(tracks.length){
@@ -912,7 +916,7 @@
       const rest=audioLibrary.filter(t=>t.id!==track.id);
       const same=rest.filter(t=>t.artist===track.artist);
       const others=StargazerMixes.mix(StargazerMixes.rank(rest.filter(t=>t.artist!==track.artist),history,saved),true);
-      openPlayer(track,[track,...same,...others]);return;
+      radioJob?.abort();station=true;queue=withHeldQueue([track,...same,...others],0);load(0);return;
     }
     radioJob?.abort(); station=true;queue=withHeldQueue([track],0);load(0);
   }
@@ -1001,7 +1005,10 @@
       actions.append(handle,up,down,remove);entry.append(actions);wrap.append(entry);
     });
     $('#clear-queue').hidden=!next.some(t=>t.userQueued);
-    if(!visible.length)wrap.append(element('p','notice','Nothing queued yet. Add songs with the bottom-left icon.'));
+    if(!visible.length){
+      const empty=element('div','empty-state');empty.append(element('span','empty-icon','♫'),element('p','','Nothing queued yet.'));
+      empty.append(button('Discover music',()=>navigate('all'),'library-action primary-play'));wrap.append(empty);
+    }
   }
   $('#clear-queue').onclick=()=>{
     if(!queue[index])return;
