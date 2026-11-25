@@ -41,11 +41,11 @@
   ],
   "rewrites": [
     {
-      "source": "/music/artist/:slug",
+      "source": "/music/artist/:slug*",
       "destination": "/music/index.html"
     },
     {
-      "source": "/music/playlist/:id",
+      "source": "/music/playlist/:id*",
       "destination": "/music/index.html"
     },
     {
