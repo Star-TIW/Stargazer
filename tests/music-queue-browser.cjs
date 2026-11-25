@@ -34,7 +34,7 @@ const {chromium}=require('playwright');
     if(!((await page.locator('#queue-toast').innerText()).includes('Added to queue')))throw Error('Queue confirmation missing');
     await first.locator('.queue-next').click();
     if(!await page.locator('#dock').evaluate(e=>e.hidden))throw Error('Play next started playback');
-    if(!((await page.locator('#queue-toast').innerText()).includes('Playing next')))throw Error('Next confirmation missing');
+    if(!((await page.locator('#queue-toast').innerText()).includes('Added to play next')))throw Error('Next confirmation missing');
     const term=(await first.locator('.pick strong').innerText()).slice(0,12);
     await page.locator('#search').fill(term);
     await page.locator('.completion-card').first().waitFor({state:'visible',timeout:10000});
