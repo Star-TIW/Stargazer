@@ -58,7 +58,8 @@ const tracks=[
   await page.locator('.artist-back').click();
   await page.locator('[data-view="library"]').first().click();
   await page.locator('[data-view="dj"]').first().click();
-  await page.goBack();
+  await page.evaluate(()=>history.back());
+  await page.waitForURL('**/music/library');
   assert.match(new URL(page.url()).pathname,/library/);
   await page.locator('[data-view="all"]').first().click();
   const heart=page.locator('.tile .art-actions .save:not(.queue-icon):not(.add-track)').first();
@@ -72,6 +73,18 @@ const tracks=[
   assert.match(await page.locator('#sleep-countdown').innerText(),/14:|15:00/);
   await page.locator('#sleep-timer').selectOption('off');
   assert.equal(await page.locator('#sleep-countdown').innerText(),'');
+  await page.locator('#search').fill('ODESZA');
+  await page.locator('#search').press('Enter');
+  const result=page.locator('#catalog .grid .tile').first();
+  await result.waitFor({timeout:30000});
+  await result.locator('.queue-add').click();
+  const manual=await page.evaluate(()=>JSON.parse(localStorage.getItem('stargazer.music.session.v1')).queue.filter(t=>t.userQueued).map(t=>t.id));
+  assert.ok(manual.length);
+  await page.locator('#search').fill('Taylor Swift');
+  await page.locator('#search').press('Enter');
+  await page.locator('#catalog .grid .tile .pick').first().waitFor({timeout:30000});
+  await page.locator('#catalog .grid .tile .pick').first().click();
+  assert.deepEqual(await page.evaluate(()=>{const s=JSON.parse(localStorage.getItem('stargazer.music.session.v1'));return s.queue.slice(s.index+1).filter(t=>t.userQueued).map(t=>t.id);}),manual);
   await page.screenshot({path:'music-features-400px.png'});
   console.log('PASS deep link, playlist queue edit, persistent reorder/clear, mini, fullscreen, Space, search empty, DJ reload and artist route');
  }finally{await page.close();await browser.close();}
