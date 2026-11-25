@@ -37,7 +37,7 @@ test('queue buttons never start playback while no player exists',()=>{
   assert.ok(js.includes('function withHeldQueue(base,selectedIndex)'));
 });
 test('service worker version 48',()=>{
-  assert.match(fs.readFileSync(path.join(root,'service-worker.js'),'utf8'),/stargazer-cache-v51/);
+  assert.match(fs.readFileSync(path.join(root,'service-worker.js'),'utf8'),/stargazer-cache-v52/);
 });
 const vm=require('node:vm');
 const insert=vm.runInNewContext(js.slice(js.indexOf('  function insertUserQueue('),js.indexOf('  function enqueueTrack('))+'\ninsertUserQueue');
