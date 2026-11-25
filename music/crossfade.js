@@ -112,9 +112,11 @@ class CrossfadePlayer {
   pauseVideo(){this.active.pause();this.incoming?.pause();}
   seekTo(time,keepPlaying=true){
     const playing=keepPlaying && !this.active.paused;
-    this.intro=false;this.introGain=1;this.clearNext();
+    this.intro=false;this.introGain=1;
+    // Keep a cued next deck across seeks; recreating the iframe costs seconds.
+    if(this.started || (this.incoming && this.next()?.id!==this.nextId))this.clearNext();
     const duration=this.active.duration, span=Math.min(this.seconds(),duration);
-    if(!this.track.audioId && playing && this.next() && span>0 && Number.isFinite(duration) && time>duration-Math.min(span,2))time=Math.max(0,duration-Math.min(span,2));
+    if(playing && this.next() && span>0 && Number.isFinite(duration) && time>duration-Math.min(span,2))time=Math.max(0,duration-Math.min(span,2));
     this.active.currentTime=time;
     if(playing && this.active.paused)this.playVideo();
     this.tick();
