@@ -25,12 +25,12 @@ jobs:
         run: |
           npm install --no-save playwright@1.56.1
           npx playwright install --with-deps chromium
-      - name: Wait for v53 music assets at preview deployment
+      - name: Wait for v54 music assets at preview deployment
         run: |
           for i in $(seq 1 30); do
-            if curl --max-time 10 -fsSL "https://stargazer-test.vercel.app/service-worker.js?qa=$i" | grep -q 'stargazer-cache-v53' \
-              && curl --max-time 10 -fsSL "https://stargazer-test.vercel.app/music/source-preference.js?qa=$i" | grep -q 'StargazerSources'; then
-              echo "v53 preview assets available"
+            if curl --max-time 10 -fsSL "https://st4rg4zer-test.st4rg4zer.pages.dev/service-worker.js?qa=$i" | grep -q 'stargazer-cache-v54' \
+              && curl --max-time 10 -fsSL "https://st4rg4zer-test.st4rg4zer.pages.dev/music/source-preference.js?qa=$i" | grep -q 'StargazerSources'; then
+              echo "v54 preview assets available"
               exit 0
             fi
             sleep 3
@@ -38,4 +38,6 @@ jobs:
           echo "Preview deployment was not ready; live playback could not be verified."
           exit 1
       - name: Exercise real YouTube to Audius and Audius to YouTube overlaps
+        env:
+          STARGAZER_QA_URL: https://st4rg4zer-test.st4rg4zer.pages.dev/music/
         run: node tests/music-live-browser.cjs
