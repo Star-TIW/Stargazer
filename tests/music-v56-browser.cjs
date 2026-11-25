@@ -29,6 +29,9 @@ const BASE=process.env.STARGAZER_QA_URL||'https://st4rg4zer-test.st4rg4zer.pages
   assert.ok(Math.abs(home.progress-music.progress)<.4,JSON.stringify({home,music}));
   assert.ok(Math.abs(home.duration-music.duration)<.03,JSON.stringify({home,music}));
   console.log('PASS 360px sidebar moves over time on home and music:',JSON.stringify({home,music}));
+  await page.evaluate(()=>localStorage.setItem('stargazer.music.audio-options',JSON.stringify({fade:12})));
+  await page.reload({waitUntil:'domcontentloaded'});
+  assert.equal(await page.locator('#fade').inputValue(),'12','selected 12s crossfade must survive reload');
   await page.evaluate(()=>localStorage.setItem('stargazer.music.session.v1',JSON.stringify({
     queue:[{source:'youtube',id:'abcdefghijk',title:'QA current',artist:'Stargazer QA'},
       {source:'youtube',id:'lmnopqrstuv',title:'QA upcoming',artist:'Stargazer QA',userQueued:true}],
@@ -38,6 +41,19 @@ const BASE=process.env.STARGAZER_QA_URL||'https://st4rg4zer-test.st4rg4zer.pages
   await page.locator('#expand-now').waitFor({state:'visible'});
   await page.evaluate(()=>{window.__testMount=document.querySelector('#mount');});
   await page.locator('#expand-now').click();
+  const controlToggle=page.locator('#show-full-controls');
+  assert.ok(await controlToggle.isVisible(),'full-screen control reveal toggle must stay visible');
+  assert.equal(await controlToggle.getAttribute('aria-label'),'Hide player controls');
+  const unobstructed=await controlToggle.evaluate(button=>{
+    const r=button.getBoundingClientRect();
+    return button.contains(document.elementFromPoint(r.left+r.width/2,r.top+r.height/2));
+  });
+  assert.ok(unobstructed,'the controls toggle must not be covered by native video or hidden controls');
+  await controlToggle.click();
+  assert.equal(await page.locator('#full-controls').isVisible(),false);
+  assert.equal(await controlToggle.getAttribute('aria-label'),'Show player controls');
+  await controlToggle.click();
+  assert.ok(await page.locator('#full-controls').isVisible(),'shuffle, repeat and mute must be reachable after restoring controls');
   assert.equal(await page.locator('#expand-now').getAttribute('aria-label'),'Close full screen');
   assert.ok(await page.locator('#expand-now .close-full-icon').isVisible(),'full screen button must turn into X');
   assert.equal(await page.locator('#expand-now .expand-icon').isVisible(),false);
