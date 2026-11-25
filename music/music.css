@@ -408,3 +408,5 @@ body.full-now #now #visual {aspect-ratio:1;align-self:start;}
 .playlist-picker-results {display:grid;gap:8px;margin-top:12px;}
 .playlist-picker-row {display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px;border-bottom:1px solid #ffffff22;}
 .scroll-shelf::after {height:100%;top:0;bottom:auto;width:28px;background:linear-gradient(90deg,transparent,#121212d9);}
+
+.made-card {display:inline-flex;align-items:center;gap:12px;padding:8px 14px 8px 8px;margin:4px;background:#282921;color:#fff;border:1px solid #efef8844;border-radius:12px;cursor:pointer;min-width:145px;}.made-art {display:grid;place-items:center;width:48px;height:48px;border-radius:8px;background:linear-gradient(135deg,#d8d57a,#4c5035);color:#141510;font-size:25px;}.made-card:nth-child(2) .made-art {background:linear-gradient(135deg,#b6a2e9,#e6d9ef);}.made-card:nth-child(3) .made-art {background:linear-gradient(135deg,#80b9ac,#e2efb8);}.made-card:nth-child(4) .made-art {background:linear-gradient(135deg,#e4a16e,#f4df8d);}
