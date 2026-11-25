@@ -27,7 +27,7 @@ test('search autocomplete and Up next render cards with the same icon controls',
   assert.ok(js.includes("const suggestion=card(t,tracks"));
   assert.ok(js.includes("suggestion.classList.add('completion-card')"));
   assert.ok(js.includes('renderUpNext(next)'));
-  assert.ok(js.includes("card(t,next,()=>queue.length ? load"));
+  assert.ok(js.includes("const entry=card(track,next,()=>queue.length?load"));
   assert.match(css,/#up-next \{display:grid/);
 });
 test('queue buttons never start playback while no player exists',()=>{
