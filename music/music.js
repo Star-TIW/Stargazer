@@ -111,7 +111,7 @@
       id:t.id,source:t.source,title:t.title,artist:t.artist,art:t.art
     }))};
     const bytes=new TextEncoder().encode(JSON.stringify(payload));
-    if(bytes.length>12000)return url.href;
+    if(bytes.length>12000)return null;
     const data=btoa(String.fromCharCode(...bytes)).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
     url.hash='list='+data;return url.href;
   }
@@ -171,6 +171,7 @@
   $('#copy-view-link').onclick=async()=>{
     const link=view==='playlist'&&currentList?portablePlaylistLink(currentList):
       view==='all'&&queue[index]?songShareLink(queue[index]):location.href;
+    if(!link){queueToast('Playlist too large for a link. Use Share to export it.');return;}
     try{await navigator.clipboard.writeText(link);queueToast('Link copied');}
     catch{queueToast('Copy this URL: '+link);}
   };
