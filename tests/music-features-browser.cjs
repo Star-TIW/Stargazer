@@ -55,6 +55,11 @@ const tracks=[
   await page.goto(BASE.replace(/\/$/,'')+'/artist/odesza',{waitUntil:'domcontentloaded',timeout:60000});
   await page.locator('.artist-hero h2').waitFor({state:'visible',timeout:30000});
   assert.match(await page.locator('.artist-hero h2').innerText(),/odesza/i);
+  await page.locator('.artist-back').click();
+  await page.locator('#sleep-timer').selectOption('15');
+  assert.match(await page.locator('#sleep-countdown').innerText(),/14:|15:00/);
+  await page.locator('#sleep-timer').selectOption('off');
+  assert.equal(await page.locator('#sleep-countdown').innerText(),'');
   await page.screenshot({path:'music-features-400px.png'});
   console.log('PASS deep link, playlist queue edit, persistent reorder/clear, mini, fullscreen, Space, search empty, DJ reload and artist route');
  }finally{await page.close();await browser.close();}
