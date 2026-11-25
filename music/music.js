@@ -90,7 +90,7 @@
     }catch { /* Private browsing can disable storage. */ }
     return null;
   }
-  let fade=readSavedFade()??0, previousPlan=null, greeted=false;
+  let fade=readSavedFade()??12, previousPlan=null, greeted=false;
   const chatKey='stargazer.music.dj-chat.v1', mixKey='stargazer.music.dj-mix.v1';
   const chat=readList(chatKey).filter(m=>typeof m?.line==='string').slice(-80);
   mix=readList(mixKey).filter(validSong);
@@ -189,6 +189,8 @@
     persist(fadeSettingsKey,{fade});
     try{localStorage.setItem(fadeBackupKey,String(fade));}catch{}
   }
+  // Persist the first-visit default, never overwrite an existing zero-second preference.
+  if(readSavedFade()===null)saveOptions();
   $('#fade').value=String(fade);
   function fadeLabel(){ $('#fade-value').textContent=fade ? fade+' s' : 'Off · 0 s'; }
   fadeLabel();
@@ -342,8 +344,8 @@
     const upcoming=queuedUpcoming(),nextTrack=upcoming[0];
     for(const b of document.querySelectorAll('.art-actions button[data-track-id]')){
       const id=b.dataset.trackId;
-      const pressed=b.classList.contains('queue-next')?nextTrack?.id===id:
-        b.classList.contains('queue-add')?upcoming.some(t=>t.id===id):
+      const pressed=b.classList.contains('queue-next')?nextTrack?.id===id && (queue[index] ? nextTrack.userQueued === true && nextTrack.queueAction==='next' : heldQueue[0]?.next === true):
+        b.classList.contains('queue-add')?upcoming.some(t=>t.id===id && t.userQueued===true && t.queueAction!=='next'):
         b.classList.contains('add-track')?playlists.some(p=>p.tracks.some(t=>t.id===id)):false;
       const current=String(Boolean(pressed));
       if(b.dataset.buttonState===current)continue;
@@ -392,9 +394,15 @@
   }
   function toggleQueueTrack(track,next){
     const upcoming=queuedUpcoming();
-    const active=next?upcoming[0]?.id===track.id:upcoming.some(t=>t.id===track.id);
-    if(active){removeQueuedTrack(track);return;}
-    enqueueTrack(track,next);syncQueueButtons();
+    if(next){
+      // Play next promotes existing station tracks instead of removing them.
+      enqueueTrack(track,true);syncQueueButtons();return;
+    }
+    const alreadyAdded=queue[index]
+      ? upcoming.some(t=>t.id===track.id && t.userQueued && t.queueAction!=='next')
+      : heldQueue.some(item=>item.track.id===track.id && !item.next);
+    if(alreadyAdded){removeQueuedTrack(track);return;}
+    enqueueTrack(track,false);syncQueueButtons();
   }
   function queueIconButton(track,next){
     const label=next?'Play next':'Add to queue';
@@ -1102,15 +1110,15 @@
   const heldKey='stargazer.music.held.v1';
   let heldQueue=readList(heldKey).filter(item=>validSong(item?.track));
   function withHeldQueue(base,selectedIndex){
-    const pending=queue.slice(index+1).filter(t=>t.userQueued).map(track=>({track,next:false}));
+    const pending=queue.slice(index+1).filter(t=>t.userQueued).map(track=>({track,next:track.queueAction==='next'}));
     if(!heldQueue.length&&!pending.length)return base;
     const pendingIds=new Set(pending.map(item=>item.track.id));const before=base.slice(0,selectedIndex+1).filter((t,i)=>i===selectedIndex||!pendingIds.has(t.id)),seen=new Set(before.map(t=>t.id));
     const unique=tracks=>tracks.filter(t=>{
       if(seen.has(t.id))return false;
       seen.add(t.id);return true;
     });
-    const immediate=unique(heldQueue.filter(item=>item.next).map(item=>({...resolveAudio(item.track),userQueued:true})));
-    const later=unique([...pending,...heldQueue.filter(item=>!item.next)].map(item=>({...resolveAudio(item.track),userQueued:true})));
+    const immediate=unique(heldQueue.filter(item=>item.next).map(item=>({...resolveAudio(item.track),userQueued:true,queueAction:'next'})));
+    const later=unique([...pending,...heldQueue.filter(item=>!item.next)].map(item=>({...resolveAudio(item.track),userQueued:true,queueAction:item.next?'next':'add'})));
     const upcoming=unique(base.slice(selectedIndex+1));
     heldQueue=[];persist(heldKey,heldQueue);document.body.classList.remove('has-held-queue');
     return [...before,...immediate,...later,...upcoming];
@@ -1407,10 +1415,10 @@
   function insertUserQueue(queue,index,track,next){
     const upcoming=queue.slice(index+1);
     const existing=upcoming.find(t=>t.id===track.id);
-    if(existing?.userQueued && (!next || upcoming[0]===existing))return queue;
+    if(existing?.userQueued && ((next && upcoming[0]===existing && existing.queueAction==='next') || (!next && existing.queueAction!=='next')))return queue;
     const rest=upcoming.filter(t=>t.id!==track.id);
     const manual=rest.filter(t=>t.userQueued),auto=rest.filter(t=>!t.userQueued);
-    const pick={...track,userQueued:true};
+    const pick={...track,userQueued:true,queueAction:next?'next':'add'};
     return [...queue.slice(0,index+1),...(next?[pick,...manual]:[...manual,pick]),...auto];
   }
   function queueUndoSnapshot(track){
@@ -1427,8 +1435,8 @@
   function enqueueTrack(track,next=false){
     track=resolveAudio(track);
     if(!queue.length){
-      if(!next && heldQueue.some(item=>item.track.id===track.id))return false;
-      if(next && heldQueue[0]?.track.id===track.id && heldQueue[0].next)return false;
+      if(!next && heldQueue.some(item=>item.track.id===track.id && !item.next))return false;
+      if(next && heldQueue[0]?.track.id===track.id && heldQueue[0].next){status(track.title+' will play next.');syncQueueButtons();return true;}
       heldQueue=heldQueue.filter(item=>item.track.id!==track.id);
       if(next)heldQueue.unshift({track,next});
       else heldQueue.push({track,next});
@@ -1438,7 +1446,7 @@
     const current=queue[index];
     if(track.id===current?.id){status('Already playing '+track.title+'.');return false;}
     const updated=insertUserQueue(queue,index,track,next);
-    if(updated===queue)return false;
+    if(updated===queue){if(next){status(track.title+' will play next.');syncQueueButtons();return true;}return false;}
     if(updated[index+1]?.id!==queue[index+1]?.id)player?.clearNext();
     queue=updated;
     checkpoint();$('#next').disabled=false;

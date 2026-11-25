@@ -8,7 +8,7 @@ const js=fs.readFileSync(path.join(root,'music/music.js'),'utf8');
 const css=fs.readFileSync(path.join(root,'music/music.css'),'utf8');
 const html=fs.readFileSync(path.join(root,'music/index.html'),'utf8');
 
-test('v57 keeps the selected 12-second fade across reload and cache changes',()=>{
+test('v58 keeps the selected 12-second fade across reload and cache changes',()=>{
   const read=js.match(/  function readSavedFade\(\)\{[\s\S]*?\n  \}/)?.[0];
   assert.ok(read,'saved fade reader must exist');
   const saved=new Map([['stargazer.music.audio-options',JSON.stringify({fade:12})]]);
@@ -19,8 +19,8 @@ test('v57 keeps the selected 12-second fade across reload and cache changes',()=
   });
   assert.equal(value,12);
   assert.match(js,/const storedFade=readSavedFade\(\)/);
-  assert.match(html,/music\/music\.js\?v=57/);
-  assert.match(fs.readFileSync(path.join(root,'service-worker.js'),'utf8'),/stargazer-cache-v57/);
+  assert.match(html,/music\/music\.js\?v=58/);
+  assert.match(fs.readFileSync(path.join(root,'service-worker.js'),'utf8'),/stargazer-cache-v58/);
 });
 
 test('audio library resolving a queued YouTube copy discards only the stale incoming deck',async()=>{

@@ -1,9 +1,9 @@
-const CACHE_NAME = "stargazer-cache-v57";
+const CACHE_NAME = "stargazer-cache-v58";
 const STATIC_ASSETS = [
   "/", "/index.html", "/home.css", "/movies.css", "/movies.js", "/player-sources.js", "/provider-frame.js",
   "/particle-config.js", "/sync.js", "/particles.min.js", "/bootstrap.js", "/analytics.js", "/settings.js", "/settings.html", "/manifest.json",
   "/stargazer.png", "/stargazer-192.png", "/stargazer-512.png",
-  "/music/", "/music/music.css", "/music/music.js", "/music/music.css?v=57", "/music/music.js?v=57", "/music/crossfade.js", "/music/youtube-deck.js", "/music/library.js", "/music/source-preference.js", "/music/mixes.js", "/music/dj.js",
+  "/music/", "/music/music.css", "/music/music.js", "/music/music.css?v=58", "/music/music.js?v=58", "/music/crossfade.js", "/music/youtube-deck.js", "/music/library.js", "/music/source-preference.js", "/music/mixes.js", "/music/dj.js",
   "/star.png", "/live/", "/live/index.html", "/live/live.css", "/live/damitv.js", "/live/matchora.js", "/live/timstreams.js", "/live/ppv.js", "/live/live.js"
 ];
 

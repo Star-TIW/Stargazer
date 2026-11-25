@@ -2,18 +2,18 @@ const test=require('node:test'), assert=require('node:assert/strict'), fs=requir
 const read=file=>fs.readFileSync(path.join(__dirname,'..',file),'utf8');
 const js=read('music/music.js'), css=read('music/music.css'), sw=read('service-worker.js'), shell=read('music/index.html');
 
-test('v57 transition preferences remain in localStorage across service-worker updates',()=>{
+test('v58 transition preferences remain in localStorage across service-worker updates',()=>{
  assert.match(js,/const fadeSettingsKey='stargazer\.music\.audio-options',fadeBackupKey='stargazer\.music\.fade\.v1'/);
  assert.match(js,/function readSavedFade\(\)/);
  assert.match(js,/localStorage\.setItem\(fadeBackupKey,String\(fade\)\)/);
  assert.match(js,/const restored=readSavedFade\(\)/);
  assert.ok(!sw.includes('localStorage.clear('));
  assert.ok(!sw.includes("localStorage.removeItem('stargazer.music.audio-options')"));
- assert.match(sw,/stargazer-cache-v57/);
- assert.ok(shell.includes('/music/music.js?v=57'));
+ assert.match(sw,/stargazer-cache-v58/);
+ assert.ok(shell.includes('/music/music.js?v=58'));
 });
 
-test('v57 artist deep links do not capitalize an unresolved slug',()=>{
+test('v58 artist deep links do not capitalize an unresolved slug',()=>{
  assert.match(js,/profile=\{name:exact\|\|'',routeSlug:slug,tracks:\[\]\}/);
  assert.match(js,/const title=element\('h2','',active.name\|\|'Loading artist…'\)/);
  assert.match(js,/slugify\(a.name\)===routeSlug/);
@@ -21,7 +21,7 @@ test('v57 artist deep links do not capitalize an unresolved slug',()=>{
  assert.ok(!js.includes("requested.replace(/\\b\\w/g"));
 });
 
-test('v57 artist Songs, Popular and Fans also like have scroll controls',()=>{
+test('v58 artist Songs, Popular and Fans also like have scroll controls',()=>{
  for(const title of ['Songs','Popular','Fans also like']) assert.ok(js.includes("artistRowControls("+({Songs:'body',Popular:'list','Fans also like':'others'}[title])+",'"+title+"')"));
  assert.match(js,/function artistRowControls\(row,title\)/);
  assert.match(js,/row\.addEventListener\('scroll',sync/);
