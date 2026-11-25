@@ -312,3 +312,16 @@ body:has(#dock:not([hidden])) .workspace { height:calc(100dvh - 246px); }
  .queue-edit button {min-width:30px;min-height:34px;}
  #dock.is-mini {bottom:0;}
 }
+
+/* v44: layering and secondary navigation polish */
+#search-scrim:not([hidden]) {display:block;position:fixed;inset:0;background:#050506a6;z-index:8;backdrop-filter:blur(2px);}
+#search-scrim[hidden] {display:none;}
+#completions:not([hidden]) {z-index:40;}
+.music-toolbar:has(#completions:not([hidden])) {z-index:50;}
+.now-meta {display:flex;flex-direction:column;align-items:flex-start;gap:5px;margin-top:12px;}
+.now-meta #now-title,.now-meta #now-artist {margin:0;display:block;}
+.scroll-shelf {position:relative;isolation:isolate;z-index:0;}
+.scroll-shelf .song-row {padding-top:8px;padding-bottom:12px;}
+.scroll-shelf .tile {isolation:isolate;}
+.scroll-shelf .tile:focus-within {z-index:3;}
+@media(max-width:760px){.now-meta {gap:6px;} }
