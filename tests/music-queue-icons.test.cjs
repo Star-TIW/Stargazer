@@ -26,7 +26,7 @@ test('touch areas are at least 40px and queue controls use opposite bottom corne
 test('search autocomplete and Up next render cards with the same icon controls',()=>{
   assert.ok(js.includes("const suggestion=card(t,tracks"));
   assert.ok(js.includes("suggestion.classList.add('completion-card')"));
-  assert.ok(js.includes("$('#up-next').replaceChildren(...next.slice(0,Math.max(4,next.filter(t=>t.userQueued).length)).map"));
+  assert.ok(js.includes('renderUpNext(next)'));
   assert.ok(js.includes("card(t,next,()=>queue.length ? load"));
   assert.match(css,/#up-next \{display:grid/);
 });
@@ -36,8 +36,8 @@ test('queue buttons never start playback while no player exists',()=>{
   assert.doesNotMatch(body,/load\(/);
   assert.ok(js.includes('function withHeldQueue(base,selectedIndex)'));
 });
-test('service worker version 42',()=>{
-  assert.match(fs.readFileSync(path.join(root,'service-worker.js'),'utf8'),/stargazer-cache-v42/);
+test('service worker version 43',()=>{
+  assert.match(fs.readFileSync(path.join(root,'service-worker.js'),'utf8'),/stargazer-cache-v43/);
 });
 const vm=require('node:vm');
 const insert=vm.runInNewContext(js.slice(js.indexOf('  function insertUserQueue('),js.indexOf('  function enqueueTrack('))+'\ninsertUserQueue');
@@ -74,4 +74,37 @@ test('Now playing keeps square cover behind centered foreground video',()=>{
  assert.match(js,/const thumbnail='https:\/\/i\.ytimg\.com\/vi\/'\+track.id/);
  assert.match(js,/art.src=source/);
  assert.match(js,/updateCover\(track,direction\)/);
+});
+
+test('Part 1: queue editing preserves active item and persisted state',()=>{
+ assert.match(js,/function moveQueued\(from,to\)/);
+ assert.match(js,/const before=queue\[index\+1\]\?\.id, item=queue\.splice\(from,1\)\[0\]/);
+ assert.match(js,/checkpoint\(\);queueToast\(message\)/);
+ assert.match(js,/handle\.onpointerdown=/);
+ assert.match(js,/handle\.ondragstart=/);
+ assert.match(js,/queue=\[\.\.\.queue\.slice\(0,index\+1\),\.\.\.queue\.slice\(index\+1\)\.filter\(t=>!t\.userQueued\)\]/);
+});
+test('Part 1: player close minimizes without removing queue or session',()=>{
+ assert.match(js,/function setMini\(value\)/);
+ assert.match(js,/\$\('#close'\)\.onclick=\(\)=>setMini\(!mini\)/);
+ assert.doesNotMatch(js,/\$\('#close'\)\.onclick=\(\)=>\{[\s\S]*?queue=\[\]/);
+});
+test('Part 1: Space prevents focused card activation and toggles playback',()=>{
+ assert.match(js,/document\.addEventListener\('keydown',event=>/);
+ assert.match(js,/if\(event\.code!=='Space'/);
+ assert.match(js,/event\.preventDefault\(\);togglePlayback\(\)/);
+});
+test('Part 1: search relevance, clear button, restored view and accessible toggles',()=>{
+ assert.match(js,/const relevant=live\.filter\(t=>terms\.every/);
+ assert.match(js,/No results for/);
+ assert.match(js,/\$\('#search-clear'\)\.onclick=/);
+ assert.match(js,/function saveView\(\)/);
+ assert.match(js,/shuffleOn=!shuffleOn/);
+ assert.match(js,/repeatMode=repeatMode==='off'\?'one'/);
+});
+test('Part 1: loading metadata, now playing sync and save Undo',()=>{
+ assert.match(js,/\$\('#loading'\)\.hidden=!loading/);
+ assert.match(js,/\$\('#playing'\)\.textContent=track\.title/);
+ assert.match(js,/queueToast\(adding\?'Saved to Liked songs'/);
+ assert.match(js,/if\(typeof undo==='function'\)/);
 });
