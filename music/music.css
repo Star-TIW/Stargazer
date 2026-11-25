@@ -410,3 +410,15 @@ body.full-now #now #visual {aspect-ratio:1;align-self:start;}
 .scroll-shelf::after {height:100%;top:0;bottom:auto;width:28px;background:linear-gradient(90deg,transparent,#121212d9);}
 
 .made-card {display:inline-flex;align-items:center;gap:12px;padding:8px 14px 8px 8px;margin:4px;background:#282921;color:#fff;border:1px solid #efef8844;border-radius:12px;cursor:pointer;min-width:145px;}.made-art {display:grid;place-items:center;width:48px;height:48px;border-radius:8px;background:linear-gradient(135deg,#d8d57a,#4c5035);color:#141510;font-size:25px;}.made-card:nth-child(2) .made-art {background:linear-gradient(135deg,#b6a2e9,#e6d9ef);}.made-card:nth-child(3) .made-art {background:linear-gradient(135deg,#80b9ac,#e2efb8);}.made-card:nth-child(4) .made-art {background:linear-gradient(135deg,#e4a16e,#f4df8d);}
+
+/* v48 layout */
+.made-grid {display:grid!important;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;}
+.made-grid .made-card {display:flex!important;flex-direction:column;align-items:stretch;text-align:left;padding:10px!important;border-radius:12px!important;min-width:0;margin:0;}
+.made-grid .made-art {display:grid!important;width:100%;height:auto;aspect-ratio:1.4;font-size:42px;}
+.song-row.fade-right {mask-image:linear-gradient(to right,#000 0%,#000 calc(100% - 28px),transparent 100%);}
+.song-row.fade-left {mask-image:linear-gradient(to right,transparent,#000 28px,#000 100%);}
+.song-row.fade-left.fade-right {mask-image:linear-gradient(to right,transparent,#000 28px,#000 calc(100% - 28px),transparent);}
+.scroll-shelf::after {display:none;}
+body.full-now #now #visual {position:relative;flex:none;height:auto;min-height:0;aspect-ratio:1;}
+body.full-now #now .now-meta {position:relative;clear:both;min-height:max-content;overflow:visible;transform:none;z-index:3;padding:8px 0;}
+@media(min-width:900px){body.full-now #now {grid-template-rows:auto max-content max-content max-content;align-items:start;}body.full-now #now #visual {height:auto;aspect-ratio:1;width:min(100%,60dvh);min-height:0;}body.full-now #now #up-next {grid-row:2/5;max-height:calc(100dvh - 150px);overflow:auto;}}
