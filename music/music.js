@@ -55,7 +55,7 @@
     const left=button('‹',()=>row.scrollBy({left:-row.clientWidth*.8,behavior:'smooth'}),'scroll-arrow');
     const right=button('›',()=>row.scrollBy({left:row.clientWidth*.8,behavior:'smooth'}),'scroll-arrow');
     left.setAttribute('aria-label','Scroll '+title+' left');right.setAttribute('aria-label','Scroll '+title+' right');
-    nav.append(left,right);section.insertBefore(nav,row);const frame=element('div','row-fade-frame');row.before(frame);frame.append(row);const leftFade=element('span','row-edge left-edge'),rightFade=element('span','row-edge right-edge');frame.append(leftFade,rightFade);
+    nav.append(left,right);section.insertBefore(nav,row);const frame=element('div','row-fade-frame');row.before(frame);frame.append(row);const leftFade=element('span','row-edge left-edge'),rightFade=element('span','row-edge right-edge');frame.append(leftFade,rightFade);frame.style.cssText='position:relative;min-width:0;width:100%;isolation:isolate';for(const [edge,side] of [[leftFade,'left'],[rightFade,'right']]){edge.setAttribute('aria-hidden','true');edge.style.cssText='position:absolute;top:0;bottom:0;width:48px;z-index:100;pointer-events:none;opacity:1;'+side+':0;background:linear-gradient(to '+(side==='left'?'right':'left')+',#121212 0%,rgba(18,18,18,0) 100%)';}
     const sync=()=>{left.disabled=row.scrollLeft<8;right.disabled=row.scrollLeft+row.clientWidth>=row.scrollWidth-8;leftFade.hidden=row.scrollLeft<=0;rightFade.hidden=row.scrollLeft+row.clientWidth>=row.scrollWidth-1;};
     row.addEventListener('scroll',sync,{passive:true});requestAnimationFrame(sync);if(window.ResizeObserver){const observer=new ResizeObserver(()=>{if(!row.isConnected){observer.disconnect();return;}sync();});observer.observe(row);}
   }
@@ -326,7 +326,7 @@
         queueToast(next?'Added to play next':'Added to queue',undo);
         b.classList.remove('confirmed');void b.offsetWidth;b.classList.add('confirmed');
         setTimeout(()=>b.classList.remove('confirmed'),650);
-      }
+      }else queueToast(queue[index]?.id===resolveAudio(track).id?'Already playing':'Already in Up next');
       if(b.closest('#completions')){clearTimeout(queueIconButton.dismissTimer);queueIconButton.dismissTimer=setTimeout(dismissSuggestions,350);}
     };
     return b;
@@ -1099,7 +1099,7 @@
       mediaControls(track);timeline();checkpoint();
     }
   }
-  function status(text) { const node=$('#audio-status');node.textContent=text;clearTimeout(status.timer);status.timer=setTimeout(()=>node.textContent='',3500); }
+  function status(text) { const node=$('#audio-status');node.classList.add('sr-only');node.style.cssText='position:absolute!important;width:1px!important;height:1px!important;overflow:hidden!important;clip-path:inset(50%)!important;white-space:nowrap!important;';node.textContent=text;clearTimeout(status.timer);status.timer=setTimeout(()=>node.textContent='',3500); }
   let sleepUntil=0,sleepAtEnd=false,sleepGain=1;
   const sleepKey='stargazer.music.sleep.v1';
   function saveSleep(){persist(sleepKey,{until:sleepUntil,atEnd:sleepAtEnd,choice:$('#sleep-timer').value});}
@@ -1112,6 +1112,7 @@
   function levels() {
     $('#volume').value=volume; $('#percent').textContent=(muted?0:volume)+'%';
     control('#mute',muted?'silent':'sound',muted?'Unmute':'Mute'); $('#mute').setAttribute('aria-pressed',String(muted));
+    $('#full-volume').value=volume;$('#full-mute').setAttribute('aria-pressed',String(muted));$('#full-mute').textContent=muted?'Unmute':'Mute';
     if (ready) {applyGain(); if (muted) player.mute(); else player.unMute();}
   }
   function saveLevels() {
@@ -1319,6 +1320,8 @@
   $('#visual').onclick=e=>{if(e.target===$('#now-art')||e.target===$('#visual'))toggleFullNow();};
   $('#full-prev').onclick=()=>$('#previous').click();
   $('#full-play').onclick=togglePlayback;
+  $('#full-shuffle').onclick=()=>$('#shuffle').click();$('#full-repeat').onclick=()=>$('#repeat').click();$('#full-mute').onclick=()=>$('#mute').click();$('#full-volume').oninput=e=>{volume=Number(e.target.value);muted=false;saveLevels();};
+  const syncFullModes=()=>{for(const id of ['shuffle','repeat']){const source=$('#'+id),target=$('#full-'+id);target.setAttribute('aria-pressed',source.getAttribute('aria-pressed')||'false');if(id==='repeat')target.textContent='Repeat '+repeatMode;}};const modeObserver=new MutationObserver(syncFullModes);for(const id of ['shuffle','repeat'])modeObserver.observe($('#'+id),{attributes:true,attributeFilter:['aria-pressed','aria-label']});syncFullModes();
   $('#full-next').onclick=()=>$('#next').click();
   $('#full-seek').oninput=e=>{resumeAt=Number(e.target.value);if(ready)player.seekTo(resumeAt,true);timeline();checkpoint();};
   document.addEventListener('keydown',event=>{
