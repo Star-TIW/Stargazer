@@ -21,6 +21,7 @@ class CrossfadePlayer {
     el.onpause=()=>{if(!el.ended){this.incoming?.pause();this.state(2);}};
     el.onerror=()=>this.error();
     el.onended=()=>{
+      if(el!==this.active)return;
       if(this.incoming && this.next()?.id===this.nextId){
         if(!this.started || this.incoming.paused)this.incoming.play().catch(()=>this.error());
         this.promote();
@@ -111,7 +112,10 @@ class CrossfadePlayer {
   pauseVideo(){this.active.pause();this.incoming?.pause();}
   seekTo(time,keepPlaying=true){
     const playing=keepPlaying && !this.active.paused;
-    this.intro=false;this.introGain=1;this.clearNext();this.active.currentTime=time;
+    this.intro=false;this.introGain=1;this.clearNext();
+    const duration=this.active.duration, span=Math.min(this.seconds(),duration);
+    if(!this.track.audioId && playing && this.next() && span>0 && Number.isFinite(duration) && time>duration-Math.min(span,2))time=Math.max(0,duration-Math.min(span,2));
+    this.active.currentTime=time;
     if(playing && this.active.paused)this.playVideo();
     this.tick();
   }
