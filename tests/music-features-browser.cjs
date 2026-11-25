@@ -31,6 +31,8 @@ const tracks=[
   assert.ok(await page.locator('#audio-dialog').isVisible());
   assert.equal(await page.locator('#music-particles').count(),0,'particle effects belong to site settings');
   await page.locator('#audio-dialog form[method="dialog"] button').click();
+  await page.locator('#audio-dialog').waitFor({state:'hidden'});
+  await page.waitForFunction(()=>getComputedStyle(document.body).position!=='fixed');
   assert.notEqual(await page.locator('body').evaluate(n=>getComputedStyle(n).position),'fixed','closing music settings unlocks body scroll');
   await page.locator('#expand-now').click();
   const fullLayout=await page.evaluate(()=>{
