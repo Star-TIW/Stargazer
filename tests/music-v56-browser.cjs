@@ -33,8 +33,9 @@ const BASE=process.env.STARGAZER_QA_URL||'https://st4rg4zer-test.st4rg4zer.pages
   await page.reload({waitUntil:'domcontentloaded'});
   assert.equal(await page.locator('#fade').inputValue(),'12','selected 12s crossfade must survive reload');
   const fullTimes=page.locator('.full-times');
-  assert.ok(await fullTimes.locator('[aria-label="Elapsed time"]').count());
-  assert.ok(await fullTimes.locator('[aria-label="Total duration"]').count());
+  assert.equal(await fullTimes.locator('.full-time-current .sr-only').innerText(),'Elapsed time:');
+  assert.equal(await fullTimes.locator('.full-time-total .sr-only').innerText(),'Total duration:');
+  assert.equal(await fullTimes.locator('.full-time-divider').innerText(),'/');
   await page.evaluate(()=>localStorage.setItem('stargazer.music.session.v1',JSON.stringify({
     queue:[{source:'youtube',id:'abcdefghijk',title:'QA current',artist:'Stargazer QA'},
       {source:'youtube',id:'lmnopqrstuv',title:'QA upcoming',artist:'Stargazer QA',userQueued:true}],

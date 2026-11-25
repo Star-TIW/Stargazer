@@ -198,7 +198,7 @@
   let audioLibrary=[];
   let audioCatalog;
   let resolvePreferred=StargazerSources.resolver([]);
-  const resolveAudio=track=>{const resolved=resolvePreferred(track);return track?.userQueued && resolved ? {...resolved,userQueued:true}:resolved;};
+  const resolveAudio=track=>{const resolved=resolvePreferred(track);return track?.userQueued && resolved ? {...resolved,userQueued:true,...(track.queueAction?{queueAction:track.queueAction}:{})}:resolved;};
   function loadAudioLibrary(){
     if(!audioCatalog) audioCatalog=fetch('/music/audio-releases.json').then(r=>{
       if(!r.ok)throw Error();
