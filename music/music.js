@@ -178,6 +178,13 @@
     control('#play','play','Play');timeline();checkpoint();
   }
 
+  window.addEventListener('popstate',()=>{dismissSuggestions();readMusicRoute();render();pageTop();});
+  function openBooth() {
+    view='dj';saveView();setMusicRoute(); query=''; $('#search').value='';syncSearchClear();
+    if(!greeted){message(greeting);greeted=true;}
+    dismissSuggestions(); render(); pageTop();
+  }
+
   function saveOptions() {
     persist(fadeSettingsKey,{fade});
     try{localStorage.setItem(fadeBackupKey,String(fade));}catch{}
