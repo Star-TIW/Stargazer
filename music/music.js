@@ -1405,7 +1405,7 @@
     $('#full-controls').hidden=!expanded;
     $('#expand-now').setAttribute('aria-expanded',String(expanded));
     $('#expand-now').setAttribute('aria-label',expanded?'Collapse Now playing':'Expand Now playing');
-    $('#expand-now').textContent=expanded?'×':'⤢';
+    // Keep the same centered SVG icon for both expand and collapse states.
     if(expanded)setMini(false);
     timeline();
   }
