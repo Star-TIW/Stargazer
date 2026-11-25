@@ -124,9 +124,7 @@ body:has(#dock:not([hidden])) .workspace { height:calc(100dvh - 246px); }
   .workspace > * { min-width:0; max-width:100%; }
   .rail { align-items:center; }
 }
-@media(max-width:768px) {
-  .header .navbar:not(.active) { right:0; transform:translateX(100%); display:none; }
-}
+/* Shared navbar animation is owned by home.css and particle-config.js. */
 
 .studio { isolation:isolate; position:relative; z-index:0; }
 #conversation { display:grid; gap:8px; margin:16px 0; max-height:240px; overflow:auto; }
@@ -479,3 +477,55 @@ body.has-held-queue #up-next {display:grid!important;}
 .artist-scroll-shelf>.related-artists {display:flex;flex-wrap:nowrap;align-items:stretch;gap:10px;overflow-x:auto;overscroll-behavior-inline:contain;scroll-snap-type:x proximity;scrollbar-width:thin;scrollbar-color:#79795f transparent;padding:5px 2px 12px;}
 .artist-scroll-shelf>.related-artists>.quick {flex:none;scroll-snap-align:start;}
 @media(max-width:760px){.artist-scroll-shelf .artist-scroll-arrows {display:flex;}}
+
+/* v55: shared menu slides exactly like home/live: no music-specific display override. */
+.music-toolbar #search-container.search-shell input[type="search"] {min-width:0;width:100%;padding-right:60px;text-overflow:ellipsis;}
+.music-toolbar input[type="search"]::-webkit-search-cancel-button,.music-toolbar input[type="search"]::-webkit-search-decoration {-webkit-appearance:none;appearance:none;display:none;}
+.music-toolbar #search-clear {right:6px;}
+#audio-dialog {overscroll-behavior:contain;overflow-y:auto;-webkit-overflow-scrolling:touch;max-height:min(85dvh,740px);}
+body:has(#audio-dialog[open]) {overscroll-behavior:none;}
+.artist-hero {align-items:flex-start;flex-wrap:wrap;column-gap:clamp(16px,3vw,36px);}
+.artist-hero .artist-back {flex:0 0 100%;width:max-content;margin:0 0 4px;align-self:flex-start;}
+.artist-hero>.artist-fallback,.artist-hero>img {flex:0 0 auto;align-self:flex-start;}
+.artist-hero>.artist-copy {flex:1 1 200px;min-width:0;}
+.artist-hero .artist-about summary {cursor:pointer;list-style:none;display:flex;align-items:center;gap:9px;padding:8px 0;}
+.artist-hero .artist-about summary::-webkit-details-marker {display:none;}
+.artist-hero .artist-about summary::before {content:'';display:inline-block;border-top:2px solid currentColor;border-right:2px solid currentColor;width:8px;height:8px;transform:rotate(45deg);transition:transform 250ms ease;flex:none;}
+.artist-hero .artist-about[open] summary::before {transform:rotate(135deg);}
+.artist-hero .artist-about {interpolate-size:allow-keywords;}
+.artist-hero .artist-about::details-content {block-size:0;opacity:0;overflow:hidden;transition:block-size 250ms ease,opacity 250ms ease;transition-behavior:allow-discrete;}
+.artist-hero .artist-about[open]::details-content {block-size:auto;opacity:1;}
+.artist-hero .artist-about p {line-height:1.55;margin:8px 0 4px;}
+@media(max-width:760px) {
+ .artist-hero {display:flex;flex-direction:column;align-items:flex-start;gap:16px;padding:clamp(20px,5vw,28px)!important;}
+ .artist-hero .artist-back {flex:none;order:0;margin:0;}
+ .artist-hero>.artist-fallback,.artist-hero>img {order:1;width:clamp(112px,38vw,170px);align-self:flex-start;}
+ .artist-hero>.artist-copy {order:2;flex:none;width:100%;max-width:100%;}
+ .artist-hero h2 {overflow-wrap:anywhere;}
+}
+#expand-now {display:grid;place-items:center;padding:6px;line-height:1;}
+#expand-now .expand-icon {display:block;width:24px;height:24px;stroke:currentColor;fill:none;flex:none;}
+#shuffle .shuffle-icon {width:24px;height:24px;stroke-width:2.2;}
+#shuffle[aria-pressed="true"],#full-shuffle[aria-pressed="true"] {color:#efef88!important;}
+#full-controls,.full-extra,.full-buttons,.loudness,.transport {min-width:0;max-width:100%;box-sizing:border-box;}
+body.full-now #now {overflow-x:hidden;max-width:100vw;box-sizing:border-box;}
+body.full-now #now #full-controls {max-width:calc(100vw - 32px);min-width:0;}
+body.full-now #now .full-extra {display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:8px;}
+body.full-now #now .full-extra button {flex:0 1 auto;min-width:0;padding:8px 10px;}
+body.full-now #now .full-extra input {flex:1 1 120px;min-width:90px;max-width:160px;}
+@media(max-width:400px){
+ body.full-now #now {padding-inline:12px!important;}
+ body.full-now #now #full-controls {padding:10px 8px;}
+ body.full-now .full-buttons {gap:12px;}
+ body.full-now .full-buttons button {width:44px;height:44px;}
+ body.full-now .full-buttons #full-play {width:52px;height:52px;}
+ body.full-now #now .full-extra button {font-size:12px;padding:7px 8px;}
+ .loudness {flex-wrap:wrap!important;gap:5px;justify-content:center;}
+ .loudness input[type=range] {min-width:65px;flex:1 1 65px;}
+ #sleep-timer {max-width:100px;}
+}
+.art-actions .queue-icon[aria-pressed="true"],.art-actions .add-track[aria-pressed="true"]{color:#efef88!important;border-color:#efef88!important;background:#4a4727!important;}
+.art-actions .queue-icon[aria-pressed="true"] svg {fill:none;stroke:currentColor;}
+.art-actions .toggle-pop {animation:music-toggle-pop 210ms cubic-bezier(.25,1.7,.5,1);}
+@keyframes music-toggle-pop {0%{transform:scale(.82)}60%{transform:scale(1.16)}100%{transform:scale(1)}}
+@media(prefers-reduced-motion:reduce){.art-actions .toggle-pop{animation:none}.artist-hero .artist-about::details-content,.artist-hero .artist-about summary::before{transition:none}}
