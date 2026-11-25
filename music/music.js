@@ -204,7 +204,13 @@
     }).then(rows=>{
       audioLibrary=rows.filter(t=>validSong(t) && /^[a-zA-Z0-9]+$/.test(t.audioId));
       resolvePreferred=StargazerSources.resolver(audioLibrary);
+      // A queued YouTube copy can resolve to direct audio after its next deck was cued.
+      // Drop that stale preload only; the currently playing deck is never rebuilt.
+      const previousUpcoming=queue[index+1];
       queue=queue.map((t,i)=>ready && i===index ? t : resolveAudio(t));
+      const currentUpcoming=queue[index+1];
+      if(ready && player instanceof CrossfadePlayer && previousUpcoming?.id===currentUpcoming?.id &&
+         Boolean(previousUpcoming?.audioId)!==Boolean(currentUpcoming?.audioId))player.clearNext();
       mix=mix.map(resolveAudio);
       if(currentTrack && !ready){currentTrack=resolveAudio(currentTrack);preview(currentTrack,queue.slice(index+1));}
     }).catch(error=>{audioCatalog=null;throw error;});
@@ -1383,6 +1389,9 @@
       if(failedPlayer){player?.destroy();player=null;failedPlayer=false;}
       if(player)player.switchTrack(track,start,sequential);
       else{
+        // Restore the selected fade duration before creating new media decks.
+        const storedFade=readSavedFade();
+        if(storedFade!==null && storedFade!==fade){fade=storedFade;$('#fade').value=String(fade);fadeLabel();}
         const decks=new CrossfadePlayer({track,start,next:()=>repeat||sleepBlocksAdvance()?null:resolveAudio(queue[index+1]),seconds:()=>fade,level:volume/100,muted,
           video:(t,immediate,offset)=>new YouTubeDeck(t,$('#mount'),playbackError,immediate,offset),
           state:code=>state({target:decks,data:code}),advance:()=>{if(sleepBlocksAdvance()){finishSleep();return;}load(index+1,0,true);},metadata:()=>timeline(),error:()=>playbackError('Audio could not start. Press Play to retry.')});
@@ -1471,6 +1480,32 @@
     $('#close').textContent=mini?'⌃':'×';$('#close').setAttribute('aria-label',mini?'Expand player':'Minimize player');
   }
   $('#close').onclick=()=>setMini(!mini);
+  let fullControlsIdle;
+  function setFullControlsVisible(visible){
+    $('#full-controls').hidden=!visible;
+    const button=$('#show-full-controls');
+    button.setAttribute('aria-label',visible?'Hide player controls':'Show player controls');
+    button.setAttribute('aria-pressed',String(visible));
+    button.title=visible?'Hide player controls':'Show player controls';
+  }
+  function armFullControlsIdle(){
+    clearTimeout(fullControlsIdle);
+    if(!document.body.classList.contains('full-now') || $('#full-controls').hidden)return;
+    fullControlsIdle=setTimeout(()=>{
+      if(document.body.classList.contains('full-now') &&
+         !$('#full-controls').contains(document.activeElement))setFullControlsVisible(false);
+    },8000);
+  }
+  $('#show-full-controls').onclick=()=>{
+    const visible=$('#full-controls').hidden;
+    setFullControlsVisible(visible);
+    if(visible)armFullControlsIdle();else clearTimeout(fullControlsIdle);
+  };
+  $('#full-controls').addEventListener('pointerdown',armFullControlsIdle);
+  $('#now').addEventListener('pointermove',event=>{
+    if(event.pointerType!=='touch' && document.body.classList.contains('full-now') &&
+       !$('#full-controls').hidden)armFullControlsIdle();
+  },{passive:true});
   let fullscreenAnimation;
   function toggleFullNow(){
     if(!queue[index])return;
@@ -1478,7 +1513,9 @@
     fullscreenAnimation?.cancel();
     const before=panel.getBoundingClientRect(),artBefore=art.getBoundingClientRect();
     const expanded=document.body.classList.toggle('full-now');
-    $('#full-controls').hidden=!expanded;
+    $('#show-full-controls').hidden=!expanded;
+    setFullControlsVisible(expanded);
+    if(expanded)armFullControlsIdle();else clearTimeout(fullControlsIdle);
     $('#expand-now').setAttribute('aria-expanded',String(expanded));
     $('#expand-now').setAttribute('aria-label',expanded?'Close full screen':'Expand Now playing');
     $('#expand-now').title=expanded?'Close full screen':'Expand Now playing';

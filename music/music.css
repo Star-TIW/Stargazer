@@ -627,3 +627,24 @@ body.full-now #now {transform-origin:top left;}
  .art-actions .queue-next.next-nudge .queue-next-glyph,.art-actions .queue-next.next-nudge::after {
    animation:none!important;}
 }
+
+/* v57: keep the fullscreen controls reveal above the YouTube iframe overlay. */
+#show-full-controls[hidden] {display:none!important;}
+body.full-now #now .now-heading {position:sticky;top:0;z-index:2147483001;
+  display:flex;align-items:center;gap:8px;width:100%;min-height:48px;
+  padding:5px 0;background:linear-gradient(180deg,#26271fec,#26271fbb);
+  border-radius:10px;}
+body.full-now #now .now-heading h2 {margin:0 auto 0 0;min-width:0;}
+#show-full-controls {flex:none;min-width:82px;min-height:42px;padding:7px 10px;
+  border-radius:22px;border:1px solid #efef8877;background:#292b20;
+  color:#efefaa;font-size:12px;font-weight:600;cursor:pointer;touch-action:manipulation;}
+#show-full-controls[aria-pressed=false] {background:#efef88;color:#171810;}
+body.full-now #now #full-controls {position:relative;z-index:3;}
+/* Play next remains a right-moving skip icon, not Add to queue's check. */
+.art-actions .queue-next .queue-next-glyph svg,
+.art-actions .queue-next[aria-pressed=true] .queue-next-glyph svg {
+  fill:currentColor!important;stroke:none!important;}
+.art-actions .queue-next.next-nudge .queue-next-glyph {color:#efef88!important;}
+.art-actions .queue-next.next-nudge {box-shadow:0 0 14px #efef8870;}
+@media(max-width:400px){#show-full-controls{min-width:72px;padding:7px 8px;font-size:11px;}}
+@media(prefers-reduced-motion:reduce){.art-actions .queue-next.next-nudge{transition:none!important;}}
