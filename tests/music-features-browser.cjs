@@ -56,6 +56,18 @@ const tracks=[
   await page.locator('.artist-hero h2').waitFor({state:'visible',timeout:30000});
   assert.match(await page.locator('.artist-hero h2').innerText(),/odesza/i);
   await page.locator('.artist-back').click();
+  await page.locator('[data-view="library"]').first().click();
+  await page.locator('[data-view="dj"]').first().click();
+  await page.goBack();
+  assert.match(new URL(page.url()).pathname,/library/);
+  await page.locator('[data-view="all"]').first().click();
+  const heart=page.locator('.tile .art-actions .save:not(.queue-icon):not(.add-track)').first();
+  await heart.waitFor({state:'visible'});
+  const prior=await page.evaluate(()=>localStorage.getItem('stargazer.music.saved.v1'));
+  await heart.click();
+  await page.locator('#queue-toast .toast-undo').click();
+  assert.deepEqual(await page.evaluate(()=>JSON.parse(localStorage.getItem('stargazer.music.saved.v1')||'[]')),JSON.parse(prior||'[]'));
+
   await page.locator('#sleep-timer').selectOption('15');
   assert.match(await page.locator('#sleep-countdown').innerText(),/14:|15:00/);
   await page.locator('#sleep-timer').selectOption('off');
