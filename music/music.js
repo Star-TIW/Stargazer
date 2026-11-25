@@ -326,7 +326,7 @@
   function saveLibrary(){persist(playlistKey,playlists);}
   function pageTop(){ $('.browse').scrollTop=0; document.documentElement.scrollTop=0; document.body.scrollTop=0; }
   function dismissSuggestions(){
-    clearTimeout(completionTimer); completionJob?.abort(); suggestions.hidden=true; suggestions.replaceChildren();
+    clearTimeout(completionTimer); completionJob?.abort(); suggestions.hidden=true; suggestions.replaceChildren();$('#search-scrim').hidden=true;
   }
   function navigate(next){
     dismissSuggestions(); view=next;saveView(); query=''; $('#search').value=''; render(); pageTop();
@@ -539,7 +539,7 @@
         suggestion.classList.add('completion-card');
         suggestions.append(suggestion);
       });
-      suggestions.hidden=false;
+      suggestions.hidden=false;$('#search-scrim').hidden=false;
     }
     const local=localSearch(term);draw(MusicLibrary.searchOrder(term,local));
     completionTimer=setTimeout(async()=>{try{const songs=await lookup(term,controller.signal);if(!controller.signal.aborted)draw(MusicLibrary.searchOrder(term,[...new Map([...local,...songs].map(t=>[t.id,t])).values()]));}catch{}},260);
