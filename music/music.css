@@ -387,3 +387,7 @@ body.full-now #dock {z-index:9000;}
 body.full-now .studio {isolation:auto!important;z-index:10001!important;}
 body.full-now .header,body.full-now .music-toolbar {visibility:hidden;pointer-events:none;}
 body.full-now #now {z-index:2147483000!important;}
+
+/* Lift fullscreen Now playing out of the studio stacking layer, above the site header. */
+body.full-now .studio {position:relative;z-index:100001!important;isolation:isolate;}
+body.full-now .header {pointer-events:none;}
