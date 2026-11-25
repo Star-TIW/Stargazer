@@ -704,31 +704,31 @@
   }
   function updateCover(track,direction){
     const art=$('#now-art');
-    const source=track.art?.startsWith('https://') ? track.art : '/stargazer-512.png';
+    const thumbnail='https://i.ytimg.com/vi/'+track.id+'/hqdefault.jpg';
+    const source=track.art?.startsWith('https://') ? track.art : thumbnail;
     if(coverTrack?.id===track.id && coverTrack.source===source)return;
+    const changing=Boolean(coverTrack);
     clearCoverSlide();
-    const slide=coverTrack && art.complete && art.naturalWidth &&
-      !matchMedia('(prefers-reduced-motion:reduce)').matches;
     coverTrack={id:track.id,source};
-    if(slide){
-      outgoingCover=art.cloneNode(false);
-      outgoingCover.removeAttribute('id');
-      outgoingCover.className='outgoing-cover';
-      outgoingCover.alt='';
-      art.after(outgoingCover);
-    }
+    const request=coverTrack;
     art.alt=track.title+' cover artwork';
-    art.onerror=()=>{art.onerror=null;art.src='/stargazer-512.png';};
-    if(art.getAttribute('src')!==source)art.src=source;
-    if(!slide)return;
-    const previous=outgoingCover;
-    art.decode().catch(()=>{}).then(()=>{
-      if(previous!==outgoingCover)return;
-      const timing={duration:350,easing:'cubic-bezier(.22,.68,.22,1)'};
-      art.animate([{transform:'translateX('+direction*100+'%)',opacity:.35},{transform:'translateX(0)',opacity:1}],timing);
-      const exit=previous.animate([{transform:'translateX(0)',opacity:1},{transform:'translateX('+direction*-100+'%)',opacity:.35}],timing);
-      exit.onfinish=()=>{if(previous===outgoingCover){previous.remove();outgoingCover=null;}};
-    });
+    art.onerror=()=>{
+      if(coverTrack!==request)return;
+      if(art.getAttribute('src')!==thumbnail && art.getAttribute('src')!=='/stargazer-512.png')art.src=thumbnail;
+      else if(art.getAttribute('src')!=='/stargazer-512.png')art.src='/stargazer-512.png';
+      else art.onerror=null;
+    };
+    // Hide the previous bitmap while the new source decodes.
+    art.style.visibility='hidden';
+    art.src=source;
+    const reveal=()=>{
+      if(coverTrack!==request)return;
+      art.style.visibility='';
+      if(changing && !matchMedia('(prefers-reduced-motion:reduce)').matches)
+        art.animate([{opacity:.25,transform:'translateX('+direction*12+'px)'},{opacity:1,transform:'none'}],{duration:350,easing:'cubic-bezier(.22,.68,.22,1)'});
+    };
+    art.onload=reveal;
+    if(art.complete && art.naturalWidth)reveal();
   }
   function preview(track,next,direction=1) {
     $('#idle').hidden=true;$('#now-title').textContent=track.title; $('#now-artist').textContent=track.artist;
