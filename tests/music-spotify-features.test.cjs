@@ -28,7 +28,8 @@ test('Part 3: all keyboard shortcuts are handled while respecting text fields',(
 test('Part 3: minimize and fullscreen keep the live queue',()=>{
  assert.ok(js.includes("$('#close').onclick=()=>setMini(!mini)"));
  assert.ok(js.includes("document.body.classList.toggle('full-now')"));
- assert.ok(js.includes("$('#full-controls').hidden=!expanded"));
+ assert.ok(js.includes("setFullControlsVisible(expanded)"));
+ assert.ok(js.includes("$('#show-full-controls').hidden=!expanded"));
  assert.ok(css.includes('body.full-now #now'));
  assert.ok(html.includes('id="full-seek"'));
 });
