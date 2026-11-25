@@ -648,3 +648,23 @@ body.full-now #now #full-controls {position:relative;z-index:3;}
 .art-actions .queue-next.next-nudge {box-shadow:0 0 14px #efef8870;}
 @media(max-width:400px){#show-full-controls{min-width:72px;padding:7px 8px;font-size:11px;}}
 @media(prefers-reduced-motion:reduce){.art-actions .queue-next.next-nudge{transition:none!important;}}
+
+/* v60: playlist navigation matches the compact artist Back pill at all widths. */
+.playlist-hero {align-items:flex-start;flex-wrap:wrap;column-gap:clamp(16px,3vw,36px);
+  padding:clamp(20px,4vw,48px);margin-bottom:24px;border-radius:16px;
+  background:linear-gradient(130deg,#62603b,#22241d);overflow-wrap:anywhere;}
+.playlist-hero>.playlist-back {display:inline-flex!important;align-items:center;justify-content:center;
+  align-self:flex-start!important;flex:0 0 auto!important;width:auto!important;
+  max-width:max-content!important;min-width:0!important;margin:0 0 4px!important;
+  padding:9px 15px!important;white-space:nowrap;text-align:left;}
+.playlist-hero>.playlist-covers {flex:0 0 auto;align-self:flex-start;}
+.playlist-hero>.playlist-details {flex:1 1 200px;min-width:0;}
+.library-actions .playlist-shuffle {display:inline-flex;align-items:center;justify-content:center;gap:8px;}
+.library-actions .playlist-shuffle .shuffle-icon {display:block;width:19px;height:19px;
+  flex:none;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;}
+@media(max-width:760px){
+  .playlist-hero {flex-direction:column;align-items:flex-start;gap:16px;padding:clamp(20px,5vw,28px)!important;}
+  .playlist-hero>.playlist-back {order:0;margin:0;}
+  .playlist-hero>.playlist-covers {order:1;width:clamp(112px,38vw,170px);}
+  .playlist-hero>.playlist-details {order:2;flex:none;width:100%;max-width:100%;}
+}

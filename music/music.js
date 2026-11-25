@@ -665,7 +665,8 @@
     listCover(currentList,covers);
     const info=element('div','playlist-details');
     info.append(element('small','eyebrow','YOUR PLAYLIST'),element('h2','',currentList.name),element('p','',currentList.description||'Add a description to personalize this playlist.'));
-    hero.append(covers,info);catalog.append(hero);
+    const backButton=button('‹ Library',()=>navigate('library'),'library-action artist-back playlist-back');
+    hero.append(backButton,covers,info);catalog.append(hero);
     const tools=element('div','library-actions');catalog.append(tools);
     if(currentList.shared&&!playlists.some(p=>p.id===currentList.id)){
       tools.append(button('Save to Library',()=>{
@@ -675,11 +676,18 @@
     if(currentList.tracks.length){
       const tracks=currentList.tracks;
       const toggle=button('▶ Play',()=>{if(queue[index]&&tracks.some(t=>t.id===queue[index].id)&&player?.getPlayerState()===1)player.pauseVideo();else if(queue[index]&&tracks.some(t=>t.id===queue[index].id))player?.playVideo();else openPlayer(tracks[0],tracks);updatePlaylistButton();},'library-action primary-play');toggle.id='playlist-play';tools.append(toggle);updatePlaylistButton();
-      if(tracks.length>1)tools.append(button('⤨ Shuffle',()=>{
-        const order=MusicLibrary.shuffle(tracks);openPlayer(order[0],order);
-      }));
+      if(tracks.length>1){
+        const shuffleButton=button('Shuffle',()=>{
+          const order=MusicLibrary.shuffle(tracks);openPlayer(order[0],order);
+        },'library-action playlist-shuffle');
+        const icon=document.createElementNS('http://www.w3.org/2000/svg','svg');
+        icon.setAttribute('class','control-icon shuffle-icon');icon.setAttribute('aria-hidden','true');
+        const use=document.createElementNS('http://www.w3.org/2000/svg','use');
+        use.setAttribute('href','#icon-shuffle');icon.append(use);
+        shuffleButton.prepend(icon);tools.append(shuffleButton);
+      }
     }
-    tools.append(button('‹ Library',()=>navigate('library')),button('Add songs',()=>openPlaylistPicker(currentList)),
+    tools.append(button('Add songs',()=>openPlaylistPicker(currentList)),
       button('Rename',()=>{openDialog('Rename playlist');nameForm(currentList.name,name=>{currentList.name=name;saveLibrary();dialog.close();render();},'Save');}),
       button('Description',()=>{
         openDialog('Edit description');

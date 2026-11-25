@@ -9,8 +9,8 @@ test('v58 transition preferences remain in localStorage across service-worker up
  assert.match(js,/const restored=readSavedFade\(\)/);
  assert.ok(!sw.includes('localStorage.clear('));
  assert.ok(!sw.includes("localStorage.removeItem('stargazer.music.audio-options')"));
- assert.match(sw,/stargazer-cache-v59/);
- assert.ok(shell.includes('/music/music.js?v=59'));
+ assert.match(sw,/stargazer-cache-v60/);
+ assert.ok(shell.includes('/music/music.js?v=60'));
 });
 
 test('v58 artist deep links do not capitalize an unresolved slug',()=>{
@@ -29,4 +29,19 @@ test('v58 artist Songs, Popular and Fans also like have scroll controls',()=>{
  assert.match(css,/\.artist-scroll-shelf \.popular-songs\s*\{[^}]*overflow-x:auto/s);
  assert.match(css,/\.artist-scroll-shelf>\.related-artists\s*\{[^}]*overflow-x:auto/s);
  assert.match(css,/\.artist-scroll-shelf \.artist-scroll-arrows\s*\{display:flex/s);
+});
+
+
+test('v60 playlist Back matches artist header and Shuffle shares player SVG',()=>{
+ assert.match(js,/hero\.append\(backButton,covers,info\)/);
+ assert.match(js,/library-action artist-back playlist-back/);
+ assert.doesNotMatch(js,/tools\.append\(button\('‹ Library'/);
+ assert.match(css,/\.playlist-hero>\.playlist-back \{display:inline-flex!important/);
+ assert.match(css,/\.playlist-hero>\.playlist-back \{[^}]*width:auto!important/s);
+ assert.match(css,/@media\(max-width:760px\)\{[\s\S]*?\.playlist-hero>\.playlist-back \{order:0/);
+ assert.match(js,/icon\.setAttribute\('class','control-icon shuffle-icon'\)/);
+ assert.match(js,/use\.setAttribute\('href','#icon-shuffle'\)/);
+ assert.match(css,/\.library-actions \.playlist-shuffle \.shuffle-icon \{[^}]*stroke:currentColor/s);
+ assert.match(shell,/<symbol id="icon-shuffle"/);
+ assert.equal((js.match(/button\('⤨ Shuffle'/g)||[]).length,0);
 });

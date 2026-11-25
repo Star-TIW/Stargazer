@@ -19,8 +19,8 @@ test('v58 keeps the selected 12-second fade across reload and cache changes',()=
   });
   assert.equal(value,12);
   assert.match(js,/const storedFade=readSavedFade\(\)/);
-  assert.match(html,/music\/music\.js\?v=59/);
-  assert.match(fs.readFileSync(path.join(root,'service-worker.js'),'utf8'),/stargazer-cache-v59/);
+  assert.match(html,/music\/music\.js\?v=60/);
+  assert.match(fs.readFileSync(path.join(root,'service-worker.js'),'utf8'),/stargazer-cache-v60/);
 });
 
 test('audio library resolving a queued YouTube copy discards only the stale incoming deck',async()=>{
