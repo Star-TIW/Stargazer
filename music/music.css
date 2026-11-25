@@ -668,3 +668,15 @@ body.full-now #now #full-controls {position:relative;z-index:3;}
   .playlist-hero>.playlist-covers {order:1;width:clamp(112px,38vw,170px);}
   .playlist-hero>.playlist-details {order:2;flex:none;width:100%;max-width:100%;}
 }
+
+/* v61: count-aware cover mosaics shared by playlist headers, library and Made for you. */
+.playlist-mosaic {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:repeat(2,minmax(0,1fr));gap:0;overflow:hidden;}
+.playlist-mosaic[data-cover-count="0"],.playlist-mosaic[data-cover-count="1"] {grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr);}
+.playlist-mosaic[data-cover-count="2"] {grid-template-rows:minmax(0,1fr);}
+.playlist-mosaic[data-cover-count="3"]>:first-child {grid-row:span 2;}
+.playlist-mosaic>* {display:grid;place-items:center;width:100%;height:100%;min-width:0;min-height:0;object-fit:cover;background:linear-gradient(125deg,#706b40,#23251d);color:#efef88;}
+.made-collage.playlist-mosaic {grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:repeat(2,minmax(0,1fr));}
+.made-collage.playlist-mosaic[data-cover-count="0"],.made-collage.playlist-mosaic[data-cover-count="1"] {grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr);}
+.made-collage.playlist-mosaic[data-cover-count="2"] {grid-template-rows:minmax(0,1fr);}
+.library-playlist {display:inline-flex;align-items:center;gap:8px;}
+.library-playlist-cover {width:48px;aspect-ratio:1;flex:none;border-radius:6px;}

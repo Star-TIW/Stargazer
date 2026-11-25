@@ -622,7 +622,13 @@
       openDialog('New playlist');nameForm('',name=>{dialog.close();selectList(newList(name,[]));},'Create');
     }),button('Import playlist',importDialog),button('♥ Liked songs · '+saved.length,()=>navigate('saved')));
     const lists=shelf('Playlists'); lists.className='list-choices';
-    playlists.forEach(list=>lists.append(button(list.name+' · '+list.tracks.length,()=>selectList(list))));
+    playlists.forEach(list=>{
+      const item=button('',()=>selectList(list),'library-action library-playlist');
+      const art=element('span','library-playlist-cover');
+      listCover(list,art);
+      item.append(art,element('span','',list.name+' · '+list.tracks.length));
+      lists.append(item);
+    });
     if(!playlists.length){
       const empty=element('div','empty-state');empty.append(element('span','empty-icon','▤'),element('p','','Your library is ready for your first playlist.'));
       empty.append(button('Create playlist',()=>{openDialog('New playlist');nameForm('',name=>{dialog.close();selectList(newList(name,[]));},'Create');},'library-action primary-play'));lists.append(empty);
@@ -635,10 +641,20 @@
   }
   function listCover(list,target){
     target.replaceChildren();
-    for(let i=0;i<4;i++){
-      const track=list.tracks[i];
-      if(track?.art?.startsWith('https://')){const img=element('img');img.src=track.art;img.alt='';img.onerror=()=>{img.replaceWith(element('span','','♫'));};target.append(img);}
-      else target.append(element('span','',track?'♫':'♪'));
+    const tracks=(list?.tracks||[]).slice(0,4);
+    target.classList.add('playlist-mosaic');
+    target.dataset.coverCount=String(tracks.length);
+    target.setAttribute('aria-hidden','true');
+    const fallback=()=>element('span','','♪');
+    if(!tracks.length){target.append(fallback());return;}
+    for(const track of tracks){
+      if(track?.art?.startsWith('https://')){
+        const img=element('img');
+        img.alt='';
+        img.onerror=()=>img.replaceWith(fallback());
+        img.src=track.art;
+        target.append(img);
+      }else target.append(fallback());
     }
   }
   function enablePlaylistReorder(body,list){
@@ -945,7 +961,7 @@
         recentSearches.slice(0,6).forEach(term=>section.append(button(term,()=>search(term),'recent-search')));
       }
       const dj=shelf('Made for you');dj.className='made-grid';
-      dj.classList.add('made-grid');const feature=(title,tracks,action)=>{const item=button('',action,'made-card');const art=element('span','made-collage');const picks=[...tracks,...ranked()].slice(0,4);for(let i=0;i<4;i++){const t=picks[i];const img=element('img');img.alt='';img.src=t?.art?.startsWith('https://')?t.art:'/stargazer-512.png';img.onerror=()=>{img.onerror=null;img.src='/stargazer-512.png';};art.append(img);}item.append(art,element('strong','',title));return item;};
+      dj.classList.add('made-grid');const feature=(title,tracks,action)=>{const item=button('',action,'made-card');const art=element('span','made-collage');listCover({tracks},art);item.append(art,element('strong','',title));return item;};
       dj.append(feature('Stargazer DJ',mix,openBooth),feature('Liked songs',saved,()=>navigate('saved')),feature('Daily mix',ranked(),()=>{openBooth();generateMix();}),feature('On repeat',history.slice().sort((a,b)=>b.plays-a.plays).map(e=>e.track),()=>search(history[0]?.track?.artist||'')));
       if(personal) songRow(chartHeading,releases);
       quickPicks();
