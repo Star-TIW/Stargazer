@@ -529,3 +529,53 @@ body.full-now #now .full-extra input {flex:1 1 120px;min-width:90px;max-width:16
 .art-actions .toggle-pop {animation:music-toggle-pop 210ms cubic-bezier(.25,1.7,.5,1);}
 @keyframes music-toggle-pop {0%{transform:scale(.82)}60%{transform:scale(1.16)}100%{transform:scale(1)}}
 @media(prefers-reduced-motion:reduce){.art-actions .toggle-pop{animation:none}.artist-hero .artist-about::details-content,.artist-hero .artist-about summary::before{transition:none}}
+
+
+/* v56 compact artist back button, real-height About animation and matched player controls. */
+.artist-hero>.artist-back {display:inline-flex!important;align-items:center;justify-content:center;
+  align-self:flex-start!important;flex:0 0 auto!important;width:auto!important;
+  max-width:max-content!important;min-width:0!important;margin:0 0 4px!important;
+  padding:9px 15px!important;white-space:nowrap;text-align:left;}
+.artist-hero .artist-about::details-content,.artist-hero .artist-about[open]::details-content {
+  block-size:auto!important;opacity:1!important;transition:none!important;}
+.artist-hero .artist-about-content {overflow:hidden;will-change:height,opacity;}
+.artist-hero .artist-about summary::before {transition:transform 280ms ease;}
+#repeat,#full-repeat {position:relative;}
+.repeat-one-badge {display:none;position:absolute;right:2px;bottom:1px;
+  background:#efef88;color:#181910;font-size:9px;font-weight:800;line-height:1;
+  border-radius:3px;padding:2px 3px;pointer-events:none;}
+#repeat[data-repeat-mode="one"] .repeat-one-badge,#full-repeat[data-repeat-mode="one"] .repeat-one-badge {display:block;}
+#full-controls:not([hidden]) .full-buttons {display:flex;justify-content:center;align-items:center;
+  flex-wrap:nowrap;gap:clamp(5px,1.8vw,12px);}
+#full-controls .full-buttons button {display:grid;place-items:center;flex:0 1 48px;
+  width:clamp(39px,11vw,48px);height:clamp(39px,11vw,48px);
+  min-width:0;min-height:0;border-radius:50%;padding:8px;box-sizing:border-box;}
+#full-controls .full-buttons #full-play {flex:0 0 clamp(48px,13vw,56px);
+  width:clamp(48px,13vw,56px);height:clamp(48px,13vw,56px);}
+#full-controls .full-buttons .control-icon {width:24px;height:24px;max-width:100%;max-height:100%;
+  fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+#full-controls .full-extra {display:flex;flex-wrap:nowrap;justify-content:center;align-items:center;
+  gap:14px;max-width:min(300px,100%);margin-inline:auto;}
+#full-controls .full-extra #full-mute {display:grid;place-items:center;flex:0 0 44px;
+  width:44px!important;height:44px!important;border-radius:50%!important;
+  padding:9px!important;background:#2f3028!important;color:#f8f8ef!important;
+  border:1px solid #efef8840!important;}
+#full-controls .full-extra #full-mute[aria-pressed=true] {color:#efef88!important;border-color:#efef88!important;}
+#full-controls .full-extra #full-mute .control-icon {width:22px;height:22px;fill:none;
+  stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+#full-controls .full-extra input[type=range] {min-width:70px;flex:1 1 140px;max-width:210px;}
+#full-controls .full-buttons #full-shuffle[aria-pressed=true],
+#full-controls .full-buttons #full-repeat[aria-pressed=true] {
+  color:#efef88!important;background:#333523!important;border-color:#efef88!important;}
+#shuffle[aria-pressed=true],#repeat[aria-pressed=true] {
+  color:#efef88!important;background:#333523!important;border-color:#efef88!important;}
+#expand-now svg[hidden] {display:none!important;}
+#expand-now .close-full-icon {display:block;width:24px;height:24px;stroke:currentColor;fill:none;}
+body.full-now #now {transform-origin:top left;}
+@media(max-width:400px){
+ #full-controls .full-buttons {gap:5px!important;}
+ #full-controls .full-buttons button {flex:0 1 42px;width:42px;height:42px;padding:8px;}
+ #full-controls .full-buttons #full-play {flex:0 0 50px;width:50px;height:50px;}
+ #full-controls .full-extra {flex-wrap:nowrap!important;}
+ #full-controls .full-extra #full-mute {flex-basis:42px!important;width:42px!important;height:42px!important;}
+}
