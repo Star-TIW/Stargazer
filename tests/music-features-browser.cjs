@@ -71,6 +71,8 @@ const tracks=[
 
   await page.locator('#sleep-timer').selectOption('15');
   assert.match(await page.locator('#sleep-countdown').innerText(),/14:|15:00/);
+  await page.reload({waitUntil:'domcontentloaded'});
+  assert.match(await page.locator('#sleep-countdown').innerText(),/14:|15:00/);
   await page.locator('#sleep-timer').selectOption('off');
   assert.equal(await page.locator('#sleep-countdown').innerText(),'');
   await page.locator('#search').fill('ODESZA');
@@ -85,6 +87,18 @@ const tracks=[
   await page.locator('#catalog .grid .tile .pick').first().waitFor({timeout:30000});
   await page.locator('#catalog .grid .tile .pick').first().click();
   assert.deepEqual(await page.evaluate(()=>{const s=JSON.parse(localStorage.getItem('stargazer.music.session.v1'));return s.queue.slice(s.index+1).filter(t=>t.userQueued).map(t=>t.id);}),manual);
+  await page.evaluate(()=>{localStorage.removeItem('stargazer.music.session.v1');});
+  await page.goto(BASE,{waitUntil:'domcontentloaded'});
+  const row=page.locator('.row-fade-frame').first();
+  await row.waitFor({timeout:30000});
+  const scroll=row.locator('.song-row');
+  if(await scroll.evaluate(n=>n.scrollWidth>n.clientWidth)){
+    assert.ok(await row.locator('.right-edge').isVisible());
+    assert.ok(!(await row.locator('.left-edge').isVisible()));
+    await scroll.evaluate(n=>n.scrollLeft=n.scrollWidth);
+    await row.locator('.right-edge').waitFor({state:'hidden'});
+    assert.ok(await row.locator('.left-edge').isVisible());
+  }
   await page.screenshot({path:'music-features-400px.png'});
   console.log('PASS deep link, playlist queue edit, persistent reorder/clear, mini, fullscreen, Space, search empty, DJ reload and artist route');
  }finally{await page.close();await browser.close();}
