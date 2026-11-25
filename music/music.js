@@ -83,9 +83,11 @@
       const settings=JSON.parse(localStorage.getItem(fadeSettingsKey));
       const primary=Number(settings?.fade);
       if(settings?.fade!==undefined && settings?.fade!==null && settings?.fade!=='' && Number.isInteger(primary) && primary>=0 && primary<=12)return primary;
+    }catch { /* An invalid primary setting must not hide the backup. */ }
+    try {
       const backup=localStorage.getItem(fadeBackupKey);
       if(backup!==null && Number.isInteger(Number(backup)) && Number(backup)>=0 && Number(backup)<=12)return Number(backup);
-    }catch { /* Invalid or unavailable saved preferences must not break playback. */ }
+    }catch { /* Private browsing can disable storage. */ }
     return null;
   }
   let fade=readSavedFade()??0, previousPlan=null, greeted=false;
