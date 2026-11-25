@@ -23,7 +23,7 @@
   </header>
   <main class="studio">
     <div class="music-toolbar">
-      <form id="search-container" class="search-shell" role="search"><button class="search-icon" type="submit" aria-label="Search">⌕</button><input id="search" enterkeyhint="search" autocapitalize="none" type="search" autocomplete="off" maxlength="120" aria-label="Search official songs and artists" placeholder="Search songs &amp; artists…"><div id="completions" aria-label="Search suggestions" hidden></div></form>
+      <form id="search-container" class="search-shell" role="search"><button class="search-icon" type="submit" aria-label="Search">⌕</button><input id="search" enterkeyhint="search" autocapitalize="none" type="search" autocomplete="off" maxlength="120" aria-label="Search official songs and artists" placeholder="Search songs &amp; artists…"><button id="search-clear" type="button" aria-label="Clear search" title="Clear search" hidden>×</button><div id="completions" aria-label="Search suggestions" hidden></div></form>
         <button id="audio-settings" aria-label="Playback settings" title="Playback settings">⚙</button>
     </div>
     <div class="workspace">
@@ -31,7 +31,7 @@
         <button data-view="all" aria-label="Discover music" title="Discover music" aria-pressed="true">♫</button>
         <button data-view="library" aria-label="Your library" title="Your library" aria-pressed="false">▤</button>
         <button data-view="dj" aria-label="Stargazer DJ" title="Stargazer DJ" aria-pressed="false">DJ</button>
-        <div id="shortcuts"></div>
+        <span class="rail-heading">Recent</span><div id="shortcuts"></div>
       </nav>
       <section class="browse" aria-label="Browse music">
         <section id="dj-card" hidden>
@@ -44,7 +44,7 @@
         <div id="playlists"></div>
         <div id="catalog" aria-live="polite"></div>
       </section>
-      <aside id="now"><h2>Now playing</h2><p id="idle">Choose a song to start your station.</p><div id="visual"><div id="mount" hidden></div><img id="now-art" alt="" hidden></div><strong id="now-title"></strong><span id="now-artist"></span><h3>Up next</h3><div id="up-next"></div></aside>
+      <aside id="now"><h2>Now playing</h2><p id="idle">Choose a song to start your station.</p><div id="visual"><div id="mount" hidden></div><img id="now-art" alt="" hidden></div><strong id="now-title"></strong><span id="now-artist"></span><div class="queue-heading"><h3>Up next</h3><button id="clear-queue" aria-label="Clear manually queued songs" hidden>Clear queue</button></div><div id="up-next"></div></aside>
     </div>
   </main>
   <dialog id="library-dialog" aria-labelledby="library-dialog-title"><header><h2 id="library-dialog-title"></h2><button id="library-close" aria-label="Close">×</button></header><div id="library-dialog-body"></div></dialog>
@@ -52,16 +52,17 @@
     <section class="transition-settings"><label for="fade">Song transition <output id="fade-value" for="fade"></output></label>
       <input type="range" id="fade" min="0" max="12" step="1" value="0">
       <div class="range-limits"><span>Off</span><span>12 seconds</span></div>
-      <p>YouTube and direct audio can overlap when the next track is ready. Between two YouTube videos, the first fades out before the second starts.</p>
+      <p>Crossfade between songs when the next source is ready. YouTube-to-YouTube transitions use the same video player and cannot overlap.</p>
     </section>
+    <section class="music-preferences"><h3>Music preferences</h3><label><input id="explicit-filter" type="checkbox"> Hide songs marked explicit</label><label for="music-particles">Particle effects</label><select id="music-particles"><option value="keep">Keep current effect</option><option value="off">Off</option><option value="stars">Stars</option></select><label for="music-language">Language</label><select id="music-language"><option value="en-US">English</option><option value="es-ES">Español</option><option value="fr-FR">Français</option></select><p>Music volume is adjustable in the player. Loudness normalization across YouTube and direct audio is unavailable because source audio cannot always be measured.</p></section>
     <button id="enable-model" hidden>Download on-device DJ model</button><p id="model-status" role="status"></p>
     <form method="dialog"><button>Done</button></form></dialog>
   <aside id="dock" aria-label="Music player" hidden>
-    <div class="dock-head"><strong id="playing"></strong><button id="close" aria-label="Close player">×</button></div>
+    <div class="dock-head"><img id="dock-cover" src="/stargazer-512.png" alt=""><strong id="playing"></strong><span id="loading" role="status" hidden>Loading…</span><button id="close" aria-label="Minimize player" title="Minimize player">×</button></div>
 
     <div class="transport">
       <div class="buttons">
-        <button id="shuffle" aria-label="Shuffle upcoming songs" title="Shuffle upcoming songs">⤨</button>
+        <button id="shuffle" aria-pressed="false" aria-label="Shuffle upcoming songs" title="Shuffle upcoming songs">⤨</button>
         <button id="previous" aria-label="Previous track" title="Previous track"><svg class="control-icon" aria-hidden="true"><use href="#icon-previous"/></svg></button>
         <button id="play" aria-label="Play" title="Play"><svg class="control-icon" aria-hidden="true"><use href="#icon-play"/></svg></button>
         <button id="next" aria-label="Next track" title="Next track"><svg class="control-icon" aria-hidden="true"><use href="#icon-next"/></svg></button>
