@@ -345,7 +345,7 @@
     for(const b of document.querySelectorAll('.art-actions button[data-track-id]')){
       const id=b.dataset.trackId;
       const pressed=b.classList.contains('queue-next')?nextTrack?.id===id && (queue[index] ? nextTrack.userQueued === true && nextTrack.queueAction==='next' : heldQueue[0]?.next === true):
-        b.classList.contains('queue-add')?upcoming.some(t=>t.id===id && t.userQueued===true && t.queueAction!=='next'):
+        b.classList.contains('queue-add')?(queue[index] ? upcoming.some(t=>t.id===id && t.userQueued===true && t.queueAction!=='next') : heldQueue.some(item=>item.track.id===id && !item.next)):
         b.classList.contains('add-track')?playlists.some(p=>p.tracks.some(t=>t.id===id)):false;
       const current=String(Boolean(pressed));
       if(b.dataset.buttonState===current)continue;
