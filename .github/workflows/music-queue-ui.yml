@@ -25,26 +25,26 @@ jobs:
         run: |
           npm install --no-save playwright@1.56.1
           npx playwright install --with-deps chromium
-      - name: Verify v55 Cloudflare preview and music routes
+      - name: Verify v56 Cloudflare preview and music routes
         run: |
           host=https://st4rg4zer-test.st4rg4zer.pages.dev
           ready=0
           for i in $(seq 1 40); do
-            if curl --max-time 10 -fsSL "$host/service-worker.js?qa=$i" | grep -q 'stargazer-cache-v55'; then ready=1; break; fi
+            if curl --max-time 10 -fsSL "$host/service-worker.js?qa=$i" | grep -q 'stargazer-cache-v56'; then ready=1; break; fi
             sleep 3
           done
-          if [ "$ready" = 0 ]; then echo "Cloudflare v55 preview unavailable"; exit 1; fi
+          if [ "$ready" = 0 ]; then echo "Cloudflare v56 preview unavailable"; exit 1; fi
           for route in 'artist/rl-grime?track=xnfi1Jv8yK8' 'playlist/test' library library/ dj saved; do
             title=$(curl -fsSL "$host/music/$route" | grep -o '<title>[^<]*</title>' | head -1)
             echo "$host/music/$route => $title"
             [ "$title" = '<title>Music · Stargazer</title>' ] || exit 1
           done
-          curl -fsSL "$host/music/music.css?v=55" | grep -q 'artist-scroll-shelf'
-          curl -fsSL "$host/music/music.js?v=55" | grep -q 'fadeBackupKey'
+          curl -fsSL "$host/music/music.css?v=56" | grep -q 'artist-scroll-shelf'
+          curl -fsSL "$host/music/music.js?v=56" | grep -q 'fadeBackupKey'
       - name: Check Vercel deployment (non-blocking while rate-limited)
         continue-on-error: true
         run: |
-          curl --max-time 10 -fsSL https://stargazer-test.vercel.app/service-worker.js | grep -q 'stargazer-cache-v55'
+          curl --max-time 10 -fsSL https://stargazer-test.vercel.app/service-worker.js | grep -q 'stargazer-cache-v56'
       - name: Assert 400px artwork layout and nonplaying queue clicks
         env:
           STARGAZER_QA_URL: https://st4rg4zer-test.st4rg4zer.pages.dev/music/
