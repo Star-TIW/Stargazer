@@ -35,7 +35,7 @@ const BASE=process.env.STARGAZER_QA_URL||'https://st4rg4zer-test.st4rg4zer.pages
   const fullTimes=page.locator('.full-times');
   assert.equal(await fullTimes.locator('.full-time-current .sr-only').innerText().then(s=>s.trim()),'Elapsed time:');
   assert.equal(await fullTimes.locator('.full-time-total .sr-only').innerText().then(s=>s.trim()),'Total duration:');
-  assert.equal(await fullTimes.locator('.full-time-divider').innerText(),'/');
+  assert.equal(await fullTimes.locator('.full-time-divider').innerText().then(s=>s.trim()),'/');
   await page.evaluate(()=>localStorage.setItem('stargazer.music.session.v1',JSON.stringify({
     queue:[{source:'youtube',id:'abcdefghijk',title:'QA current',artist:'Stargazer QA'},
       {source:'youtube',id:'lmnopqrstuv',title:'QA upcoming',artist:'Stargazer QA',userQueued:true}],
