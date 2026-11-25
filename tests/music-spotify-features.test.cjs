@@ -14,7 +14,7 @@ test('Part 3: shareable paths, playlist IDs and history navigation',()=>{
 test('Part 3: media session supports video and direct audio with lock-screen commands',()=>{
  for(const action of ['play:','pause:','nexttrack:','previoustrack:','seekto:','seekbackward:','seekforward:'])assert.ok(js.includes(action),action);
  assert.ok(js.includes('session.metadata=track?new MediaMetadata'));
- assert.ok(js.includes('session.setPositionState'));
+ assert.ok(js.includes('navigator.mediaSession.setPositionState'));
  assert.ok(js.includes("session.setActionHandler(name,track?handler:null)"));
  assert.ok(!js.includes("session.playbackState=native?'paused':'none'"));
 });
