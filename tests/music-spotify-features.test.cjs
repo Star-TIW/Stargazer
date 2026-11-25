@@ -40,7 +40,7 @@ test('Part 3: context menu gives all seven actions',()=>{
 });
 test('Part 3: song radio and listening history remain integrated',()=>{
  assert.ok(js.includes("songRow('Recently played'"));
- assert.ok(js.includes("radioJob?.abort();station=true;queue=withHeldQueue([track,...same,...others],0);load(0)"));
+ assert.ok(js.includes("radioJob?.abort();station=true;queue=withHeldQueue([track,...same,...others],0);load(0,0,false,false,false,true)"));
  assert.ok(js.includes("shelf('Following')"));
 });
 test('Part 3: sleep timer fades volume and can stop at song end',()=>{
