@@ -467,3 +467,15 @@ body.has-held-queue #up-next {display:grid!important;}
 .row-fade-frame .row-edge:not([hidden]) {display:block!important;opacity:1!important;visibility:visible!important;width:64px!important;z-index:100!important;pointer-events:none!important;}.row-fade-frame>.song-row {position:relative;z-index:0;min-width:0;max-width:100%;}.full-extra {display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:10px;margin:12px 0;}.full-extra button {padding:8px 12px;border-radius:10px;background:#24251e;color:#fff;border:1px solid #777;}.full-extra button[aria-pressed=true]{color:#efef88;border-color:#efef88;}.full-extra input {width:min(150px,100%);}
 
 .row-fade-frame {background:#121212;}
+
+
+/* v54: artist shelves use the same scroll affordances as Discover without altering playback cards. */
+.artist-scroll-shelf {position:relative;min-width:0;}
+.artist-scroll-shelf .artist-scroll-arrows {display:flex;justify-content:flex-end;gap:8px;margin:-44px 0 12px;}
+.artist-scroll-shelf>.grid {display:grid;grid-auto-flow:column;grid-template-columns:none;grid-auto-columns:clamp(128px,13vw,178px);align-items:start;overflow-x:auto;overscroll-behavior-inline:contain;scroll-snap-type:x proximity;scrollbar-width:thin;scrollbar-color:#79795f transparent;padding:8px 2px 12px;}
+.artist-scroll-shelf>.grid>.tile {scroll-snap-align:start;}
+.artist-scroll-shelf .popular-songs {display:grid;grid-auto-flow:column;grid-template-columns:none;grid-auto-columns:clamp(210px,30vw,325px);overflow-x:auto;overscroll-behavior-inline:contain;scroll-snap-type:x proximity;scrollbar-width:thin;scrollbar-color:#79795f transparent;padding:5px 2px 12px;}
+.artist-scroll-shelf .popular-song {height:100%;scroll-snap-align:start;}
+.artist-scroll-shelf>.related-artists {display:flex;flex-wrap:nowrap;align-items:stretch;gap:10px;overflow-x:auto;overscroll-behavior-inline:contain;scroll-snap-type:x proximity;scrollbar-width:thin;scrollbar-color:#79795f transparent;padding:5px 2px 12px;}
+.artist-scroll-shelf>.related-artists>.quick {flex:none;scroll-snap-align:start;}
+@media(max-width:760px){.artist-scroll-shelf .artist-scroll-arrows {display:flex;}}
