@@ -391,3 +391,20 @@ body.full-now #now {z-index:2147483000!important;}
 /* Lift fullscreen Now playing out of the studio stacking layer, above the site header. */
 body.full-now .studio {position:relative;z-index:100001!important;isolation:isolate;}
 body.full-now .header {pointer-events:none;}
+
+/* v47 */
+.queue-toast {z-index:2147483647;bottom:calc(var(--dock-height,180px) + 24px + env(safe-area-inset-bottom));max-width:calc(100vw - 32px);}
+.queue-toast.is-visible {pointer-events:auto;}
+.toast-undo {pointer-events:auto;min-height:40px;padding:6px 10px;}
+body.full-now .queue-toast {bottom:24px;}
+#source-badge {font-size:12px;color:#efefaa;border:1px solid #efef8855;border-radius:20px;padding:3px 9px;}
+#source-badge:empty {display:none;}
+#sleep-countdown,#full-sleep-countdown {font-variant-numeric:tabular-nums;color:#efefaa;font-size:12px;}
+#visual #mount:not([hidden]) {visibility:visible;}
+body.full-now #visual #mount:not([hidden]):not(.is-preloading) {display:block!important;visibility:visible!important;opacity:1!important;}
+body.full-now #now #visual {aspect-ratio:1;align-self:start;}
+@media(min-width:900px){body.full-now #now {display:grid!important;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);grid-template-rows:auto auto auto 1fr;gap:16px 36px;align-content:start;}body.full-now #now .now-heading {grid-column:1/-1;width:100%;}body.full-now #now #visual {grid-column:1;grid-row:2;width:min(100%,65vh);margin:0 auto;}body.full-now #now .now-meta {grid-column:1;grid-row:3;}body.full-now #now #full-controls {grid-column:1;grid-row:4;align-self:start;}body.full-now #now .queue-heading {grid-column:2;grid-row:2;align-self:start;}body.full-now #now #up-next {grid-column:2;grid-row:2/5;align-self:start;margin-top:64px;}}
+.playlist-search {width:100%;box-sizing:border-box;padding:12px;border-radius:10px;background:#191a15;color:white;border:1px solid #efef8855;}
+.playlist-picker-results {display:grid;gap:8px;margin-top:12px;}
+.playlist-picker-row {display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px;border-bottom:1px solid #ffffff22;}
+.scroll-shelf::after {height:100%;top:0;bottom:auto;width:28px;background:linear-gradient(90deg,transparent,#121212d9);}
