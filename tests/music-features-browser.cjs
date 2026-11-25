@@ -52,9 +52,31 @@ const tracks=[
   await page.locator('#dj-card').waitFor({state:'visible',timeout:30000});
   await page.reload({waitUntil:'domcontentloaded'});
   assert.ok(await page.locator('#dj-card').isVisible(),'DJ view must restore');
-  await page.goto(BASE.replace(/\/$/,'')+'/artist/odesza',{waitUntil:'domcontentloaded',timeout:60000});
+  await page.locator('#audio-settings').click();
+  await page.locator('#fade').evaluate(el=>{el.value='12';el.dispatchEvent(new Event('input',{bubbles:true}));});
+  assert.equal(await page.locator('#fade-value').innerText(),'12 s');
+  await page.locator('#audio-dialog form[method="dialog"] button').click();
+  await page.reload({waitUntil:'domcontentloaded'});
+  await page.locator('#audio-settings').click();
+  assert.equal(await page.locator('#fade').inputValue(),'12','transition setting must survive reload and service-worker updates');
+  assert.equal(await page.locator('#fade-value').innerText(),'12 s');
+  assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('stargazer.music.audio-options')).fade),12);
+  await page.locator('#audio-dialog form[method="dialog"] button').click();
+  await page.goto(BASE.replace(/\/$/,'')+'/artist/rl-grime',{waitUntil:'domcontentloaded',timeout:60000});
   await page.locator('.artist-hero h2').waitFor({state:'visible',timeout:30000});
-  assert.match(await page.locator('.artist-hero h2').innerText(),/odesza/i);
+  assert.notEqual(await page.locator('.artist-hero h2').innerText(),'Rl Grime','slug must not become display name');
+  await page.waitForFunction(()=>{const h=document.querySelector('.artist-hero h2');return h && h.textContent!=='Loading artist…';},{timeout:30000}).catch(()=>{});
+  assert.notEqual(await page.locator('.artist-hero h2').innerText(),'Rl Grime');
+  for(const label of ['Songs','Popular','Fans also like']){
+    const shelf=page.locator('.artist-scroll-shelf').filter({has:page.locator('h3').filter({hasText:label})}).first();
+    if(await shelf.count()){
+      assert.equal(await shelf.locator('.artist-scroll-arrows .scroll-arrow').count(),2,label+' navigation arrows');
+      const trackRow=label==='Songs'?shelf.locator('.grid'):label==='Popular'?shelf.locator('.popular-songs'):shelf.locator('.related-artists');
+      if(await trackRow.count()&&await trackRow.evaluate(n=>n.scrollWidth>n.clientWidth)){
+        assert.equal(await shelf.locator('.artist-scroll-arrows .scroll-arrow').last().isDisabled(),false,label+' right scroll enabled');
+      }
+    }
+  }
   await page.locator('.artist-back').click();
   await page.locator('[data-view="library"]').first().click();
   await page.locator('[data-view="dj"]').first().click();
