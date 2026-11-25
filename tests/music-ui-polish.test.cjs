@@ -5,7 +5,7 @@ test('Part 1: playlist playing indicator, artist back navigation and Music-only 
   assert.match(js,/function updatePlaylistButton\(/);
   assert.match(js,/window\.history\.back\(\)/);
   assert.match(js,/\$\('#music-menu-settings'\)\?\.addEventListener\('click'/);
-  assert.match(html,/id="music-language"/);
+  assert.doesNotMatch(html,/id="music-language"/);
   assert.match(html,/id="music-particles"/);
   assert.match(html,/id="explicit-filter"/);
 });
