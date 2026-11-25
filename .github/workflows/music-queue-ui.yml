@@ -25,15 +25,15 @@ jobs:
         run: |
           npm install --no-save playwright@1.56.1
           npx playwright install --with-deps chromium
-      - name: Wait for v48 preview deployment
+      - name: Wait for v49 preview deployment
         run: |
           for i in $(seq 1 40); do
-            if curl --max-time 10 -fsSL "https://stargazer-test.vercel.app/service-worker.js?qa=$i" | grep -q 'stargazer-cache-v48'; then
+            if curl --max-time 10 -fsSL "https://stargazer-test.vercel.app/service-worker.js?qa=$i" | grep -q 'stargazer-cache-v49'; then
               exit 0
             fi
             sleep 3
           done
-          echo 'v48 test preview unavailable'
+          echo 'v49 test preview unavailable'
           exit 1
       - name: Assert 400px artwork layout and nonplaying queue clicks
         run: |
