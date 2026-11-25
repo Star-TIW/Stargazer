@@ -422,3 +422,13 @@ body.full-now #now #visual {aspect-ratio:1;align-self:start;}
 body.full-now #now #visual {position:relative;flex:none;height:auto;min-height:0;aspect-ratio:1;}
 body.full-now #now .now-meta {position:relative;clear:both;min-height:max-content;overflow:visible;transform:none;z-index:3;padding:8px 0;}
 @media(min-width:900px){body.full-now #now {grid-template-rows:auto max-content max-content max-content;align-items:start;}body.full-now #now #visual {height:auto;aspect-ratio:1;width:min(100%,60dvh);min-height:0;}body.full-now #now #up-next {grid-row:2/5;max-height:calc(100dvh - 150px);overflow:auto;}}
+
+/* v48 explicit card geometry and scroll masks */
+.made-grid {display:grid!important;grid-template-columns:repeat(auto-fit,minmax(115px,1fr));gap:12px;}
+.made-grid .made-art {width:100%;height:auto;aspect-ratio:1;display:grid;place-items:center;font-size:clamp(28px,5vw,56px);}
+.song-row.fade-right { -webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 32px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 32px),transparent);}
+.song-row.fade-left { -webkit-mask-image:linear-gradient(90deg,transparent,#000 32px);mask-image:linear-gradient(90deg,transparent,#000 32px);}
+.song-row.fade-left.fade-right {-webkit-mask-image:linear-gradient(90deg,transparent,#000 32px,#000 calc(100% - 32px),transparent);mask-image:linear-gradient(90deg,transparent,#000 32px,#000 calc(100% - 32px),transparent);}
+body.full-now #now #visual {height:auto!important;min-height:0!important;max-height:none!important;aspect-ratio:1!important;flex-shrink:0;}
+body.full-now #now .now-meta {position:relative!important;inset:auto!important;display:flex;flex-direction:column;gap:6px;height:auto!important;overflow:visible!important;white-space:normal;}
+@media(max-width:899px){body.full-now #now {display:flex!important;flex-direction:column;align-items:center;}body.full-now #now>* {flex-shrink:0;}}
