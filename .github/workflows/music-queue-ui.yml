@@ -7,6 +7,7 @@ on:
       - 'service-worker.js'
       - 'tests/music-queue-browser.cjs'
       - 'tests/music-artwork-browser.cjs'
+      - 'tests/music-features-browser.cjs'
       - '.github/workflows/music-queue-ui.yml'
   workflow_dispatch:
 permissions:
@@ -24,20 +25,21 @@ jobs:
         run: |
           npm install --no-save playwright@1.56.1
           npx playwright install --with-deps chromium
-      - name: Wait for v44 preview deployment
+      - name: Wait for v45 preview deployment
         run: |
           for i in $(seq 1 40); do
-            if curl --max-time 10 -fsSL "https://stargazer-test.vercel.app/service-worker.js?qa=$i" | grep -q 'stargazer-cache-v44'; then
+            if curl --max-time 10 -fsSL "https://stargazer-test.vercel.app/service-worker.js?qa=$i" | grep -q 'stargazer-cache-v45'; then
               exit 0
             fi
             sleep 3
           done
-          echo 'v44 test preview unavailable'
+          echo 'v45 test preview unavailable'
           exit 1
       - name: Assert 400px artwork layout and nonplaying queue clicks
         run: |
           node tests/music-queue-browser.cjs
           node tests/music-artwork-browser.cjs
+          node tests/music-features-browser.cjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -45,4 +47,5 @@ jobs:
           path: |
             music-queue-400px.png
             music-artwork-*.png
+            music-features-*.png
           if-no-files-found: ignore
