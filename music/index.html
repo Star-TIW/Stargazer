@@ -22,6 +22,7 @@
     </nav>
   </header>
   <main class="studio">
+    <div id="search-scrim" hidden></div>
     <div class="music-toolbar">
       <form id="search-container" class="search-shell" role="search"><button class="search-icon" type="submit" aria-label="Search">⌕</button><input id="search" enterkeyhint="search" autocapitalize="none" type="search" autocomplete="off" maxlength="120" aria-label="Search official songs and artists" placeholder="Search songs &amp; artists…"><button id="search-clear" type="button" aria-label="Clear search" title="Clear search" hidden>×</button><div id="completions" aria-label="Search suggestions" hidden></div></form>
         <button id="audio-settings" aria-label="Playback settings" title="Playback settings">⚙</button>
@@ -44,7 +45,7 @@
         <div id="playlists"></div>
         <div id="catalog" aria-live="polite"></div>
       </section>
-      <aside id="now"><h2>Now playing</h2><p id="idle">Choose a song to start your station.</p><div id="visual"><div id="mount" hidden></div><img id="now-art" alt="" hidden></div><strong id="now-title"></strong><span id="now-artist"></span><div class="queue-heading"><h3>Up next</h3><button id="clear-queue" aria-label="Clear manually queued songs" hidden>Clear queue</button></div><div id="up-next"></div></aside>
+      <aside id="now"><h2>Now playing</h2><p id="idle">Choose a song to start your station.</p><div id="visual"><div id="mount" hidden></div><img id="now-art" alt="" hidden></div><div class="now-meta"><strong id="now-title"></strong><span id="now-artist"></span></div><div class="queue-heading"><h3>Up next</h3><button id="clear-queue" aria-label="Clear manually queued songs" hidden>Clear queue</button></div><div id="up-next"></div></aside>
     </div>
   </main>
   <dialog id="library-dialog" aria-labelledby="library-dialog-title"><header><h2 id="library-dialog-title"></h2><button id="library-close" aria-label="Close">×</button></header><div id="library-dialog-body"></div></dialog>
