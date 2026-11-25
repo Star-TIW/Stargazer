@@ -1,0 +1,43 @@
+name: Music queue 400px browser QA
+on:
+  push:
+    branches: [st4rg4zer-test]
+    paths:
+      - 'music/**'
+      - 'service-worker.js'
+      - 'tests/music-queue-browser.cjs'
+      - '.github/workflows/music-queue-ui.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  mobile-ui:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install free Playwright Chromium
+        run: |
+          npm install --no-save playwright@1.56.1
+          npx playwright install --with-deps chromium
+      - name: Wait for v40 preview deployment
+        run: |
+          for i in $(seq 1 40); do
+            if curl --max-time 10 -fsSL "https://stargazer-test.vercel.app/service-worker.js?qa=$i" | grep -q 'stargazer-cache-v40'; then
+              exit 0
+            fi
+            sleep 3
+          done
+          echo 'v40 test preview unavailable'
+          exit 1
+      - name: Assert 400px artwork layout and nonplaying queue clicks
+        run: node tests/music-queue-browser.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: music-queue-400px
+          path: music-queue-400px.png
+          if-no-files-found: ignore

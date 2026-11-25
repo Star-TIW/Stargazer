@@ -66,7 +66,7 @@ async function runPair(browser,direction){
     await page.locator('#dock').waitFor({state:'visible',timeout:45000});
     const firstPlaying=await page.locator('#now-title').innerText();
     let second=await findTrack(song[1]);
-    await second.locator('button.queue-action').filter({hasText:'Play next'}).click();
+    await second.locator('button.queue-next[aria-label="Play next"]').click();
     if((await page.locator('#now-title').innerText())!==firstPlaying)
       throw Error('Play next interrupted the current track');
     await page.waitForFunction(()=>{
