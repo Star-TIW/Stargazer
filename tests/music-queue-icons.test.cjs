@@ -91,8 +91,9 @@ test('Part 1: player close minimizes without removing queue or session',()=>{
 });
 test('Part 1: Space prevents focused card activation and toggles playback',()=>{
  assert.match(js,/document\.addEventListener\('keydown',event=>/);
- assert.match(js,/if\(event\.code!=='Space'/);
- assert.match(js,/event\.preventDefault\(\);togglePlayback\(\)/);
+ assert.match(js,/const recognized=\['Space','ArrowLeft','ArrowRight'/);
+ assert.match(js,/if\(code==='Space'\)togglePlayback\(\)/);
+ assert.match(js,/event\.preventDefault\(\)/);
 });
 test('Part 1: search relevance, clear button, restored view and accessible toggles',()=>{
  assert.match(js,/const relevant=live\.filter\(t=>terms\.every/);
