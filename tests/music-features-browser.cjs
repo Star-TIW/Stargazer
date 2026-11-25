@@ -95,7 +95,7 @@ const tracks=[
   if(await scroll.evaluate(n=>n.scrollWidth>n.clientWidth)){
     assert.ok(await row.locator('.right-edge').isVisible());
     const style=await row.locator('.right-edge').evaluate(n=>{const c=getComputedStyle(n),b=n.getBoundingClientRect();return {width:b.width,height:b.height,background:c.backgroundImage,opacity:c.opacity,pointer:c.pointerEvents,z:c.zIndex,parent:getComputedStyle(n.parentElement).position};});
-    assert.ok(style.width>=48&&style.height>0);assert.match(style.background,/linear-gradient.*rgb\(18, 18, 18\)/);assert.equal(style.opacity,'1');assert.equal(style.pointer,'none');assert.ok(Number(style.z)>=100);assert.equal(style.parent,'relative');
+    assert.ok(style.width>=64&&style.height>0);assert.match(style.background,/linear-gradient.*rgb\(18, 18, 18\)/);assert.equal(style.opacity,'1');assert.equal(style.pointer,'none');assert.ok(Number(style.z)>=100);assert.equal(style.parent,'relative');
     assert.ok(!(await row.locator('.left-edge').isVisible()));
     await scroll.evaluate(n=>n.scrollLeft=n.scrollWidth);
     await row.locator('.right-edge').waitFor({state:'hidden'});
