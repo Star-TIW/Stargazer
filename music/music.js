@@ -32,7 +32,9 @@
   function persist(key,value) { try { localStorage.setItem(key,JSON.stringify(value)); } catch { /* Session state remains available. */ } }
   const historyKey='stargazer.music.listens.v1', playlistKey='stargazer.music.playlists.v1';
   let history=readList(historyKey).filter(e=>validSong(e?.track) && Number.isFinite(e.plays) && Number.isFinite(e.last)).slice(0,100);
-  let playlists=readList(playlistKey).filter(p=>typeof p?.name==='string' && Array.isArray(p.tracks) && p.tracks.every(validSong));
+  const slugify=value=>String(value).normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+  let playlists=readList(playlistKey).filter(p=>typeof p?.name==='string' && Array.isArray(p.tracks) && p.tracks.every(validSong))
+    .map((p,i)=>({...p,id:p.id||'p-'+slugify(p.name)+'-'+i}));
   let mix=[], mixRequest, currentList=null, listenTimer;
   function pool() {
     const items=[...audioLibrary,...history.map(e=>e.track),...saved,...releases];
@@ -93,8 +95,50 @@
   }
   for(const m of chat)appendMessage(m.line,m.user);
   greeted=chat.length>0;
+  function musicRoutePath(){
+    if(view==='artist' && profile?.name)return '/music/artist/'+encodeURIComponent(slugify(profile.name));
+    if(view==='playlist' && currentList?.id)return '/music/playlist/'+encodeURIComponent(currentList.id);
+    if(['dj','library','saved'].includes(view))return '/music/'+view;
+    return '/music/';
+  }
+  function setMusicRoute(replace=false){
+    const url=new URL(musicRoutePath(),location.origin);
+    if(query && view==='all')url.searchParams.set('q',query);
+    if(queue?.[index])url.searchParams.set('track',queue[index].id);
+    if(url.pathname+url.search===location.pathname+location.search)return;
+    window.history[replace?'replaceState':'pushState']({stargazerMusic:true},'',url.pathname+url.search);
+  }
+  function readMusicRoute(){
+    const parts=location.pathname.split('/').filter(Boolean),kind=parts[1];
+    query='';$('#search').value='';
+    if(kind==='artist'&&parts[2]){
+      const requested=decodeURIComponent(parts[2]).replace(/-/g,' ');
+      const exact=pool().find(t=>slugify(t.artist)===parts[2])?.artist;
+      profile={name:exact||requested.replace(/\b\w/g,c=>c.toUpperCase()),tracks:[]};view='artist';
+    }else if(kind==='playlist'&&parts[2]){
+      currentList=playlists.find(p=>p.id===decodeURIComponent(parts[2]))||null;
+      view=currentList?'playlist':'library';
+    }else if(['dj','library','saved'].includes(kind))view=kind;
+    else{view='all';query=new URL(location.href).searchParams.get('q')||'';$('#search').value=query;}
+    saveView();if(releases.length)render();
+  }
+  function openLinkedTrack(){
+    const id=new URL(location.href).searchParams.get('track');
+    if(!id || queue[index]?.id===id)return;
+    const track=pool().find(t=>t.id===id);if(!track)return;
+    player?.destroy();player=null;ready=false;failedPlayer=false;
+    queue=[resolveAudio(track)];index=0;currentTrack=queue[0];resumeAt=0;savedDuration=Number(track.duration)||0;
+    preview(track,[]);$('#now-art').hidden=false;$('#dock').hidden=false;
+    $('#playing').textContent=track.title+' · '+track.artist;$('#dock-cover').src=track.art||'/stargazer-512.png';
+    control('#play','play','Play');timeline();checkpoint();
+  }
+  $('#copy-view-link').onclick=async()=>{
+    try{await navigator.clipboard.writeText(location.href);queueToast('Link copied');}
+    catch{queueToast('Copy this URL: '+location.href);}
+  };
+  window.addEventListener('popstate',()=>{readMusicRoute();openLinkedTrack();});
   function openBooth() {
-    view='dj';saveView(); query=''; $('#search').value='';
+    view='dj';saveView();setMusicRoute(); query=''; $('#search').value='';
     if(!greeted){message(greeting);greeted=true;}
     dismissSuggestions(); render(); pageTop();
   }
@@ -210,7 +254,7 @@
     const row=element('div','playlist-row');
     playlists.forEach(p=>{
       const b=element('button','playlist-choice',p.name);
-      b.onclick=()=>{currentList=p;view='playlist';render();};
+      b.onclick=()=>selectList(p);
       row.append(b);
     });
     panel.append(row);
@@ -329,7 +373,7 @@
     clearTimeout(completionTimer); completionJob?.abort(); suggestions.hidden=true; suggestions.replaceChildren();$('#search-scrim').hidden=true;
   }
   function navigate(next){
-    dismissSuggestions(); view=next;saveView(); query=''; $('#search').value=''; render(); pageTop();
+    dismissSuggestions(); view=next;saveView(); query=''; $('#search').value='';setMusicRoute(); render(); pageTop();
   }
   function openDialog(title){
     $('#library-dialog-title').textContent=title; dialogBody.replaceChildren();
@@ -345,7 +389,7 @@
     dialogBody.append(form);
   }
   function newList(name,tracks){
-    const list={name,tracks};playlists.unshift(list);saveLibrary();return list;
+    const list={id:'p-'+crypto.randomUUID(),name,tracks};playlists.unshift(list);saveLibrary();return list;
   }
   function selectList(list){currentList=list;navigate('playlist');}
   function manageSong(track){
@@ -600,7 +644,7 @@
   }
   function search(term) {
     dismissSuggestions();$('#search').blur();pageTop();view = 'all';saveView(); query = term.trim(); $('#search').value = query;
-    render(); $('.browse').scrollTop = 0;
+    setMusicRoute();render(); $('.browse').scrollTop = 0;
   }
   function shortcut(t,compact) {
     const button = element('button',compact ? 'artist-icon' : 'quick');
@@ -897,7 +941,7 @@
     currentTrack=track;
     resumeAt=start;clearTimeout(listenTimer);counted=false;
     const direction=i<index ? -1 : 1;
-    index=i;failed=false;preview(track,queue.slice(i+1),direction);
+    index=i;failed=false;preview(track,queue.slice(i+1),direction);setMusicRoute(true);
     mediaControls(track);
     $('#now-art').hidden=false;$('#dock').hidden=false;
     if(!matchMedia('(prefers-reduced-motion:reduce)').matches){
@@ -991,5 +1035,5 @@
     event.preventDefault();togglePlayback();
   },true);
   new ResizeObserver(([entry]) => document.documentElement.style.setProperty('--music-panel-top', (entry.target.offsetHeight+12)+'px')).observe(document.querySelector('.header'));
-  YouTubeDeck.api().catch(()=>{});restore();loadCatalog();
+  readMusicRoute();YouTubeDeck.api().catch(()=>{});restore();loadCatalog();
 })();
