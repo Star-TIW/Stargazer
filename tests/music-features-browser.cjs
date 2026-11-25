@@ -88,7 +88,10 @@ const tracks=[
   await heart.waitFor({state:'visible'});
   const prior=await page.evaluate(()=>localStorage.getItem('stargazer.music.saved.v1'));
   await heart.click();
-  await page.locator('#queue-toast .toast-undo').click();
+  assert.equal(await heart.getAttribute('aria-pressed'),'true');
+  await heart.click();
+  assert.equal(await heart.getAttribute('aria-pressed'),'false');
+  assert.equal(await page.locator('#queue-toast .toast-undo').count(),0);
   assert.deepEqual(await page.evaluate(()=>JSON.parse(localStorage.getItem('stargazer.music.saved.v1')||'[]')),JSON.parse(prior||'[]'));
 
   await page.locator('#sleep-timer').selectOption('15');
