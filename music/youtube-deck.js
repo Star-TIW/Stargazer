@@ -29,7 +29,7 @@ class YouTubeDeck {
           if(this.dead || !this.matches())return;
           if(e.data===1){this.onplaying?.();this.onloadedmetadata?.();}
           if(e.data===2)this.onpause?.();
-          if(e.data===0)this.onended?.();
+          if(e.data===0 && (!this.seekGuard || Date.now()>=this.seekGuard || this.api.getCurrentTime()>=this.api.getDuration()-.25))this.onended?.();
         },
         onAutoplayBlocked:()=>{if(!this.dead && this.wanted)this.onFailure('Playback was blocked. Press Play or use the video controls.',false);},
         onError:()=>{if(!this.dead)this.onFailure('This video could not start. Press Play to retry.');}
@@ -53,7 +53,7 @@ class YouTubeDeck {
         {duration:400,easing:'cubic-bezier(.22,.68,.22,1)'});
     }
     const keepPlaying=this.track ? this.wanted : false;
-    this.track=track;this.start=start;this.wanted=keepPlaying;this.pendingLoad=true;this.exiting=false;
+    this.track=track;this.start=start;this.wanted=keepPlaying;this.pendingLoad=true;this.exiting=false;this.seekGuard=0;
     if(keepPlaying)this.mount.classList?.remove('is-preloading');
     if(this.mount.firstChild)this.mount.firstChild.title=track.title+' by '+track.artist;
   }
@@ -79,7 +79,7 @@ class YouTubeDeck {
   get currentTime(){return this.matches()?this.api.getCurrentTime():this.start;}
   set currentTime(t){
     this.exiting=false;this.exitAnimation?.cancel();this.start=t;
-    if(this.matches() && !this.pendingLoad){this.api.seekTo(t,true);if(this.wanted)this.api.playVideo();}
+    if(this.matches() && !this.pendingLoad){this.seekGuard=Date.now()+1200;this.api.seekTo(t,true);if(this.wanted)this.api.playVideo();}
   }
   set volume(v){if(v!==this.level){this.level=v;if(this.connected)this.api.setVolume(Math.round(v*100));}}
   set muted(v){if(v!==this.silent){this.silent=v;if(this.connected)this.configure();}}
