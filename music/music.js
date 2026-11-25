@@ -326,7 +326,7 @@
         b.classList.remove('confirmed');void b.offsetWidth;b.classList.add('confirmed');
         setTimeout(()=>b.classList.remove('confirmed'),650);
       }
-      if(b.closest('#completions'))dismissSuggestions();
+      if(b.closest('#completions')){clearTimeout(queueIconButton.dismissTimer);queueIconButton.dismissTimer=setTimeout(dismissSuggestions,350);}
     };
     return b;
   }
@@ -779,11 +779,8 @@
         recentSearches.slice(0,6).forEach(term=>section.append(button(term,()=>search(term),'recent-search')));
       }
       const dj=shelf('Made for you');
-      const launch=element('button','dj-launch','♫   Stargazer DJ');
-      launch.onclick=openBooth;dj.append(launch,
-        button('♥ Liked songs',()=>navigate('saved'),'dj-launch'),
-        button('Daily mix',()=>{openBooth();generateMix();},'dj-launch'),
-        button('On repeat',()=>{search(history[0]?.track?.artist||'');},'dj-launch'));
+      const feature=(title,art,action)=>{const item=button('',action,'made-card');const image=element('span','made-art',art);item.append(image,element('strong','',title));return item;};
+      dj.append(feature('Stargazer DJ','♫',openBooth),feature('Liked songs','♥',()=>navigate('saved')),feature('Daily mix','◉',()=>{openBooth();generateMix();}),feature('On repeat','↻',()=>search(history[0]?.track?.artist||'')));
       if(personal) songRow(chartHeading,releases);
       quickPicks();
       return;
