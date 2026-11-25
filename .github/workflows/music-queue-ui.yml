@@ -6,6 +6,7 @@ on:
       - 'music/**'
       - 'service-worker.js'
       - 'tests/music-queue-browser.cjs'
+      - 'tests/music-artwork-browser.cjs'
       - '.github/workflows/music-queue-ui.yml'
   workflow_dispatch:
 permissions:
