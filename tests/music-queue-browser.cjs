@@ -32,18 +32,22 @@ const {chromium}=require('playwright');
     await first.locator('.queue-add').click();
     if(!await page.locator('#dock').evaluate(e=>e.hidden))throw Error('Add to queue started playback');
     if(await first.locator('.queue-add').getAttribute('aria-pressed')!=='true')throw Error('Queue button failed to show selected state');
-    if(await first.locator('.queue-next').getAttribute('aria-pressed')!=='true')throw Error('First queued song should already be next');
+    if(await first.locator('.queue-next').getAttribute('aria-pressed')!=='false')throw Error('Add to queue must not light up Play next');
     await first.locator('.queue-next').click();
     if(!await page.locator('#dock').evaluate(e=>e.hidden))throw Error('Play next started playback');
-    if(await first.locator('.queue-next').getAttribute('aria-pressed')!=='false')throw Error('Play next button failed to toggle off');
+    if(await first.locator('.queue-next').getAttribute('aria-pressed')!=='true')throw Error('Play next should become active');
+    if(await first.locator('.queue-add').getAttribute('aria-pressed')!=='false')throw Error('Play next must not light up Add to queue');
     await first.locator('.queue-next').click();
-    if(await first.locator('.queue-next').getAttribute('aria-pressed')!=='true')throw Error('Play next button failed to toggle back on');
+    if(await first.locator('.queue-next').getAttribute('aria-pressed')!=='true')throw Error('Repeated Play next must not remove the song');
+    await first.locator('.queue-add').click();
+    if(await first.locator('.queue-add').getAttribute('aria-pressed')!=='true')throw Error('Add to queue should become active independently');
+    if(await first.locator('.queue-next').getAttribute('aria-pressed')!=='false')throw Error('Add to queue should reset Play next state');
     const term=(await first.locator('.pick strong').innerText()).slice(0,12);
     await page.locator('#search').fill(term);
     await page.locator('.completion-card').first().waitFor({state:'visible',timeout:10000});
     if(await page.locator('.completion-card').first().locator('.art-actions > button').count()!==4)
       throw Error('Autocomplete did not use four cover buttons');
     await page.screenshot({path:'music-queue-400px.png'});
-    console.log('PASS 400px corners, 40px touch targets, no overlaps, no accidental playback, button toggles, autocomplete');
+    console.log('PASS 400px corners, 40px touch targets, no overlaps, no accidental playback, independent button actions, autocomplete');
   }finally{await context.close();await browser.close();}
 })().catch(e=>{console.error(e);process.exitCode=1;});
