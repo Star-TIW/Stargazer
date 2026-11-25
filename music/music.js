@@ -1482,8 +1482,9 @@
     $('#expand-now').setAttribute('aria-expanded',String(expanded));
     $('#expand-now').setAttribute('aria-label',expanded?'Close full screen':'Expand Now playing');
     $('#expand-now').title=expanded?'Close full screen':'Expand Now playing';
-    $('#expand-now .expand-icon').hidden=expanded;
-    $('#expand-now .close-full-icon').hidden=!expanded;
+    // SVGElement does not implement HTMLElement.hidden; toggle the real attribute.
+    $('#expand-now .expand-icon').toggleAttribute('hidden',expanded);
+    $('#expand-now .close-full-icon').toggleAttribute('hidden',!expanded);
     if(expanded)setMini(false);
     timeline();
     if(!matchMedia('(prefers-reduced-motion: reduce)').matches){
