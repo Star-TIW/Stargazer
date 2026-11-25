@@ -8,7 +8,7 @@
   <link rel="icon" href="/stargazer-192.png">
   <link rel="stylesheet" href="/home.css">
   <link rel="stylesheet" href="/movies.css">
-  <link rel="stylesheet" href="/music/music.css">
+  <link rel="stylesheet" href="/music/music.css?v=51">
 </head>
 <body>
   <svg class="icon-defs" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><symbol id="icon-play" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></symbol><symbol id="icon-pause" viewBox="0 0 24 24"><path d="M8 5v14M16 5v14"/></symbol><symbol id="icon-previous" viewBox="0 0 24 24"><path d="M6 5v14m12-14v14L8 12z"/></symbol><symbol id="icon-next" viewBox="0 0 24 24"><path d="M18 5v14M6 5v14l10-7z"/></symbol><symbol id="icon-repeat" viewBox="0 0 24 24"><path d="M3 10a5 5 0 0 1 5-5h11m-3-3 3 3-3 3M21 14a5 5 0 0 1-5 5H5m3-3-3 3 3 3"/></symbol><symbol id="icon-sound" viewBox="0 0 24 24"><path d="M3 9h4l5-4v14l-5-4H3z M16 8q4 4 0 8 M19 5q7 7 0 14"/></symbol><symbol id="icon-silent" viewBox="0 0 24 24"><path d="M3 9h4l5-4v14l-5-4H3z M16 9l6 6m0-6-6 6"/></symbol></svg>
@@ -45,7 +45,7 @@
         <div id="playlists"></div>
         <div id="catalog" aria-live="polite"></div>
       </section>
-      <aside id="now"><div class="now-heading"><h2>Now playing</h2><button id="expand-now" aria-label="Expand Now playing" title="Expand Now playing">⤢</button></div><p id="idle">Choose a song to start your station.</p><div id="visual"><div id="mount" hidden></div><img id="now-art" alt="" hidden></div><div class="now-meta"><strong id="now-title"></strong><span id="now-artist"></span><span id="source-badge"></span><button id="radio-now" class="library-action" hidden>Start song radio</button><span id="full-sleep-countdown"></span></div><section id="full-controls" hidden><div class="full-buttons"><button id="full-prev" aria-label="Previous track">⏮</button><button id="full-play" aria-label="Play or pause">▶</button><button id="full-next" aria-label="Next track">⏭</button></div><input id="full-seek" aria-label="Full-screen playback position" type="range" min="0" max="0" value="0"><div class="full-times"><span id="full-elapsed">0:00</span><span id="full-duration">0:00</span></div></section><div class="queue-heading"><h3>Up next</h3><button id="clear-queue" aria-label="Clear manually queued songs" hidden>Clear queue</button></div><div id="up-next"></div></aside>
+      <aside id="now"><div class="now-heading"><h2>Now playing</h2><button id="expand-now" aria-label="Expand Now playing" title="Expand Now playing">⤢</button></div><p id="idle">Choose a song to start your station.</p><div id="visual"><div id="mount" hidden></div><img id="now-art" alt="" hidden></div><div class="now-meta"><strong id="now-title"></strong><span id="now-artist"></span><span id="source-badge"></span><button id="radio-now" class="library-action" hidden>Start song radio</button><span id="full-sleep-countdown"></span></div><section id="full-controls" hidden><div class="full-buttons"><button id="full-prev" aria-label="Previous track">⏮</button><button id="full-play" aria-label="Play or pause">▶</button><button id="full-next" aria-label="Next track">⏭</button></div><div class="full-extra"><button id="full-shuffle" aria-pressed="false">Shuffle</button><button id="full-repeat" aria-pressed="false">Repeat off</button><button id="full-mute" aria-pressed="false">Mute</button><input id="full-volume" type="range" min="0" max="100" aria-label="Fullscreen volume"></div><input id="full-seek" aria-label="Full-screen playback position" type="range" min="0" max="0" value="0"><div class="full-times"><span id="full-elapsed">0:00</span><span id="full-duration">0:00</span></div></section><div class="queue-heading"><h3>Up next</h3><button id="clear-queue" aria-label="Clear manually queued songs" hidden>Clear queue</button></div><div id="up-next"></div></aside>
     </div>
   </main>
   <dialog id="library-dialog" aria-labelledby="library-dialog-title"><header><h2 id="library-dialog-title"></h2><button id="library-close" aria-label="Close">×</button></header><div id="library-dialog-body"></div></dialog>
@@ -72,7 +72,7 @@
       <label class="timeline"><span id="elapsed">0:00</span><input id="seek" type="range" min="0" max="0" step="1" value="0" aria-label="Playback position" disabled><span id="duration">0:00</span></label>
       <div class="loudness"><button id="mute" aria-pressed="false" aria-label="Mute" title="Mute"><svg class="control-icon" aria-hidden="true"><use href="#icon-sound"/></svg></button><input id="volume" aria-label="Volume" type="range" min="0" max="100" value="80"><output for="volume" id="percent">80%</output><select id="sleep-timer" aria-label="Sleep timer" title="Sleep timer"><option value="off">☾ Sleep</option><option value="15">15 min</option><option value="30">30 min</option><option value="45">45 min</option><option value="60">60 min</option><option value="end">End of track</option></select><span id="sleep-countdown"></span></div>
     </div>
-    <p id="audio-status" role="status"></p>
+    <p id="audio-status" class="sr-only" role="status" style="position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap"></p>
   </aside>
   <script src="/bootstrap.js"></script>
   <script src="/particles.min.js"></script>
@@ -83,6 +83,6 @@
   <script src="/music/crossfade.js"></script>
   <script src="/music/library.js"></script>
   <script src="/music/source-preference.js"></script>
-  <script src="/music/music.js"></script>
+  <script src="/music/music.js?v=51"></script>
 </body>
 </html>
