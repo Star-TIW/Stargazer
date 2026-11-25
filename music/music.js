@@ -343,14 +343,31 @@
       if(b.dataset.buttonState===current)continue;
       b.dataset.buttonState=current;b.setAttribute('aria-pressed',current);
       if(b.classList.contains('queue-icon')){
-        if(!b.dataset.defaultIcon)b.dataset.defaultIcon=b.innerHTML;
-        b.innerHTML=pressed?goldCheck:b.dataset.defaultIcon;
-      }else if(b.classList.contains('add-track'))b.textContent=pressed?'✓':'＋';
+        // Both icon layers stay in the DOM so CSS can slide between them without replacing SVGs.
+      }else if(b.classList.contains('add-track') && !b.querySelector('.playlist-plus')){
+        b.innerHTML='<span class="playlist-plus">＋</span><span class="playlist-check">✓</span>';
+      }
     }
   }
   function animateToggle(button){
-    button.classList.remove('toggle-pop');void button.offsetWidth;button.classList.add('toggle-pop');
-    setTimeout(()=>button.classList.remove('toggle-pop'),260);
+    const effect=button.classList.contains('queue-next')?'next-nudge':
+      button.classList.contains('queue-add')?'queue-slide':
+      button.classList.contains('add-track')?'playlist-turn':'toggle-pop';
+    button.classList.remove(effect);void button.offsetWidth;button.classList.add(effect);
+    setTimeout(()=>button.classList.remove(effect),350);
+  }
+  function setHeartState(track,liked,animate=false){
+    for(const button of document.querySelectorAll('.art-actions .save[data-heart-id]')){
+      if(button.dataset.heartId!==track.id)continue;
+      button.textContent=liked?'♥':'♡';
+      button.setAttribute('aria-pressed',String(liked));
+      button.setAttribute('aria-label',(liked?'Remove from saved ':'Save ')+track.title);
+      if(animate){
+        const effect=liked?'heart-heartbeat':'heart-unlike';
+        button.classList.remove('heart-heartbeat','heart-unlike');void button.offsetWidth;button.classList.add(effect);
+        setTimeout(()=>button.classList.remove(effect),350);
+      }
+    }
   }
   function removeQueuedTrack(track){
     const id=resolveAudio(track).id;
@@ -377,9 +394,11 @@
     const label=next?'Play next':'Add to queue';
     const b=element('button','save queue-icon '+(next?'queue-next':'queue-add'));
     b.type='button';b.setAttribute('aria-label',label);b.title=label;b.dataset.trackId=track.id;b.setAttribute('aria-pressed','false');
-    b.innerHTML=next
+    const original=next
       ? '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 5.5v13l9-6.5z"/><rect x="16.5" y="5.5" width="2.4" height="13" rx="1"/></svg>'
       : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h6M6 3v6"/><path d="M11 10h7.5a3 3 0 0 0 0-6H16"/><path d="M4 15h16M4 20h16"/></svg>';
+    b.innerHTML=next?'<span class="queue-next-glyph">'+original+'</span>':
+      '<span class="queue-icon-original">'+original+'</span><span class="queue-icon-check">'+goldCheck+'</span>';
     b.onclick=event=>{
       event.preventDefault();event.stopPropagation();
       toggleQueueTrack(track,next);animateToggle(b);
@@ -431,6 +450,7 @@
     tile.addEventListener('pointerup',()=>{clearTimeout(longPressTimer);tile.pressOrigin=null;});
     tile.addEventListener('pointercancel',()=>{clearTimeout(longPressTimer);tile.pressOrigin=null;});
     const save = element('button','save');
+    save.dataset.heartId=track.id;
     function refresh() {
       const liked = isSaved(track);
       save.textContent = liked ? '♥' : '♡';
@@ -440,10 +460,21 @@
     refresh();
     save.onclick = () => {
       const old=saved.slice(),adding=!isSaved(track);
+      // Update every visible copy of this heart before touching storage or repainting the cards.
+      setHeartState(track,adding,true);
       saved=adding?[track,...saved]:saved.filter(t=>t.id!==track.id);
-      persist(storageKey,saved);if(view==='saved'||home())render();else refresh();animateToggle(save);
+      try{localStorage.setItem(storageKey,JSON.stringify(saved));}
+      catch{
+        saved=old;setHeartState(track,!adding);
+        status('Could not save this like.');return;
+      }
+      if(view==='saved'||home()){
+        clearTimeout(save.pendingRender);
+        save.pendingRender=setTimeout(()=>render(),330);
+      }
     };
-    const add=button('＋',()=>{animateToggle(add);manageSong(track);},'save add-track');
+    const add=button('',()=>{manageSong(track);},'save add-track');
+    add.innerHTML='<span class="playlist-plus">＋</span><span class="playlist-check">✓</span>';
     add.dataset.trackId=track.id;add.setAttribute('aria-pressed','false');
     add.setAttribute('aria-label','Manage playlists for '+track.title);
     add.title='Manage playlists for '+track.title;
