@@ -40,7 +40,7 @@ for(const types of [['video','audio'],['audio','video']]){
     p.pauseVideo();assert.ok(p.active.paused && p.incoming.paused);p.playVideo();
     assert.ok(!p.active.paused && !p.incoming.paused);
     p.setVolume(40);assert.ok(Math.abs(p.incoming.volume-.4*Math.SQRT1_2)<1e-9);
-    p.seekTo(10);assert.equal(p.incoming,null);assert.equal(p.active.volume,.4);
+    p.seekTo(10);assert.ok(!p.incoming || p.incoming.paused);assert.equal(p.active.volume,.4);
     p.active.currentTime=92;p.tick();const next=p.incoming;next.currentTime=8;p.active.onended();
     assert.equal(p.active,next);assert.equal(p.active.currentTime,8);p.destroy();
   });
@@ -141,5 +141,5 @@ test('near-end video seek starts overlap without immediately skipping queued tra
 });
 
 for(const types of [['audio','video'],['video','audio']])test('12 second '+types.join(' to ')+' seek preserves cued deck and promotes elapsed overlap',()=>{
- const {p}=fixture(types,12);p.active.currentTime=65;p.tick();const incoming=p.incoming;assert.ok(incoming);p.seekTo(88,true);assert.equal(p.incoming,incoming);assert.equal(incoming.paused,false);p.active.currentTime=94;incoming.currentTime=6;p.tick();assert.ok(p.active.volume>0&&incoming.volume>0);p.active.currentTime=100;incoming.currentTime=12;p.active.onended();assert.equal(p.active,incoming);assert.equal(p.getCurrentTime(),12);p.destroy();
+ const {p}=fixture(types,12);p.active.currentTime=65;p.tick();const incoming=p.incoming;assert.ok(incoming);p.seekTo(98,true);assert.equal(p.getCurrentTime(),88);assert.equal(p.incoming,incoming);assert.equal(incoming.paused,false);p.active.currentTime=94;incoming.currentTime=6;p.tick();assert.ok(p.active.volume>0&&incoming.volume>0);p.active.currentTime=100;incoming.currentTime=12;p.active.onended();assert.equal(p.active,incoming);assert.equal(p.getCurrentTime(),12);p.destroy();
 });
