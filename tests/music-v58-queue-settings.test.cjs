@@ -19,7 +19,7 @@ test('Play next promotes an auto-station song from anywhere in Up next to the fi
   const current=song('current'),a=song('a'),hikari=song('hikari'),c=song('c');
   const original=[current,a,hikari,c];
   const moved=fn(original,0,hikari,true);
-  assert.deepEqual(moved.map(t=>t.id),['current','hikari','a','c']);
+  assert.deepEqual(Array.from(moved,t=>t.id),['current','hikari','a','c']);
   assert.equal(moved.filter(t=>t.id==='hikari').length,1);
   assert.equal(moved[1].userQueued,true);
   assert.equal(moved[1].queueAction,'next');
@@ -29,7 +29,7 @@ test('Play next upgrades existing Add-to-queue entries and remains idempotent',(
   const fn=vm.runInNewContext('('+extract('insertUserQueue')+')');
   const current=song('current'),hikari=song('hikari',{userQueued:true,queueAction:'add'}),c=song('c');
   const moved=fn([current,c,hikari],0,hikari,true);
-  assert.deepEqual(moved.map(t=>t.id),['current','hikari','c']);
+  assert.deepEqual(Array.from(moved,t=>t.id),['current','hikari','c']);
   assert.equal(moved[1].queueAction,'next');
   assert.equal(fn(moved,0,hikari,true),moved,'repeating Play next must not remove or duplicate the song');
 });
