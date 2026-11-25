@@ -333,26 +333,67 @@
     return node;
   }
 
+  const goldCheck='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12 5 5L20 6"/></svg>';
+  function queuedUpcoming(){
+    return queue[index] ? queue.slice(index+1) : heldQueue.map(item=>item.track);
+  }
+  function syncQueueButtons(){
+    const upcoming=queuedUpcoming(),nextTrack=upcoming[0];
+    for(const b of document.querySelectorAll('.art-actions button[data-track-id]')){
+      const id=b.dataset.trackId;
+      const pressed=b.classList.contains('queue-next')?nextTrack?.id===id:
+        b.classList.contains('queue-add')?upcoming.some(t=>t.id===id):
+        b.classList.contains('add-track')?playlists.some(p=>p.tracks.some(t=>t.id===id)):false;
+      const current=String(Boolean(pressed));
+      if(b.dataset.buttonState===current)continue;
+      b.dataset.buttonState=current;b.setAttribute('aria-pressed',current);
+      if(b.classList.contains('queue-icon')){
+        if(!b.dataset.defaultIcon)b.dataset.defaultIcon=b.innerHTML;
+        b.innerHTML=pressed?goldCheck:b.dataset.defaultIcon;
+      }else if(b.classList.contains('add-track'))b.textContent=pressed?'✓':'＋';
+    }
+  }
+  function animateToggle(button){
+    button.classList.remove('toggle-pop');void button.offsetWidth;button.classList.add('toggle-pop');
+    setTimeout(()=>button.classList.remove('toggle-pop'),260);
+  }
+  function removeQueuedTrack(track){
+    const id=resolveAudio(track).id;
+    if(!queue[index]){
+      const before=heldQueue.length;
+      heldQueue=heldQueue.filter(item=>item.track.id!==id);
+      if(heldQueue.length===before)return false;
+      persist(heldKey,heldQueue);renderHeldQueue();
+    }else{
+      const at=queue.findIndex((item,i)=>i>index&&item.id===id);
+      if(at<0)return false;
+      const before=queue[index+1]?.id;
+      queue.splice(at,1);afterQueueEdit(before);
+    }
+    syncQueueButtons();return true;
+  }
+  function toggleQueueTrack(track,next){
+    const upcoming=queuedUpcoming();
+    const active=next?upcoming[0]?.id===track.id:upcoming.some(t=>t.id===track.id);
+    if(active){removeQueuedTrack(track);return;}
+    enqueueTrack(track,next);syncQueueButtons();
+  }
   function queueIconButton(track,next){
     const label=next?'Play next':'Add to queue';
     const b=element('button','save queue-icon '+(next?'queue-next':'queue-add'));
-    b.type='button';b.setAttribute('aria-label',label);b.title=label;
+    b.type='button';b.setAttribute('aria-label',label);b.title=label;b.dataset.trackId=track.id;b.setAttribute('aria-pressed','false');
     b.innerHTML=next
       ? '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 5.5v13l9-6.5z"/><rect x="16.5" y="5.5" width="2.4" height="13" rx="1"/></svg>'
       : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h6M6 3v6"/><path d="M11 10h7.5a3 3 0 0 0 0-6H16"/><path d="M4 15h16M4 20h16"/></svg>';
     b.onclick=event=>{
       event.preventDefault();event.stopPropagation();
-      const undo=queueUndoSnapshot(track);
-      if(enqueueTrack(track,next)){
-        queueToast(next?'Added to play next':'Added to queue',undo);
-        b.classList.remove('confirmed');void b.offsetWidth;b.classList.add('confirmed');
-        setTimeout(()=>b.classList.remove('confirmed'),650);
-      }else queueToast(queue[index]?.id===resolveAudio(track).id?'Already playing':'Already in Up next');
+      toggleQueueTrack(track,next);animateToggle(b);
       if(b.closest('#completions')){clearTimeout(queueIconButton.dismissTimer);queueIconButton.dismissTimer=setTimeout(dismissSuggestions,350);}
     };
     return b;
   }
   function queueToast(message,undo){
+    if(!message || typeof undo==='function')return;
     let toast=$('#queue-toast');
     if(!toast){
       toast=element('div','queue-toast');toast.id='queue-toast';
@@ -360,9 +401,8 @@
       document.body.append(toast);
     }
     toast.replaceChildren(document.createTextNode(message));
-    if(typeof undo==='function'){const action=element('button','toast-undo','Undo');action.onclick=e=>{e.stopPropagation();clearTimeout(queueToast.timer);toast.classList.remove('is-visible');action.disabled=true;undo();status('');toast.replaceChildren();};toast.append(action);}
     toast.classList.remove('is-visible');void toast.offsetWidth;toast.classList.add('is-visible');
-    clearTimeout(queueToast.timer);queueToast.timer=setTimeout(()=>toast.classList.remove('is-visible'),typeof undo==='function'?8000:3500);
+    clearTimeout(queueToast.timer);queueToast.timer=setTimeout(()=>toast.classList.remove('is-visible'),3500);
   }
 
   function card(track, tracks, onPick) {
@@ -406,10 +446,10 @@
     save.onclick = () => {
       const old=saved.slice(),adding=!isSaved(track);
       saved=adding?[track,...saved]:saved.filter(t=>t.id!==track.id);
-      persist(storageKey,saved);if(view==='saved'||home())render();else refresh();
-      queueToast(adding?'Saved to Liked songs':'Removed from Liked songs',()=>{saved=old;persist(storageKey,saved);render();});
+      persist(storageKey,saved);if(view==='saved'||home())render();else refresh();animateToggle(save);
     };
-    const add=button('＋',()=>manageSong(track),'save add-track');
+    const add=button('＋',()=>{animateToggle(add);manageSong(track);},'save add-track');
+    add.dataset.trackId=track.id;add.setAttribute('aria-pressed','false');
     add.setAttribute('aria-label','Manage playlists for '+track.title);
     add.title='Manage playlists for '+track.title;
     const actions=element('div','art-actions');
@@ -428,7 +468,6 @@
       [isSaved(track)?'Remove saved':'Save song',()=>{
         const old=saved.slice(),wasSaved=isSaved(track);
         saved=wasSaved?saved.filter(t=>t.id!==track.id):[track,...saved];persist(storageKey,saved);render();
-        queueToast(wasSaved?'Removed from Liked songs':'Saved to Liked songs',()=>{saved=old;persist(storageKey,saved);render();});
       }],
       ['Go to artist',()=>openArtist({name:track.artist},[track])],
       ['Start song radio',()=>startStation(track)],
@@ -467,7 +506,7 @@
   function button(label,action,style='library-action') {
     const b=element('button',style,label); b.type='button'; b.onclick=action; return b;
   }
-  function saveLibrary(){persist(playlistKey,playlists);}
+  function saveLibrary(){persist(playlistKey,playlists);requestAnimationFrame(syncQueueButtons);}
   function pageTop(){ $('.browse').scrollTop=0; document.documentElement.scrollTop=0; document.body.scrollTop=0; }
   function dismissSuggestions(){
     clearTimeout(completionTimer); completionJob?.abort(); suggestions.hidden=true; suggestions.replaceChildren();$('#search-scrim').hidden=true;
@@ -499,8 +538,13 @@
     let job,timer;
     const draw=tracks=>{results.replaceChildren();for(const track of tracks.slice(0,30)){
       const row=element('div','playlist-picker-row');row.append(element('span','',track.title+' · '+track.artist));
-      const add=button('+',()=>{if(list.tracks.some(t=>t.id===track.id))return;list.tracks.push(track);saveLibrary();add.disabled=true;add.textContent='✓';queueToast('Added to '+list.name,()=>{list.tracks=list.tracks.filter(t=>t.id!==track.id);saveLibrary();add.disabled=false;add.textContent='+';});},'library-action');
-      add.setAttribute('aria-label','Add '+track.title);add.disabled=list.tracks.some(t=>t.id===track.id);if(add.disabled)add.textContent='✓';row.append(add);results.append(row);
+      const add=button(list.tracks.some(t=>t.id===track.id)?'✓':'+',()=>{
+        const exists=list.tracks.some(t=>t.id===track.id);
+        list.tracks=exists?list.tracks.filter(t=>t.id!==track.id):[...list.tracks,track];
+        saveLibrary();add.textContent=exists?'+':'✓';add.setAttribute('aria-pressed',String(!exists));animateToggle(add);syncQueueButtons();
+      },'library-action');
+      add.setAttribute('aria-label','Toggle '+track.title+' in '+list.name);
+      add.setAttribute('aria-pressed',String(list.tracks.some(t=>t.id===track.id)));row.append(add);results.append(row);
     }if(!tracks.length)results.textContent='No results. Try another search.';};
     input.oninput=()=>{clearTimeout(timer);job?.abort();const term=input.value.trim();draw(term?localSearch(term):ranked());if(!term)return;timer=setTimeout(async()=>{job=new AbortController();const active=job;try{const response=await fetch('/api/music-search?q='+encodeURIComponent(term),{signal:active.signal});const rows=(await response.json()).filter(validSong);if(!active.signal.aborted&&input.value.trim()===term)draw([...new Map([...localSearch(term),...rows].map(t=>[t.id,t])).values()]);}catch{}},300);};
     dialog.addEventListener('close',()=>{clearTimeout(timer);job?.abort();render();},{once:true});draw(ranked());input.focus();
@@ -519,10 +563,10 @@
       dialogBody.append(button((exists?'Remove from ':'Add to ')+list.name,()=>{
         const prior=list.tracks.slice();
         if(exists)list.tracks=list.tracks.filter(t=>t.id!==track.id);else list.tracks.push(track);
-        saveLibrary();dialog.close();if(view==='playlist')render();queueToast((exists?'Removed from ':'Added to ')+list.name,()=>{list.tracks=prior;saveLibrary();render();});
+        saveLibrary();dialog.close();if(view==='playlist')render();syncQueueButtons();
       }));
     }
-    nameForm('',name=>{const list=newList(name,[track]);dialog.close();queueToast('Added to '+name,()=>{playlists=playlists.filter(p=>p!==list);saveLibrary();render();});},'Create and add');
+    nameForm('',name=>{newList(name,[track]);dialog.close();syncQueueButtons();},'Create and add');
   }
   function shareList(list){
     const file=new File([JSON.stringify({version:1,name:list.name,tracks:list.tracks.map(({id,title,artist,source,art})=>({id,title,artist,source,art}))})],
@@ -1067,7 +1111,7 @@
     if(queue[index+1]?.id!==before)player?.clearNext();
     if(queue[index])preview(queue[index],queue.slice(index+1));
     $('#next').disabled=index>=queue.length-1;
-    checkpoint();queueToast(message);
+    checkpoint();syncQueueButtons();queueToast(message);
   }
   function moveQueued(from,to){
     if(from<=index||to<=index||from>=queue.length||to>=queue.length||from===to)return;
@@ -1086,6 +1130,7 @@
       remove.setAttribute('aria-label','Remove '+item.track.title+' from Up next');entry.append(remove);wrap.append(entry);
     }
     if(!heldQueue.length)renderUpNext([]);
+    requestAnimationFrame(syncQueueButtons);
   }
   function renderUpNext(next){
     const wrap=$('#up-next');wrap.replaceChildren();
@@ -1120,11 +1165,14 @@
       actions.append(handle,up,down,remove);entry.append(actions);wrap.append(entry);
     });
     $('#clear-queue').hidden=!next.some(t=>t.userQueued);
+    requestAnimationFrame(syncQueueButtons);
     if(!visible.length){
       const empty=element('div','empty-state');empty.append(element('span','empty-icon','♫'),element('p','','Nothing queued yet.'));
       empty.append(button('Discover music',()=>navigate('all'),'library-action primary-play'));wrap.append(empty);
     }
   }
+  const queueUIObserver=new MutationObserver(()=>requestAnimationFrame(syncQueueButtons));
+  for(const id of ['#catalog','#up-next','#completions','#playlists'])queueUIObserver.observe($(id),{childList:true,subtree:true});
   $('#clear-queue').onclick=()=>{
     if(!queue[index]){heldQueue=[];persist(heldKey,heldQueue);renderHeldQueue();return;}
     const before=queue[index+1]?.id;
@@ -1301,7 +1349,7 @@
       heldQueue=heldQueue.filter(item=>item.track.id!==track.id);
       if(next)heldQueue.unshift({track,next});
       else heldQueue.push({track,next});
-      persist(heldKey,heldQueue);renderHeldQueue();
+      persist(heldKey,heldQueue);renderHeldQueue();syncQueueButtons();
       return true;
     }
     const current=queue[index];
@@ -1312,7 +1360,7 @@
     queue=updated;
     checkpoint();$('#next').disabled=false;
     clearTimeout(enqueueTrack.renderTimer);enqueueTrack.renderTimer=setTimeout(()=>{if(queue[index])renderUpNext(queue.slice(index+1));},250);
-    status(track.title+(next?' will play next.':' added to queue.'));
+    status(track.title+(next?' will play next.':' added to queue.'));syncQueueButtons();
     return true;
   }
   function previousTrack(){
