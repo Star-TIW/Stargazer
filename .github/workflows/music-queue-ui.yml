@@ -23,21 +23,25 @@ jobs:
         run: |
           npm install --no-save playwright@1.56.1
           npx playwright install --with-deps chromium
-      - name: Wait for v41 preview deployment
+      - name: Wait for v42 preview deployment
         run: |
           for i in $(seq 1 40); do
-            if curl --max-time 10 -fsSL "https://stargazer-test.vercel.app/service-worker.js?qa=$i" | grep -q 'stargazer-cache-v41'; then
+            if curl --max-time 10 -fsSL "https://stargazer-test.vercel.app/service-worker.js?qa=$i" | grep -q 'stargazer-cache-v42'; then
               exit 0
             fi
             sleep 3
           done
-          echo 'v41 test preview unavailable'
+          echo 'v42 test preview unavailable'
           exit 1
       - name: Assert 400px artwork layout and nonplaying queue clicks
-        run: node tests/music-queue-browser.cjs
+        run: |
+          node tests/music-queue-browser.cjs
+          node tests/music-artwork-browser.cjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: music-queue-400px
-          path: music-queue-400px.png
+          path: |
+            music-queue-400px.png
+            music-artwork-*.png
           if-no-files-found: ignore
