@@ -77,11 +77,18 @@
   }
   let counted=false;
   const greeting="Yo, let’s vibe to the stars. What are we cooking up today?";
-  let fade=0, previousPlan=null, greeted=false;
-  try {
-    const settings=JSON.parse(localStorage.getItem('stargazer.music.audio-options'));
-    if(Number.isInteger(settings?.fade) && settings.fade>=0 && settings.fade<=12) fade=settings.fade;
-  } catch { /* Use defaults. */ }
+  const fadeSettingsKey='stargazer.music.audio-options',fadeBackupKey='stargazer.music.fade.v1';
+  function readSavedFade(){
+    try {
+      const settings=JSON.parse(localStorage.getItem(fadeSettingsKey));
+      const primary=Number(settings?.fade);
+      if(settings?.fade!==undefined && settings?.fade!==null && settings?.fade!=='' && Number.isInteger(primary) && primary>=0 && primary<=12)return primary;
+      const backup=localStorage.getItem(fadeBackupKey);
+      if(backup!==null && Number.isInteger(Number(backup)) && Number(backup)>=0 && Number(backup)<=12)return Number(backup);
+    }catch { /* Invalid or unavailable saved preferences must not break playback. */ }
+    return null;
+  }
+  let fade=readSavedFade()??0, previousPlan=null, greeted=false;
   const chatKey='stargazer.music.dj-chat.v1', mixKey='stargazer.music.dj-mix.v1';
   const chat=readList(chatKey).filter(m=>typeof m?.line==='string').slice(-80);
   mix=readList(mixKey).filter(validSong);
@@ -142,9 +149,9 @@
     const parts=location.pathname.split('/').filter(Boolean),kind=parts[1];
     query='';$('#search').value='';
     if(kind==='artist'&&parts[2]){
-      const requested=decodeURIComponent(parts[2]).replace(/-/g,' ');
-      const exact=pool().find(t=>slugify(t.artist)===parts[2])?.artist;
-      profile={name:exact||requested.replace(/\b\w/g,c=>c.toUpperCase()),tracks:[]};view='artist';
+      const slug=decodeURIComponent(parts[2]);
+      const exact=pool().find(t=>slugify(t.artist)===slug)?.artist;
+      profile={name:exact||'',routeSlug:slug,tracks:[]};view='artist';
     }else if(kind==='playlist'&&parts[2]){
       currentList=playlists.find(p=>p.id===decodeURIComponent(parts[2]))||decodeSharedPlaylist(decodeURIComponent(parts[2]));
       view=currentList?'playlist':'library';
@@ -181,7 +188,10 @@
     if(!greeted){message(greeting);greeted=true;}
     dismissSuggestions(); render(); pageTop();
   }
-  function saveOptions() { persist('stargazer.music.audio-options',{fade}); }
+  function saveOptions() {
+    persist(fadeSettingsKey,{fade});
+    try{localStorage.setItem(fadeBackupKey,String(fade));}catch{}
+  }
   $('#fade').value=String(fade);
   function fadeLabel(){ $('#fade-value').textContent=fade ? fade+' s' : 'Off · 0 s'; }
   fadeLabel();
@@ -217,6 +227,8 @@
   };
   if(localStorage.getItem('stargazer.music.particles-off')==='true')$('#particles-js').hidden=true;
   $('#audio-settings').onclick=async()=>{
+    const restored=readSavedFade();
+    if(restored!==null && restored!==fade){fade=restored;$('#fade').value=String(fade);fadeLabel();}
     $('#audio-dialog').showModal();
     const state=await StargazerDJ.availability();
     $('#enable-model').hidden=state!=='downloadable' && state!=='downloading';
@@ -675,6 +687,20 @@
       if(a.name.toLowerCase().includes(term.toLowerCase()) && !map.has(a.name.toLowerCase()))map.set(a.name.toLowerCase(),a);
     }));return [...map.values()].sort((a,b)=>a.name.length-b.name.length);
   }
+  function artistRowControls(row,title){
+    const section=row.closest('section.shelf');
+    if(!section)return;
+    section.classList.add('artist-scroll-shelf');
+    const nav=element('div','scroll-arrows artist-scroll-arrows');
+    const left=button('‹',()=>row.scrollBy({left:-row.clientWidth*.8,behavior:'smooth'}),'scroll-arrow');
+    const right=button('›',()=>row.scrollBy({left:row.clientWidth*.8,behavior:'smooth'}),'scroll-arrow');
+    left.setAttribute('aria-label','Scroll '+title+' left');right.setAttribute('aria-label','Scroll '+title+' right');
+    nav.append(left,right);section.insertBefore(nav,section.children[1]);
+    const sync=()=>{if(!row.isConnected)return;left.disabled=row.scrollLeft<8;right.disabled=row.scrollLeft+row.clientWidth>=row.scrollWidth-8;};
+    row.addEventListener('scroll',sync,{passive:true});requestAnimationFrame(sync);
+    const mutation=new MutationObserver(()=>{if(!row.isConnected){mutation.disconnect();return;}requestAnimationFrame(sync);});mutation.observe(row,{childList:true});
+    if(window.ResizeObserver){const observer=new ResizeObserver(()=>{if(!row.isConnected){observer.disconnect();return;}sync();});observer.observe(row);}
+  }
   function openArtist(artist,tracks){
     profile={...artist,tracks:tracks.filter(t=>(t.artists || [{name:t.artist}]).some(a=>a.name===artist.name))};
     navigate('artist');
@@ -682,21 +708,28 @@
   async function artistView(signal){
     const active=profile;
     const hero=element('section','artist-hero'),copy=element('div');
-    const initialFallback=element('div','artist-fallback',active.name.split(/\s+/).map(word=>word[0]).slice(0,2).join('').toUpperCase());hero.prepend(initialFallback);
+    const routeSlug=active.routeSlug||slugify(active.name);
+    const resolvedName=pool().find(t=>slugify(t.artist)===routeSlug)?.artist;
+    if(!active.name && resolvedName)active.name=resolvedName;
+    const initialFallback=element('div','artist-fallback',active.name?active.name.split(/\s+/).map(word=>word[0]).slice(0,2).join('').toUpperCase():'♫');hero.prepend(initialFallback);
     copy.append(button('‹ Back',()=>window.history.state?.stargazerMusic?window.history.back():navigate('all'),'library-action artist-back'));
-    const title=element('h2','',active.name), follow=button('',()=>{
+    const title=element('h2','',active.name||'Loading artist…'), follow=button('',()=>{
       followed=followed.some(a=>a.name===active.name)?followed.filter(a=>a.name!==active.name):[...followed,{id:active.id,name:active.name}];
       persist(followsKey,followed);refresh();
     });
-    function refresh(){follow.textContent=followed.some(a=>a.name===active.name)?'Following ✓':'Follow';}
+    function refresh(){follow.disabled=!active.name;follow.textContent=!active.name?'Loading…':followed.some(a=>a.name===active.name)?'Following ✓':'Follow';}
     refresh();copy.append(element('small','eyebrow','Artist'),title,follow);hero.append(copy);catalog.append(hero);
-    const body=shelf('Songs');show(body,active.tracks,'Loading songs…');
+    const body=shelf('Songs');show(body,active.tracks,'Loading songs…');artistRowControls(body,'Songs');
     try{
       let tracks=active.tracks;
       if(!tracks.length || !active.id){
-        const live=await lookup(active.name,signal);if(signal.aborted)return;
-        const credit=credits(live,active.name).find(a=>a.name.toLowerCase()===active.name.toLowerCase());
-        active.id=credit?.id || active.id;tracks=live.filter(t=>(t.artists || [{name:t.artist}]).some(a=>a.name===active.name));
+        const searchName=active.name||routeSlug.replace(/-/g,' ');
+        const live=await lookup(searchName,signal);if(signal.aborted)return;
+        const credit=credits(live,searchName).find(a=>slugify(a.name)===routeSlug);
+        tracks=live.filter(t=>(t.artists || [{name:t.artist}]).some(a=>slugify(a.name)===routeSlug));
+        const canonical=credit?.name||tracks.find(t=>slugify(t.artist)===routeSlug)?.artist;
+        if(canonical && !active.name){active.name=canonical;title.textContent=canonical;refresh();}
+        active.id=credit?.id || active.id;
       }
       if(tracks.length)show(body,tracks,'');
       if(active.id){
@@ -718,17 +751,18 @@
               (Number.isFinite(plays)&&plays>0?' · '+new Intl.NumberFormat().format(plays)+' plays':'');
             list.append(button(label,()=>startStation(track),'popular-song'));
           });
-          section.append(list);
+          section.append(list);artistRowControls(list,'Popular');
           const candidates=ranked().filter(t=>t.artist.toLowerCase()!==active.name.toLowerCase());
           const similar=active.tracks[0]?.genre?candidates.filter(t=>t.genre===active.tracks[0].genre):candidates;
           const unique=[...new Map(similar.map(t=>[t.artist.toLowerCase(),t])).values()].slice(0,6);
           if(unique.length){
             const others=shelf('Fans also like');others.className='related-artists';
-            unique.forEach(t=>others.append(shortcut(t,false)));
+            unique.forEach(t=>others.append(shortcut(t,false)));artistRowControls(others,'Fans also like');
           }
         }
       }
     }catch{if(!signal.aborted && !body.querySelector('.tile'))body.textContent='Artist songs are unavailable. Try searching again.';}
+    finally {if(!signal.aborted && !active.name){title.textContent='Artist unavailable';refresh();}}
   }
   function suggest(){
     dismissSuggestions();const term=$('#search').value.trim();
