@@ -3,7 +3,7 @@ const root=path.resolve(__dirname,'..');
 const read=name=>fs.readFileSync(path.join(root,name),'utf8');
 const js=read('music/music.js'),css=read('music/music.css'),html=read('music/index.html'),vercel=JSON.parse(read('vercel.json'));
 test('Part 3: shareable paths, playlist IDs and history navigation',()=>{
- for(const path of ['/music/artist/:slug','/music/playlist/:id','/music/dj'])assert.ok(vercel.rewrites.some(x=>x.source===path && x.destination==='/music/index.html'));
+ for(const path of ['/music/artist/:slug*','/music/playlist/:id*','/music/dj'])assert.ok(vercel.rewrites.some(x=>x.source===path && x.destination==='/music/'));
  assert.ok(js.includes('function musicRoutePath()'));
  assert.ok(js.includes("window.history[replace?'replaceState':'pushState']"));
  assert.ok(js.includes("window.addEventListener('popstate'"));
