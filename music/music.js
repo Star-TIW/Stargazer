@@ -1514,10 +1514,13 @@
     if(event.pointerType!=='touch' && document.body.classList.contains('full-now') &&
        !$('#full-controls').hidden)armFullControlsIdle();
   },{passive:true});
-  let fullscreenAnimation;
+  let fullscreenAnimation, fullscreenBrowseScroll=null;
   function toggleFullNow(){
     if(!queue[index])return;
     const panel=$('#now'),art=$('#visual');
+    const browse=$('.browse');
+    const opening=!document.body.classList.contains('full-now');
+    if(opening)fullscreenBrowseScroll={top:browse.scrollTop,left:browse.scrollLeft,x:window.scrollX,y:window.scrollY};
     fullscreenAnimation?.cancel();
     const before=panel.getBoundingClientRect(),artBefore=art.getBoundingClientRect();
     const expanded=document.body.classList.toggle('full-now');
@@ -1532,6 +1535,15 @@
     $('#expand-now .close-full-icon').toggleAttribute('hidden',!expanded);
     if(expanded)setMini(false);
     timeline();
+    if(!expanded && fullscreenBrowseScroll){
+      const saved=fullscreenBrowseScroll;
+      fullscreenBrowseScroll=null;
+      // Restore synchronously, before measuring the closing animation destination.
+      // Blur the fullscreen control so focus cannot scroll the underlying catalog.
+      if(panel.contains(document.activeElement))document.activeElement.blur();
+      browse.scrollTo({top:saved.top,left:saved.left,behavior:'instant'});
+      window.scrollTo({top:saved.y,left:saved.x,behavior:'instant'});
+    }
     if(!matchMedia('(prefers-reduced-motion: reduce)').matches){
       const after=panel.getBoundingClientRect(),artAfter=art.getBoundingClientRect();
       const sx=Math.max(.15,Math.min(4,before.width/Math.max(1,after.width)));

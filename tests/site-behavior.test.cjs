@@ -110,7 +110,7 @@ test("security headers, no-referrer embeds, and service-worker updates are deplo
   assert.deepEqual(vercelHeaders[1], {source:"/service-worker.js",headers:[{key:"Cache-Control",value:"no-cache, no-store, must-revalidate"}]});
   assert.match(read("index.html"), /id="video-iframe"[^>]*referrerpolicy="no-referrer"/);
   assert.match(read("provider-frame.js"), /frame\.referrerPolicy = "no-referrer"/);
-  assert.match(read("service-worker.js"), /stargazer-cache-v58/);
+  assert.match(read("service-worker.js"), /stargazer-cache-v59/);
 });
 
 function providerSession() {
@@ -380,7 +380,7 @@ test("settings particle layer is viewport-anchored and canvas fills it on mobile
   assert.match(layer[1], /pointer-events:\s*none\s*;/);
   assert.match(layer[1], /z-index:\s*0\s*;/);
   assert.match(html, /#particles-js\s*>\s*canvas\s*\{[^}]*width:\s*100%\s*;[^}]*height:\s*100%\s*;/);
-  assert.match(read("service-worker.js"), /stargazer-cache-v58/);
+  assert.match(read("service-worker.js"), /stargazer-cache-v59/);
 });
 
 test("last saved provider is reopened and low-percent progress remains visible", () => {

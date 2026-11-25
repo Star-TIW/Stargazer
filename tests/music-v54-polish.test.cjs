@@ -9,8 +9,8 @@ test('v58 transition preferences remain in localStorage across service-worker up
  assert.match(js,/const restored=readSavedFade\(\)/);
  assert.ok(!sw.includes('localStorage.clear('));
  assert.ok(!sw.includes("localStorage.removeItem('stargazer.music.audio-options')"));
- assert.match(sw,/stargazer-cache-v58/);
- assert.ok(shell.includes('/music/music.js?v=58'));
+ assert.match(sw,/stargazer-cache-v59/);
+ assert.ok(shell.includes('/music/music.js?v=59'));
 });
 
 test('v58 artist deep links do not capitalize an unresolved slug',()=>{

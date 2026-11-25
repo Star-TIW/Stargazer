@@ -95,7 +95,7 @@ test('a clean session defaults to twelve seconds but saved off remains honored',
   assert.match(js,/let fade=readSavedFade\(\)\?\?12/);
   assert.match(js,/if\(readSavedFade\(\)===null\)saveOptions\(\)/);
   assert.match(html,/id="fade"[^>]*value="12"/);
-  assert.match(sw,/stargazer-cache-v58/);
+  assert.match(sw,/stargazer-cache-v59/);
 });
 test('fullscreen readout has two distinct accessible values and a visual separator',()=>{
   assert.match(html,/class="full-times" role="group" aria-label="Playback time"/);

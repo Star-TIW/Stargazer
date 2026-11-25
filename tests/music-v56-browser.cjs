@@ -86,6 +86,28 @@ const BASE=process.env.STARGAZER_QA_URL||'https://st4rg4zer-test.st4rg4zer.pages
   assert.ok(await page.locator('#expand-now .expand-icon').isVisible());
   assert.equal(await page.evaluate(()=>window.__testMount===document.querySelector('#mount')),true);
   console.log('PASS 360px fullscreen icon order, bounds, repeat one badge, mute icons, X and persistent player mount');
+  for(const close of ['x','escape','art']){
+    const saved=await page.evaluate(()=>{
+      const browse=document.querySelector('.browse');
+      browse.scrollTop=240;window.scrollTo(0,240);
+      const snapshot=()=>({browse:browse.scrollTop,window:window.scrollY});
+      window.__scrollSnapshot=snapshot;
+      return snapshot();
+    });
+    assert.ok(saved.browse>0||saved.window>0,'catalog must be scrolled before opening');
+    // Dispatch directly so the test runner does not scroll the opener into view.
+    await page.locator('#expand-now').evaluate(b=>b.click());
+    await page.waitForTimeout(400);
+    await page.evaluate(()=>{document.querySelector('.browse').scrollTop=0;window.scrollTo(0,0);});
+    if(close==='escape')await page.keyboard.press('Escape');
+    else if(close==='art')await page.locator('#visual').evaluate(b=>b.click());
+    else await page.locator('#expand-now').click();
+    assert.deepEqual(await page.evaluate(()=>window.__scrollSnapshot()),saved,'scroll must restore immediately: '+close);
+    await page.waitForTimeout(400);
+    assert.deepEqual(await page.evaluate(()=>window.__scrollSnapshot()),saved,'scroll must stay restored after animation: '+close);
+    assert.equal(await page.evaluate(()=>window.__testMount===document.querySelector('#mount')),true);
+  }
+  console.log('PASS catalog scroll restoration on X, Escape and artwork close');
   await page.goto(BASE.replace(/\/$/,'')+'/artist/rl-grime',{waitUntil:'domcontentloaded'});
   await page.locator('.artist-hero .artist-back').waitFor({state:'visible'});
   const back=await page.locator('.artist-hero').evaluate(hero=>{
