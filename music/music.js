@@ -167,7 +167,7 @@
     return audioCatalog;
   }
   loadAudioLibrary().catch(()=>{});
-  $('#settings-btn')?.addEventListener('click',event=>{event.preventDefault();event.stopImmediatePropagation();$('#audio-settings').click();},true);
+  $('#music-menu-settings')?.addEventListener('click',event=>{event.preventDefault();event.stopImmediatePropagation();$('#audio-settings').click();},true);
   $('#explicit-filter').checked=hideExplicit;
   $('#explicit-filter').onchange=e=>{hideExplicit=e.target.checked;persist(explicitKey,hideExplicit);render();};
   $('#music-language').value=localStorage.getItem('catalogLanguage')||'en-US';
@@ -328,13 +328,15 @@
     tile.oncontextmenu=e=>{e.preventDefault();showTrackMenu(track,e.clientX,e.clientY);};
     tile.addEventListener('pointerdown',e=>{
       if(e.pointerType!=='touch'||e.target.closest('.art-actions,.queue-edit,.playlist-drag'))return;
-      const origin={x:e.clientX,y:e.clientY};
+      const origin={x:e.clientX,y:e.clientY};tile.pressOrigin=origin;
       clearTimeout(longPressTimer);
       longPressTimer=setTimeout(()=>{suppressPick=true;showTrackMenu(track,origin.x,origin.y);},550);
     });
-    tile.addEventListener('pointermove',e=>{if(e.pointerType==='touch')clearTimeout(longPressTimer);});
-    tile.addEventListener('pointerup',()=>clearTimeout(longPressTimer));
-    tile.addEventListener('pointercancel',()=>clearTimeout(longPressTimer));
+    tile.addEventListener('pointermove',e=>{
+      if(e.pointerType==='touch'&&tile.pressOrigin&&Math.hypot(e.clientX-tile.pressOrigin.x,e.clientY-tile.pressOrigin.y)>12)clearTimeout(longPressTimer);
+    });
+    tile.addEventListener('pointerup',()=>{clearTimeout(longPressTimer);tile.pressOrigin=null;});
+    tile.addEventListener('pointercancel',()=>{clearTimeout(longPressTimer);tile.pressOrigin=null;});
     const save = element('button','save');
     function refresh() {
       const liked = isSaved(track);
@@ -442,8 +444,8 @@
     for(const list of playlists){
       const exists=list.tracks.some(t=>t.id===track.id);
       dialogBody.append(button((exists?'Remove from ':'Add to ')+list.name,()=>{
+        const prior=list.tracks.slice();
         if(exists)list.tracks=list.tracks.filter(t=>t.id!==track.id);else list.tracks.push(track);
-        const prior=exists?list.tracks.concat(track):list.tracks.filter(t=>t.id!==track.id);
         saveLibrary();dialog.close();if(view==='playlist')render();queueToast((exists?'Removed from ':'Added to ')+list.name,()=>{list.tracks=prior;saveLibrary();render();});
       }));
     }
