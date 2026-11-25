@@ -63,6 +63,24 @@ test('Play next and Add to queue have separate gold states',()=>{
   assert.equal(addButton.attrs['aria-pressed'],'false');
   assert.equal(addedButton.attrs['aria-pressed'],'true');
 });
+test('held queue shows Add only for Add actions and Play next only for Play next',()=>{
+  const fn=extract('syncQueueButtons');
+  function button(kind,id){
+    const attrs={};
+    return {dataset:{trackId:id},classList:{contains:value=>value===kind||value==='queue-icon'},attrs,
+      setAttribute:(name,value)=>{attrs[name]=value;}};
+  }
+  const added=button('queue-add','a'),addedNext=button('queue-next','a');
+  const next=button('queue-next','b'),nextAdd=button('queue-add','b');
+  const context={queue:[],index:0,heldQueue:[{track:song('b'),next:true},{track:song('a'),next:false}],
+    playlists:[],document:{querySelectorAll:()=>[added,addedNext,next,nextAdd]}};
+  context.queuedUpcoming=()=>context.heldQueue.map(item=>item.track);
+  vm.runInNewContext(fn+';syncQueueButtons()',context);
+  assert.equal(added.attrs['aria-pressed'],'true');
+  assert.equal(addedNext.attrs['aria-pressed'],'false');
+  assert.equal(next.attrs['aria-pressed'],'true');
+  assert.equal(nextAdd.attrs['aria-pressed'],'false');
+});
 test('source preference retains the action responsible for the gold state',()=>{
   assert.match(js,/track\.queueAction\?\{queueAction:track\.queueAction\}/);
   assert.match(js,/queueAction:next\?'next':'add'/);
