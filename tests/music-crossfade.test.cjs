@@ -139,3 +139,7 @@ test('near-end video seek starts overlap without immediately skipping queued tra
  ended();assert.equal(p.track.id,'1');
  p.destroy();
 });
+
+for(const types of [['audio','video'],['video','audio']])test('12 second '+types.join(' to ')+' seek preserves cued deck and promotes elapsed overlap',()=>{
+ const {p}=fixture(types,12);p.active.currentTime=65;p.tick();const incoming=p.incoming;assert.ok(incoming);p.seekTo(88,true);assert.equal(p.incoming,incoming);assert.equal(incoming.paused,false);p.active.currentTime=94;incoming.currentTime=6;p.tick();assert.ok(p.active.volume>0&&incoming.volume>0);p.active.currentTime=100;incoming.currentTime=12;p.active.onended();assert.equal(p.active,incoming);assert.equal(p.getCurrentTime(),12);p.destroy();
+});
