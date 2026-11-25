@@ -330,7 +330,7 @@
       if(e.pointerType!=='touch'||e.target.closest('.art-actions,.queue-edit,.playlist-drag'))return;
       const origin={x:e.clientX,y:e.clientY};tile.pressOrigin=origin;
       clearTimeout(longPressTimer);
-      longPressTimer=setTimeout(()=>{suppressPick=true;showTrackMenu(track,origin.x,origin.y);},550);
+      longPressTimer=setTimeout(()=>{suppressPick=true;showTrackMenu(track,origin.x,origin.y);setTimeout(()=>suppressPick=false,1000);},550);
     });
     tile.addEventListener('pointermove',e=>{
       if(e.pointerType==='touch'&&tile.pressOrigin&&Math.hypot(e.clientX-tile.pressOrigin.x,e.clientY-tile.pressOrigin.y)>12)clearTimeout(longPressTimer);
@@ -368,7 +368,9 @@
       ['Add to queue',()=>enqueueTrack(track,false)],
       ['Add to playlist',()=>manageSong(track)],
       [isSaved(track)?'Remove saved':'Save song',()=>{
-        saved=isSaved(track)?saved.filter(t=>t.id!==track.id):[track,...saved];persist(storageKey,saved);render();queueToast(isSaved(track)?'Saved to Liked songs':'Saved songs updated');
+        const old=saved.slice(),wasSaved=isSaved(track);
+        saved=wasSaved?saved.filter(t=>t.id!==track.id):[track,...saved];persist(storageKey,saved);render();
+        queueToast(wasSaved?'Removed from Liked songs':'Saved to Liked songs',()=>{saved=old;persist(storageKey,saved);render();});
       }],
       ['Go to artist',()=>openArtist({name:track.artist},[track])],
       ['Start song radio',()=>startStation(track)],
@@ -863,7 +865,7 @@
       const t=queue[index];currentTrack=t;savedDuration=Number(session.duration)||Number(t.duration)||0;
       backStack=(session.backStack || queue.slice(0,index)).filter(validSong).map(resolveAudio).slice(-100);
       timeline();preview(t,queue.slice(index+1));
-      $('#now-art').hidden=false;$('#dock').hidden=false;$('#playing').textContent=t.title+' · '+t.artist;mediaControls(t);
+      $('#now-art').hidden=false;$('#dock').hidden=false;$('#playing').textContent=t.title+' · '+t.artist;$('#dock-cover').src=t.art?.startsWith('https://')?t.art:'https://i.ytimg.com/vi/'+t.id+'/hqdefault.jpg';mediaControls(t);
       $('#previous').disabled=!backStack.length && !index;$('#next').disabled=index===queue.length-1;
       $('#elapsed').textContent=time(resumeAt);$('#repeat').setAttribute('aria-pressed',String(repeatMode!=='off'));$('#shuffle').setAttribute('aria-pressed',String(shuffleOn));
       control('#play','play','Play');status('Ready to resume');
@@ -1018,6 +1020,18 @@
     queue=[...queue.slice(0,index+1),...queue.slice(index+1).filter(t=>!t.userQueued)];
     afterQueueEdit(before,'Manual queue cleared');
   };
+  function syncNowPlaying(){
+    const track=player?.track;if(!track||!queue.length)return;
+    const actualIndex=queue.findIndex(t=>t.id===track.id);
+    if(actualIndex<0)return;
+    if(actualIndex!==index || currentTrack?.id!==track.id){
+      index=actualIndex;currentTrack=queue[index];savedDuration=Number(track.duration)||0;
+      preview(currentTrack,queue.slice(index+1));
+      $('#playing').textContent=track.title+' · '+track.artist;
+      $('#dock-cover').src=track.art?.startsWith('https://')?track.art:'https://i.ytimg.com/vi/'+track.id+'/hqdefault.jpg';
+      mediaControls(track);timeline();checkpoint();
+    }
+  }
   function status(text) { $('#audio-status').textContent=text; }
   let sleepUntil=0,sleepAtEnd=false,sleepGain=1;
   function applyGain() {player?.setVolume(volume*sleepGain);}
@@ -1068,7 +1082,7 @@
     }catch{}
   }
   setInterval(()=>{if(ready && player instanceof CrossfadePlayer)player.tick();},30);
-  setInterval(()=>{if(ready){timeline();applyGain();const playing=player.getPlayerState()===1;
+  setInterval(()=>{if(ready){syncNowPlaying();timeline();applyGain();const playing=player.getPlayerState()===1;
     if($('#play').getAttribute('aria-label')!==(playing?'Pause':'Play'))control('#play',playing?'pause':'play',playing?'Pause':'Play');updatePlaylistButton();
     if(playing && Date.now()-lastCheckpoint>4000)checkpoint();}},150);
   $('#seek').oninput=e=>{resumeAt=Number(e.target.value);if(ready)player.seekTo(resumeAt,true);timeline();checkpoint();};
