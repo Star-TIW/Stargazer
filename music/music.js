@@ -56,7 +56,7 @@
     const right=button('›',()=>row.scrollBy({left:row.clientWidth*.8,behavior:'smooth'}),'scroll-arrow');
     left.setAttribute('aria-label','Scroll '+title+' left');right.setAttribute('aria-label','Scroll '+title+' right');
     nav.append(left,right);section.insertBefore(nav,row);
-    const sync=()=>{left.disabled=row.scrollLeft<8;right.disabled=row.scrollLeft+row.clientWidth>=row.scrollWidth-8;};
+    const sync=()=>{left.disabled=row.scrollLeft<8;right.disabled=row.scrollLeft+row.clientWidth>=row.scrollWidth-8;row.classList.toggle('fade-left',!left.disabled);row.classList.toggle('fade-right',!right.disabled);};
     row.addEventListener('scroll',sync,{passive:true});requestAnimationFrame(sync);
   }
   function home() { return view==='all' && !query; }
@@ -135,7 +135,7 @@
     const url=new URL(musicRoutePath(),location.origin);
     if(query && view==='all')url.searchParams.set('q',query);
     if(replace && queue?.[index])url.searchParams.set('track',queue[index].id);
-    if(url.pathname+url.search===location.pathname+location.search)return;
+    if(url.pathname+url.search===location.pathname+location.search){if(!history.state?.stargazerMusic)history.replaceState({stargazerMusic:true,view},'',url);return;}
     window.history[replace?'replaceState':'pushState']({stargazerMusic:true,view},'',url.pathname+url.search);
   }
   function readMusicRoute(initial=false){
@@ -778,7 +778,7 @@
         const section=shelf('Recent searches');section.className='recent-searches';
         recentSearches.slice(0,6).forEach(term=>section.append(button(term,()=>search(term),'recent-search')));
       }
-      const dj=shelf('Made for you');
+      const dj=shelf('Made for you');dj.className='made-grid';
       const feature=(title,art,action)=>{const item=button('',action,'made-card');const image=element('span','made-art',art);item.append(image,element('strong','',title));return item;};
       dj.append(feature('Stargazer DJ','♫',openBooth),feature('Liked songs','♥',()=>navigate('saved')),feature('Daily mix','◉',()=>{openBooth();generateMix();}),feature('On repeat','↻',()=>search(history[0]?.track?.artist||'')));
       if(personal) songRow(chartHeading,releases);
@@ -951,14 +951,15 @@
   const heldKey='stargazer.music.held.v1';
   let heldQueue=readList(heldKey).filter(item=>validSong(item?.track));
   function withHeldQueue(base,selectedIndex){
-    if(!heldQueue.length)return base;
+    const pending=queue.slice(index+1).filter(t=>t.userQueued).map(track=>({track,next:false}));
+    if(!heldQueue.length&&!pending.length)return base;
     const before=base.slice(0,selectedIndex+1),seen=new Set(before.map(t=>t.id));
     const unique=tracks=>tracks.filter(t=>{
       if(seen.has(t.id))return false;
       seen.add(t.id);return true;
     });
     const immediate=unique(heldQueue.filter(item=>item.next).map(item=>({...resolveAudio(item.track),userQueued:true})));
-    const later=unique(heldQueue.filter(item=>!item.next).map(item=>({...resolveAudio(item.track),userQueued:true})));
+    const later=unique([...pending,...heldQueue.filter(item=>!item.next)].map(item=>({...resolveAudio(item.track),userQueued:true})));
     const upcoming=unique(base.slice(selectedIndex+1));
     heldQueue=[];persist(heldKey,heldQueue);
     return [...before,...immediate,...later,...upcoming];
