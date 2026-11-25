@@ -36,8 +36,8 @@ test('queue buttons never start playback while no player exists',()=>{
   assert.doesNotMatch(body,/load\(/);
   assert.ok(js.includes('function withHeldQueue(base,selectedIndex)'));
 });
-test('service worker version 41',()=>{
-  assert.match(fs.readFileSync(path.join(root,'service-worker.js'),'utf8'),/stargazer-cache-v41/);
+test('service worker version 42',()=>{
+  assert.match(fs.readFileSync(path.join(root,'service-worker.js'),'utf8'),/stargazer-cache-v42/);
 });
 const vm=require('node:vm');
 const insert=vm.runInNewContext(js.slice(js.indexOf('  function insertUserQueue('),js.indexOf('  function enqueueTrack('))+'\ninsertUserQueue');
@@ -63,4 +63,15 @@ test('queue order and manual priority survive session serialization',()=>{
  assert.deepEqual(ids(insert(restored.queue,restored.index,song('later'),false)),['current','next','added','later','auto']);
  assert.match(js,/persist\(sessionKey,\{queue,index,/);
  assert.match(js,/queue=session.queue.map\(resolveAudio\)/);
+});
+
+test('Now playing keeps square cover behind centered foreground video',()=>{
+ assert.match(css,/#visual:has\(#now-art:not\(\[hidden\]\)\) \{aspect-ratio:1/);
+ assert.match(css,/#visual #now-art,#visual \.outgoing-cover \{[^}]*z-index:0/);
+ assert.match(css,/#visual #mount \{[^}]*top:50%;transform:translateY\(-50%\);z-index:2/);
+ assert.match(css,/#visual #mount iframe \{[^}]*aspect-ratio:16\/9;min-width:200px;min-height:200px/);
+ assert.doesNotMatch(css,/#visual:has\(#mount:not\(\.is-preloading\) iframe\) > img \{display:none/);
+ assert.match(js,/const thumbnail='https:\/\/i\.ytimg\.com\/vi\/'\+track.id/);
+ assert.match(js,/art.src=source/);
+ assert.match(js,/updateCover\(track,direction\)/);
 });
