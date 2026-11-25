@@ -4,9 +4,9 @@ const js=fs.readFileSync(path.join(root,'music/music.js'),'utf8'),css=fs.readFil
 test('Part 1: playlist playing indicator, artist back navigation and Music-only settings',()=>{
   assert.match(js,/function updatePlaylistButton\(/);
   assert.match(js,/window\.history\.back\(\)/);
-  assert.match(js,/\$\('#music-menu-settings'\)\?\.addEventListener\('click'/);
+  assert.match(html,/id="settings-btn"/);
   assert.doesNotMatch(html,/id="music-language"/);
-  assert.match(html,/id="music-particles"/);
+  assert.doesNotMatch(html,/id="music-particles"/);
   assert.match(html,/id="explicit-filter"/);
 });
 test('Part 2: two-line titles, readable secondary copy and correct range spacing',()=>{
