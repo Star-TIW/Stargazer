@@ -106,6 +106,7 @@ test('Part 1: search relevance, clear button, restored view and accessible toggl
 test('Part 1: loading metadata and now playing sync without Undo popups',()=>{
  assert.match(js,/\$\('#loading'\)\.hidden=!loading/);
  assert.match(js,/\$\('#playing'\)\.textContent=track\.title/);
- assert.match(js,/animateToggle\(save\)/);
+ assert.match(js,/setHeartState\(track,adding,true\)/);
+ assert.ok(js.indexOf('setHeartState(track,adding,true)')<js.indexOf('localStorage.setItem(storageKey,JSON.stringify(saved))'));
  assert.ok(!js.includes("className='toast-undo'"));
 });

@@ -8,6 +8,7 @@ on:
       - 'tests/music-queue-browser.cjs'
       - 'tests/music-artwork-browser.cjs'
       - 'tests/music-features-browser.cjs'
+      - 'tests/music-v56-browser.cjs'
       - '.github/workflows/music-queue-ui.yml'
   workflow_dispatch:
 permissions:
@@ -52,6 +53,7 @@ jobs:
           node tests/music-queue-browser.cjs
           node tests/music-artwork-browser.cjs
           node tests/music-features-browser.cjs
+          node tests/music-v56-browser.cjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:
