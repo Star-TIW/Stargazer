@@ -325,3 +325,6 @@ body:has(#dock:not([hidden])) .workspace { height:calc(100dvh - 246px); }
 .scroll-shelf .tile {isolation:isolate;}
 .scroll-shelf .tile:focus-within {z-index:3;}
 @media(max-width:760px){.now-meta {gap:6px;} }
+
+/* Preserve a true 16:9 YouTube viewport of at least 356x200 on 400px phones. */
+@media(max-width:440px){#now {padding-inline:6px;}}
