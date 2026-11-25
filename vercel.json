@@ -42,23 +42,23 @@
   "rewrites": [
     {
       "source": "/music/artist/:slug*",
-      "destination": "/music/index.html"
+      "destination": "/music/"
     },
     {
       "source": "/music/playlist/:id*",
-      "destination": "/music/index.html"
+      "destination": "/music/"
     },
     {
       "source": "/music/dj",
-      "destination": "/music/index.html"
+      "destination": "/music/"
     },
     {
       "source": "/music/library",
-      "destination": "/music/index.html"
+      "destination": "/music/"
     },
     {
       "source": "/music/saved",
-      "destination": "/music/index.html"
+      "destination": "/music/"
     }
   ]
 }
