@@ -6,7 +6,7 @@ const assert=require('node:assert/strict');
   for(const width of [400,1440]){
    const page=await browser.newPage({viewport:{width,height:900},reducedMotion:'reduce'});
    await page.route('https://www.youtube.com/embed/**',r=>r.fulfill({contentType:'text/html',body:'<html><body style="background:black;color:white">Video viewport</body></html>'}));
-   await page.goto('https://stargazer-test.vercel.app/music/',{waitUntil:'domcontentloaded'});
+   await page.goto(process.env.STARGAZER_QA_URL||'https://stargazer-test.vercel.app/music/',{waitUntil:'domcontentloaded'});
    await page.locator('.grid .tile').first().waitFor({timeout:30000});
    // Exercise actual restore and selection code without relying on provider autoplay.
    const tracks=[{source:'youtube',id:'abcdefghijk',title:'Artwork One',artist:'Test',art:'https://i.ytimg.com/vi/abcdefghijk/hqdefault.jpg'},{source:'youtube',id:'lmnopqrstuv',title:'Artwork Two',artist:'Test'}];
